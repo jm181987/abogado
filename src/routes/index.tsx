@@ -13,7 +13,9 @@ const WHATS = "https://api.whatsapp.com/send/?phone=56977778778";
 
 function Index() {
   const [lang, setLang] = useState<Lang>("es");
+  const [bookingOpen, setBookingOpen] = useState(false);
   const { data: t = translations[lang] } = useSiteContent(lang);
+  const openBooking = () => setBookingOpen(true);
 
 
   return (
