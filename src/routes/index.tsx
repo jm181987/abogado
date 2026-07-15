@@ -18,6 +18,8 @@ function Index() {
   const phoneDigits = (t.whatsapp?.number || "5555999887766").replace(/\D/g, "");
   const WHATS = `https://api.whatsapp.com/send/?phone=${phoneDigits}`;
   const brand = t.brand ?? { name1: "Vizcaya", name2: "Salud", logoUrl: "" };
+  const heroSrc = t.media?.heroImage || heroImg;
+  const gallery = t.media?.gallery ?? [];
 
 
   return (
@@ -76,7 +78,7 @@ function Index() {
       {/* Hero */}
       <section id="inicio" className="relative pt-32 pb-20 md:pt-40 md:pb-32 overflow-hidden">
         <div className="absolute inset-0 -z-10">
-          <img src={heroImg} alt="Clínica Vizcaya Salud" className="h-full w-full object-cover" width={1600} height={1200} />
+          <img src={heroSrc} alt="Clínica Vizcaya Salud" className="h-full w-full object-cover" width={1600} height={1200} />
           <div className="absolute inset-0 bg-gradient-to-r from-background via-background/85 to-background/40" />
         </div>
         <div className="mx-auto max-w-7xl px-6">
@@ -209,6 +211,23 @@ function Index() {
 
       {/* Booking modal */}
       <BookingForm open={bookingOpen} onClose={() => setBookingOpen(false)} />
+
+      {/* Gallery (opcional, gestionada desde admin) */}
+      {gallery.length > 0 && (
+        <section id="galeria" className="py-20 md:py-28 bg-muted/30">
+          <div className="mx-auto max-w-6xl px-6">
+            <p className="text-xs uppercase tracking-[0.25em] text-primary mb-3">Galería</p>
+            <h2 className="font-display text-3xl md:text-5xl tracking-tight mb-10">Nuestro consultorio</h2>
+            <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+              {gallery.map((url, i) => (
+                <img key={i} src={url} alt="" loading="lazy"
+                  className="w-full aspect-square object-cover rounded-2xl border border-border" />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
 
       {/* Contact */}
       <section id="contacto" className="py-24 md:py-32">
