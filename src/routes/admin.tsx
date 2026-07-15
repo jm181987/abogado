@@ -464,9 +464,9 @@ function PhotosTab() {
       const { data } = await supabase.from("site_content").select("data").eq("lang", lang).maybeSingle();
       const current = (data?.data as any) ?? {};
       const merged = { ...current, media: { ...(current.media ?? {}), ...next } };
-      await supabase.from("site_content")
-        .update({ data: merged, updated_at: new Date().toISOString() })
-        .eq("lang", lang);
+      const { error } = await supabase.from("site_content")
+        .upsert({ lang, data: merged, updated_at: new Date().toISOString() }, { onConflict: "lang" });
+      if (error) { alert("Error al guardar media (" + lang + "): " + error.message); throw error; }
     }
   }
 
