@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { ContentEditor } from "@/components/admin/ContentEditor";
+import { useSiteContent } from "@/lib/site-content";
 
 export const Route = createFileRoute("/admin")({
   ssr: false,
@@ -19,6 +20,8 @@ function AdminPage() {
   const { user, isAdmin, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const [tab, setTab] = useState<"appointments" | "content" | "plans" | "photos">("appointments");
+  const { data: siteContent } = useSiteContent("es");
+  const brand = siteContent?.brand ?? { name1: "Vizcaya", name2: "Salud", logoUrl: "" };
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth" });
@@ -47,8 +50,14 @@ VALUES ('${user.id}', 'admin');`}
       <header className="border-b border-border bg-background">
         <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
           <Link to="/" className="flex items-baseline gap-1.5">
-            <span className="font-display text-xl font-semibold">Vizcaya</span>
-            <span className="font-display text-xl italic text-primary">Salud</span>
+            {brand.logoUrl ? (
+              <img src={brand.logoUrl} alt={`${brand.name1} ${brand.name2}`} className="h-8 w-auto" />
+            ) : (
+              <>
+                <span className="font-display text-xl font-semibold">{brand.name1}</span>
+                <span className="font-display text-xl italic text-primary">{brand.name2}</span>
+              </>
+            )}
             <span className="ml-3 text-xs uppercase tracking-widest text-muted-foreground">Admin</span>
           </Link>
           <div className="flex items-center gap-3 text-sm">
