@@ -111,6 +111,7 @@ function AppointmentsTab() {
   const [filter, setFilter] = useState<"upcoming" | "today" | "past" | "all">("upcoming");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const notifyChange = useServerFn(waNotifyStatusChange);
 
   async function load() {
     setLoading(true);
@@ -125,7 +126,17 @@ function AppointmentsTab() {
   useEffect(() => { load(); }, []);
 
   async function patch(id: string, changes: Partial<Appointment>) {
+    const prev = items.find(a => a.id === id);
     await supabase.from("appointments").update(changes as any).eq("id", id);
+    // Disparar notificaciones de WhatsApp según lo que cambió
+    try {
+      if (changes.status && prev && changes.status !== prev.status) {
+        if (changes.status === "confirmed") await notifyChange({ data: { appointmentId: id, kind: "confirmed" } });
+        else if (changes.status === "cancelled") await notifyChange({ data: { appointmentId: id, kind: "cancelled" } });
+      } else if (changes.scheduled_at && prev && changes.scheduled_at !== prev.scheduled_at) {
+        await notifyChange({ data: { appointmentId: id, kind: "reschedule" } });
+      }
+    } catch (e) { console.warn("[wa notify]", e); }
     load();
   }
   async function remove(id: string) {
