@@ -198,7 +198,11 @@ function Index() {
       </section>
 
       {/* Contact */}
+      <BookingForm />
+
+      {/* Contact */}
       <section id="contacto" className="py-24 md:py-32">
+
         <div className="mx-auto max-w-6xl px-6">
           <p className="text-xs uppercase tracking-[0.25em] text-primary mb-4">{t.contact.kicker}</p>
           <h2 className="font-display text-4xl md:text-5xl tracking-tight mb-16">{t.contact.title}</h2>
