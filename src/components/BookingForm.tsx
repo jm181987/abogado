@@ -32,12 +32,39 @@ export function BookingForm({ open, onClose }: { open: boolean; onClose: () => v
   const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [serverErr, setServerErr] = useState<string | null>(null);
+  const [bookedTimes, setBookedTimes] = useState<Set<string>>(new Set());
+  const [loadingSlots, setLoadingSlots] = useState(false);
 
   useEffect(() => {
     supabase.from("plans").select("id, name").order("position").then(({ data }) => {
       setPlans((data as PlanOpt[]) ?? []);
     });
   }, []);
+
+  useEffect(() => {
+    if (!form.date) { setBookedTimes(new Set()); return; }
+    setLoadingSlots(true);
+    const start = new Date(`${form.date}T00:00:00`).toISOString();
+    const end = new Date(`${form.date}T23:59:59`).toISOString();
+    supabase
+      .from("appointments")
+      .select("scheduled_at, status")
+      .gte("scheduled_at", start)
+      .lte("scheduled_at", end)
+      .neq("status", "cancelled")
+      .then(({ data }) => {
+        const taken = new Set<string>();
+        for (const row of (data as { scheduled_at: string }[]) ?? []) {
+          const d = new Date(row.scheduled_at);
+          const hh = String(d.getHours()).padStart(2, "0");
+          const mm = String(d.getMinutes()).padStart(2, "0");
+          taken.add(`${hh}:${mm}`);
+        }
+        setBookedTimes(taken);
+        setLoadingSlots(false);
+        setForm(f => (f.time && taken.has(f.time) ? { ...f, time: "" } : f));
+      });
+  }, [form.date]);
 
   useEffect(() => {
     if (!open) return;
@@ -53,6 +80,7 @@ export function BookingForm({ open, onClose }: { open: boolean; onClose: () => v
 
   const minDate = useMemo(() => todayStr(), []);
 
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setServerErr(null); setErrors({});
@@ -65,6 +93,22 @@ export function BookingForm({ open, onClose }: { open: boolean; onClose: () => v
     }
     setState("sending");
     const scheduledAt = new Date(`${form.date}T${form.time}:00`).toISOString();
+
+    // Revalidar disponibilidad justo antes de insertar
+    const { data: clash } = await supabase
+      .from("appointments")
+      .select("id")
+      .eq("scheduled_at", scheduledAt)
+      .neq("status", "cancelled")
+      .limit(1);
+    if (clash && clash.length > 0) {
+      setServerErr("Ese horario acaba de ser reservado. Por favor elige otro.");
+      setBookedTimes(prev => new Set(prev).add(form.time));
+      setForm(f => ({ ...f, time: "" }));
+      setState("error");
+      return;
+    }
+
     const payload = {
       name: parsed.data.name,
       full_name: parsed.data.name,
@@ -141,10 +185,23 @@ export function BookingForm({ open, onClose }: { open: boolean; onClose: () => v
               </Field>
               <Field label="Hora" error={errors.time}>
                 <select required value={form.time} onChange={e => setForm({ ...form, time: e.target.value })}
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm">
-                  <option value="">Selecciona una hora</option>
-                  {TIME_SLOTS.map(s => <option key={s} value={s}>{s} hrs</option>)}
+                  disabled={!form.date || loadingSlots}
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm disabled:opacity-60">
+                  <option value="">
+                    {!form.date ? "Elige una fecha primero" : loadingSlots ? "Cargando horarios…" : "Selecciona una hora"}
+                  </option>
+                  {TIME_SLOTS.map(s => {
+                    const taken = bookedTimes.has(s);
+                    return (
+                      <option key={s} value={s} disabled={taken}>
+                        {s} hrs{taken ? " — no disponible" : ""}
+                      </option>
+                    );
+                  })}
                 </select>
+                {form.date && !loadingSlots && bookedTimes.size > 0 && (
+                  <p className="mt-1 text-xs text-muted-foreground">{bookedTimes.size} horario(s) ya reservados ese día.</p>
+                )}
               </Field>
               <Field label="Plan de interés (opcional)" full>
                 <select value={form.plan_id} onChange={e => setForm({ ...form, plan_id: e.target.value })}
