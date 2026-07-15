@@ -26,12 +26,33 @@ async function evo(path: string, init?: RequestInit) {
   let body: unknown = text;
   try { body = text ? JSON.parse(text) : {}; } catch { /* keep text */ }
   if (!res.ok) {
-    const msg = typeof body === "object" && body && "message" in body
-      ? String((body as { message: unknown }).message)
-      : text || res.statusText;
+    const msg = extractEvolutionErrorMessage(body, text, res.statusText);
     throw new Error(`Evolution ${res.status}: ${msg}`);
   }
   return body as any;
+}
+
+function extractEvolutionErrorMessage(body: unknown, text: string, fallback: string): string {
+  const raw = text || fallback;
+  const normalized = raw.toLowerCase();
+
+  if (normalized.includes("error code: 1003") || normalized.includes("error 1003")) {
+    return "Cloudflare 1003: EVOLUTION_API_URL apunta a una IP/host no válido. Usa la URL pública del servidor Evolution, con dominio y sin /manager ni rutas extra, por ejemplo https://evolution.tudominio.com";
+  }
+
+  if (typeof body === "object" && body) {
+    const candidate = body as { message?: unknown; error?: unknown };
+    const message = Array.isArray(candidate.message)
+      ? candidate.message.join(" · ")
+      : candidate.message;
+    if (message) return String(message);
+    if (typeof candidate.error === "object" && candidate.error && "message" in candidate.error) {
+      return String((candidate.error as { message: unknown }).message);
+    }
+    if (candidate.error) return String(candidate.error);
+  }
+
+  return raw;
 }
 
 /** Normaliza un teléfono guardado (+55...) al formato Evolution: solo dígitos. */
