@@ -5,7 +5,7 @@ type PlanOpt = { id: string; name: string };
 
 export function BookingForm() {
   const [plans, setPlans] = useState<PlanOpt[]>([]);
-  const [form, setForm] = useState({ name: "", email: "", phone: "", plan_id: "", message: "" });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", plan_id: "", preferred_date: "", message: "" });
   const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [err, setErr] = useState<string | null>(null);
 
@@ -18,11 +18,11 @@ export function BookingForm() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setState("sending"); setErr(null);
-    const payload = { ...form, plan_id: form.plan_id || null, status: "pending" as const };
+    const payload = { ...form, plan_id: form.plan_id || null, preferred_date: form.preferred_date || null, status: "pending" as const };
     const { error } = await supabase.from("appointments").insert(payload);
     if (error) { setErr(error.message); setState("error"); return; }
     setState("sent");
-    setForm({ name: "", email: "", phone: "", plan_id: "", message: "" });
+    setForm({ name: "", email: "", phone: "", plan_id: "", preferred_date: "", message: "" });
   }
 
   return (
@@ -64,6 +64,12 @@ export function BookingForm() {
                 <option value="">Sin preferencia</option>
                 {plans.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-xs font-medium mb-1.5">Fecha preferida (opcional)</label>
+              <input type="text" placeholder="Ej: Lunes por la tarde, 15 de marzo AM…"
+                value={form.preferred_date} onChange={e => setForm({ ...form, preferred_date: e.target.value })}
+                className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm" />
             </div>
             <div className="md:col-span-2">
               <label className="block text-xs font-medium mb-1.5">Mensaje (opcional)</label>
