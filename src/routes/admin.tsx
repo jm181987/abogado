@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
+import { ContentEditor } from "@/components/admin/ContentEditor";
 
 export const Route = createFileRoute("/admin")({
   ssr: false,
