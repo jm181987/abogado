@@ -78,7 +78,7 @@ function Index() {
       {/* Hero */}
       <section id="inicio" className="relative pt-32 pb-20 md:pt-40 md:pb-32 overflow-hidden">
         <div className="absolute inset-0 -z-10">
-          <img src={heroImg} alt="Clínica Vizcaya Salud" className="h-full w-full object-cover" width={1600} height={1200} />
+          <img src={heroSrc} alt="Clínica Vizcaya Salud" className="h-full w-full object-cover" width={1600} height={1200} />
           <div className="absolute inset-0 bg-gradient-to-r from-background via-background/85 to-background/40" />
         </div>
         <div className="mx-auto max-w-7xl px-6">
