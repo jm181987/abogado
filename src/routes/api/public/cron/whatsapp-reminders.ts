@@ -15,7 +15,7 @@ export const Route = createFileRoute("/api/public/cron/whatsapp-reminders")({
           return new Response("Unauthorized", { status: 401 });
         }
         const { createClient } = await import("@supabase/supabase-js");
-        const { evoSendText, fillTemplate, formatDateEs, getBrandInfo } = await import("@/lib/whatsapp.server");
+        const { evoSendText, fillTemplate, formatDateForLang, getBrandInfo, pickClientLang, pickTemplate } = await import("@/lib/whatsapp.server");
 
         const admin = createClient(
           process.env.APP_SUPABASE_URL!,
@@ -32,7 +32,7 @@ export const Route = createFileRoute("/api/public/cron/whatsapp-reminders")({
         const end = new Date(now + 25 * 60 * 60 * 1000).toISOString();
 
         const { data: appts } = await admin.from("appointments")
-          .select("id, name, phone, scheduled_at, plans:plan_id(name_es)")
+          .select("id, name, phone, scheduled_at, plans:plan_id(name_es, name_pt)")
           .gte("scheduled_at", start)
           .lte("scheduled_at", end)
           .eq("status", "confirmed")
@@ -41,16 +41,21 @@ export const Route = createFileRoute("/api/public/cron/whatsapp-reminders")({
         const results: { id: string; ok: boolean; error?: string }[] = [];
         for (const a of appts ?? []) {
           if (!a.scheduled_at || !a.phone) continue;
-          const { date, time } = formatDateEs(a.scheduled_at);
+          const lang = pickClientLang(a.phone);
+          const { date, time } = formatDateForLang(a.scheduled_at, lang);
+          const planName = lang === "pt"
+            ? ((a as any).plans?.name_pt ?? (a as any).plans?.name_es ?? "")
+            : ((a as any).plans?.name_es ?? "");
           const vars = {
             name: a.name ?? "",
             phone: a.phone ?? "",
             date, time,
-            plan: (a as any).plans?.name_es ?? "",
+            plan: planName,
             brand: brand.name,
           };
           try {
-            await evoSendText(brand.slug, a.phone, fillTemplate(cfg.msg_reminder, vars));
+            const tpl = pickTemplate(cfg as any, "msg_reminder", lang);
+            await evoSendText(brand.slug, a.phone, fillTemplate(tpl, vars));
             await admin.from("appointments").update({ reminder_sent_at: new Date().toISOString() }).eq("id", a.id);
             results.push({ id: a.id, ok: true });
           } catch (e) {
@@ -58,6 +63,7 @@ export const Route = createFileRoute("/api/public/cron/whatsapp-reminders")({
           }
         }
         return Response.json({ ok: true, sent: results.filter(r => r.ok).length, total: results.length, results });
+
 
       },
     },
