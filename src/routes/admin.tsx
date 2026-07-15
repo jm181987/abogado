@@ -337,58 +337,99 @@ function PlansTab() {
     setPlans(prev => prev.map(p => p.id === id ? { ...p, ...patch } : p));
   }
 
+  async function addPlan() {
+    const nextOrder = plans.length ? Math.max(...plans.map(p => p.sort_order ?? 0)) + 1 : 1;
+    const slug = `plan-${Date.now()}`;
+    const payload = {
+      slug,
+      name_es: "Nuevo plan",
+      name_pt: "Novo plano",
+      age_es: "",
+      age_pt: "",
+      price: "R$ 0",
+      old_price: "",
+      features_es: [] as string[],
+      features_pt: [] as string[],
+      popular: false,
+      sort_order: nextOrder,
+      active: true,
+    };
+    const { error } = await supabase.from("plans").insert(payload as any);
+    if (error) { alert("Error creando plan: " + error.message); return; }
+    load();
+  }
+
+  async function remove(p: Plan) {
+    if (!confirm(`¿Eliminar el plan "${p.name_es}"? Esta acción no se puede deshacer.`)) return;
+    const { error } = await supabase.from("plans").delete().eq("id", p.id);
+    if (error) { alert("Error eliminando: " + error.message); return; }
+    load();
+  }
+
   if (loading) return <p className="text-sm text-muted-foreground">Cargando…</p>;
 
   return (
-    <div className="grid gap-4 md:grid-cols-2">
-      {plans.map(p => (
-        <div key={p.id} className="rounded-2xl border border-border bg-card p-5 space-y-3">
-          <div className="grid grid-cols-2 gap-2">
-            <input value={p.name_es} onChange={e => update(p.id, { name_es: e.target.value })}
-              className="rounded-lg border border-input px-3 py-2 text-sm" placeholder="Nombre (ES)" />
-            <input value={p.name_pt} onChange={e => update(p.id, { name_pt: e.target.value })}
-              className="rounded-lg border border-input px-3 py-2 text-sm" placeholder="Nome (PT)" />
-            <input value={p.age_es} onChange={e => update(p.id, { age_es: e.target.value })}
-              className="rounded-lg border border-input px-3 py-2 text-sm" placeholder="Rango edad (ES)" />
-            <input value={p.age_pt} onChange={e => update(p.id, { age_pt: e.target.value })}
-              className="rounded-lg border border-input px-3 py-2 text-sm" placeholder="Faixa etária (PT)" />
-            <div>
-              <label className="block text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Precio (R$)</label>
-              <input value={p.price} onChange={e => update(p.id, { price: e.target.value })}
-                className="w-full rounded-lg border border-input px-3 py-2 text-sm" placeholder="R$ 180,00" />
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">{plans.length} plan(es). Marca como "Activo" para mostrar en la web.</p>
+        <button onClick={addPlan}
+          className="rounded-full bg-primary text-primary-foreground px-5 py-2 text-xs font-medium">
+          + Nuevo plan
+        </button>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2">
+        {plans.map(p => (
+          <div key={p.id} className={`rounded-2xl border p-5 space-y-3 ${p.active ? "border-border bg-card" : "border-dashed border-border bg-muted/30 opacity-70"}`}>
+            <div className="grid grid-cols-2 gap-2">
+              <input value={p.name_es} onChange={e => update(p.id, { name_es: e.target.value })}
+                className="rounded-lg border border-input px-3 py-2 text-sm" placeholder="Nombre (ES)" />
+              <input value={p.name_pt} onChange={e => update(p.id, { name_pt: e.target.value })}
+                className="rounded-lg border border-input px-3 py-2 text-sm" placeholder="Nome (PT)" />
+              <input value={p.age_es} onChange={e => update(p.id, { age_es: e.target.value })}
+                className="rounded-lg border border-input px-3 py-2 text-sm" placeholder="Rango edad (ES)" />
+              <input value={p.age_pt} onChange={e => update(p.id, { age_pt: e.target.value })}
+                className="rounded-lg border border-input px-3 py-2 text-sm" placeholder="Faixa etária (PT)" />
+              <div>
+                <label className="block text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Precio (R$)</label>
+                <input value={p.price} onChange={e => update(p.id, { price: e.target.value })}
+                  className="w-full rounded-lg border border-input px-3 py-2 text-sm" placeholder="R$ 180,00" />
+              </div>
+              <div>
+                <label className="block text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Precio anterior (R$)</label>
+                <input value={p.old_price ?? ""} onChange={e => update(p.id, { old_price: e.target.value })}
+                  className="w-full rounded-lg border border-input px-3 py-2 text-sm" placeholder="R$ 240,00" />
+              </div>
+              <input type="number" value={p.sort_order} onChange={e => update(p.id, { sort_order: Number(e.target.value) })}
+                className="rounded-lg border border-input px-3 py-2 text-sm" placeholder="Orden" />
             </div>
-            <div>
-              <label className="block text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Precio anterior (R$)</label>
-              <input value={p.old_price ?? ""} onChange={e => update(p.id, { old_price: e.target.value })}
-                className="w-full rounded-lg border border-input px-3 py-2 text-sm" placeholder="R$ 240,00" />
+            <label className="block text-xs text-muted-foreground">Features (ES) — una por línea</label>
+            <textarea value={(p.features_es ?? []).join("\n")} onChange={e => update(p.id, { features_es: e.target.value.split("\n").filter(Boolean) })}
+              rows={4} className="w-full rounded-lg border border-input px-3 py-2 text-sm font-mono" />
+            <label className="block text-xs text-muted-foreground">Features (PT) — uma por linha</label>
+            <textarea value={(p.features_pt ?? []).join("\n")} onChange={e => update(p.id, { features_pt: e.target.value.split("\n").filter(Boolean) })}
+              rows={4} className="w-full rounded-lg border border-input px-3 py-2 text-sm font-mono" />
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" checked={p.popular} onChange={e => update(p.id, { popular: e.target.checked })} />
+                  Más popular
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" checked={p.active} onChange={e => update(p.id, { active: e.target.checked })} />
+                  Activo
+                </label>
+              </div>
+              <div className="flex items-center gap-3">
+                <button onClick={() => remove(p)} className="text-xs text-destructive hover:underline">Eliminar</button>
+                <button onClick={() => save(p)} disabled={saving === p.id}
+                  className="rounded-full bg-primary text-primary-foreground px-5 py-2 text-xs font-medium disabled:opacity-50">
+                  {saving === p.id ? "Guardando…" : "Guardar"}
+                </button>
+              </div>
             </div>
-            <input type="number" value={p.sort_order} onChange={e => update(p.id, { sort_order: Number(e.target.value) })}
-              className="rounded-lg border border-input px-3 py-2 text-sm" placeholder="Orden" />
           </div>
-          <label className="block text-xs text-muted-foreground">Features (ES) — una por línea</label>
-          <textarea value={(p.features_es ?? []).join("\n")} onChange={e => update(p.id, { features_es: e.target.value.split("\n").filter(Boolean) })}
-            rows={4} className="w-full rounded-lg border border-input px-3 py-2 text-sm font-mono" />
-          <label className="block text-xs text-muted-foreground">Features (PT) — uma por linha</label>
-          <textarea value={(p.features_pt ?? []).join("\n")} onChange={e => update(p.id, { features_pt: e.target.value.split("\n").filter(Boolean) })}
-            rows={4} className="w-full rounded-lg border border-input px-3 py-2 text-sm font-mono" />
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <div className="flex items-center gap-4">
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={p.popular} onChange={e => update(p.id, { popular: e.target.checked })} />
-                Más popular
-              </label>
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={p.active} onChange={e => update(p.id, { active: e.target.checked })} />
-                Activo
-              </label>
-            </div>
-            <button onClick={() => save(p)} disabled={saving === p.id}
-              className="rounded-full bg-primary text-primary-foreground px-5 py-2 text-xs font-medium disabled:opacity-50">
-              {saving === p.id ? "Guardando…" : "Guardar"}
-            </button>
-          </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }
