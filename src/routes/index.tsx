@@ -254,7 +254,7 @@ function Index() {
 
       <footer className="border-t border-border py-8">
         <div className="mx-auto max-w-6xl px-6 flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
-          <span className="font-display italic">Vizcaya Salud</span>
+          <span className="font-display italic">{brand.name1} {brand.name2}</span>
           <span>{t.footer}</span>
           <span>© {new Date().getFullYear()}</span>
         </div>
