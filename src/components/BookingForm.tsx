@@ -55,7 +55,7 @@ function todayStr() {
 
 export function BookingForm({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [plans, setPlans] = useState<PlanOpt[]>([]);
-  const [form, setForm] = useState({ name: "", email: "", phone: "", plan_id: "", date: "", time: "", message: "" });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", country: "55" as CountryCode, plan_id: "", date: "", time: "", message: "" });
   const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [serverErr, setServerErr] = useState<string | null>(null);
