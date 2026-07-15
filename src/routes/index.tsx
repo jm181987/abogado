@@ -19,6 +19,7 @@ function Index() {
   const WHATS = `https://api.whatsapp.com/send/?phone=${phoneDigits}`;
   const brand = t.brand ?? { name1: "Vizcaya", name2: "Salud", logoUrl: "" };
   const heroSrc = t.media?.heroImage || heroImg;
+  const hasCustomHero = Boolean(t.media?.heroImage);
   const gallery = t.media?.gallery ?? [];
 
 
@@ -78,8 +79,8 @@ function Index() {
       {/* Hero */}
       <section id="inicio" className="relative pt-32 pb-20 md:pt-40 md:pb-32 overflow-hidden">
         <div className="absolute inset-0 -z-10">
-          <img src={heroSrc} alt="Clínica Vizcaya Salud" className="h-full w-full object-cover" width={1600} height={1200} />
-          <div className="absolute inset-0 bg-gradient-to-r from-background via-background/85 to-background/40" />
+          <img src={heroSrc} alt="Clínica Vizcaya Salud" className="h-full w-full object-cover object-center" width={1600} height={1200} />
+          <div className={`absolute inset-0 ${hasCustomHero ? "bg-gradient-to-r from-background/95 via-background/65 to-background/10" : "bg-gradient-to-r from-background via-background/85 to-background/40"}`} />
         </div>
         <div className="mx-auto max-w-7xl px-6">
           <div className="max-w-2xl">
