@@ -83,12 +83,10 @@ function Index() {
           {isTransparentHero ? (
             <>
               <div className="absolute inset-0 bg-background" />
-              <img
-                src={heroSrc}
-                alt="Clínica Vizcaya Salud"
-                className="absolute right-0 top-1/2 hidden max-h-[78%] w-[48%] -translate-y-1/2 object-contain object-center p-6 opacity-95 md:block"
-                width={1600}
-                height={1200}
+              <div
+                aria-hidden="true"
+                className="absolute inset-y-12 right-0 hidden w-[52%] bg-contain bg-center bg-no-repeat opacity-95 md:block"
+                style={{ backgroundImage: `url(${heroSrc})` }}
               />
             </>
           ) : (
