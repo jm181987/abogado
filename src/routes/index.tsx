@@ -216,11 +216,11 @@ function Index() {
           </div>
           <div className="grid gap-px bg-background/10 sm:grid-cols-2 lg:grid-cols-3 rounded-3xl overflow-hidden border border-background/10">
             {t.diff.items.map((item, i) => (
-              <div key={i} className="bg-foreground p-8 hover:bg-background/5 transition">
+              <Reveal key={i} delay={i * 60} className="bg-foreground p-8 hover:bg-background/5 transition">
                 <span className="font-display text-4xl text-primary">{String(i + 1).padStart(2, "0")}</span>
                 <h3 className="font-display text-xl mt-4 mb-2">{item.t}</h3>
                 <p className="text-sm text-background/60 leading-relaxed">{item.d}</p>
-              </div>
+              </Reveal>
             ))}
           </div>
         </div>
