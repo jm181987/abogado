@@ -23,7 +23,7 @@ type Photo = { id: string; slot: string; storage_path: string; alt_es: string | 
 function AdminPage() {
   const { user, isAdmin, loading, signOut } = useAuth();
   const navigate = useNavigate();
-  const [tab, setTab] = useState<"appointments" | "content" | "plans" | "photos">("appointments");
+  const [tab, setTab] = useState<"appointments" | "content" | "plans" | "photos" | "whatsapp">("appointments");
   const { data: siteContent } = useSiteContent("es");
   const brand = siteContent?.brand ?? { name1: "Vizcaya", name2: "Salud", logoUrl: "" };
 
