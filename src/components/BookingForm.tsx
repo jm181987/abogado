@@ -66,6 +66,12 @@ export function BookingForm() {
               </select>
             </div>
             <div className="md:col-span-2">
+              <label className="block text-xs font-medium mb-1.5">Fecha preferida (opcional)</label>
+              <input type="text" placeholder="Ej: Lunes por la tarde, 15 de marzo AM…"
+                value={form.preferred_date} onChange={e => setForm({ ...form, preferred_date: e.target.value })}
+                className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm" />
+            </div>
+            <div className="md:col-span-2">
               <label className="block text-xs font-medium mb-1.5">Mensaje (opcional)</label>
               <textarea rows={4} value={form.message} onChange={e => setForm({ ...form, message: e.target.value })}
                 className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm" />
