@@ -70,10 +70,10 @@ VALUES ('${user.id}', 'admin');`}
           </div>
         </div>
         <nav className="mx-auto max-w-7xl px-6 flex gap-1 border-t border-border">
-          {(["appointments", "content", "plans", "photos"] as const).map(t => (
+          {(["appointments", "content", "plans", "photos", "whatsapp"] as const).map(t => (
             <button key={t} onClick={() => setTab(t)}
               className={`px-4 py-3 text-sm border-b-2 transition ${tab === t ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
-              {t === "appointments" ? "Citas" : t === "content" ? "Contenido" : t === "plans" ? "Planes" : "Fotos"}
+              {t === "appointments" ? "Citas" : t === "content" ? "Contenido" : t === "plans" ? "Planes" : t === "photos" ? "Fotos" : "WhatsApp"}
             </button>
           ))}
         </nav>
@@ -83,6 +83,7 @@ VALUES ('${user.id}', 'admin');`}
         {tab === "content" && <ContentEditor />}
         {tab === "plans" && <PlansTab />}
         {tab === "photos" && <PhotosTab />}
+        {tab === "whatsapp" && <WhatsappTab />}
       </main>
     </div>
   );
