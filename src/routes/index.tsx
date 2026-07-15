@@ -9,7 +9,7 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-const WHATS = "https://api.whatsapp.com/send/?phone=56977778778";
+const WHATS = "https://api.whatsapp.com/send/?phone=5555999887766";
 
 function Index() {
   const [lang, setLang] = useState<Lang>("es");
@@ -237,7 +237,7 @@ function Index() {
             <div>
               <h3 className="font-display text-xl mb-3">{t.contact.whats}</h3>
               <a href={WHATS} target="_blank" rel="noreferrer" className="text-primary hover:underline text-sm">
-                +56 9 7777 8778
+                +55 55 99988 7766
               </a>
             </div>
           </div>
