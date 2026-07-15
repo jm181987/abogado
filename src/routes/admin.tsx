@@ -438,12 +438,37 @@ function PhotosTab() {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [uploading, setUploading] = useState(false);
   const [title, setTitle] = useState("");
+  const [heroUrl, setHeroUrl] = useState<string>("");
+  const [gallery, setGallery] = useState<string[]>([]);
+  const [savingKey, setSavingKey] = useState<string | null>(null);
 
   async function load() {
-    const { data } = await supabase.from("site_photos").select("*").order("created_at", { ascending: false });
-    setPhotos((data as Photo[]) ?? []);
+    const [{ data: ph }, { data: content }] = await Promise.all([
+      supabase.from("site_photos").select("*").order("created_at", { ascending: false }),
+      supabase.from("site_content").select("data").eq("lang", "es").maybeSingle(),
+    ]);
+    setPhotos((ph as Photo[]) ?? []);
+    const media = ((content?.data as any)?.media) ?? {};
+    setHeroUrl(media.heroImage ?? "");
+    setGallery(Array.isArray(media.gallery) ? media.gallery : []);
   }
   useEffect(() => { load(); }, []);
+
+  function urlFor(path: string) {
+    return supabase.storage.from("site-photos").getPublicUrl(path).data.publicUrl;
+  }
+
+  async function persistMedia(next: { heroImage?: string; gallery?: string[] }) {
+    // Escribe en ambos idiomas para que el sitio lo vea en ES y PT.
+    for (const lang of ["es", "pt"] as const) {
+      const { data } = await supabase.from("site_content").select("data").eq("lang", lang).maybeSingle();
+      const current = (data?.data as any) ?? {};
+      const merged = { ...current, media: { ...(current.media ?? {}), ...next } };
+      await supabase.from("site_content")
+        .update({ data: merged, updated_at: new Date().toISOString() })
+        .eq("lang", lang);
+    }
+  }
 
   async function onUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -460,33 +485,106 @@ function PhotosTab() {
 
   async function remove(p: Photo) {
     if (!confirm("¿Eliminar foto?")) return;
+    const url = urlFor(p.storage_path);
     await supabase.storage.from("site-photos").remove([p.storage_path]);
     await supabase.from("site_photos").delete().eq("id", p.id);
+    // Limpiar referencias si estaba en uso
+    const nextHero = heroUrl === url ? "" : heroUrl;
+    const nextGallery = gallery.filter(u => u !== url);
+    if (nextHero !== heroUrl || nextGallery.length !== gallery.length) {
+      await persistMedia({ heroImage: nextHero, gallery: nextGallery });
+    }
     load();
   }
 
-  function urlFor(path: string) {
-    return supabase.storage.from("site-photos").getPublicUrl(path).data.publicUrl;
+  async function useAsHero(p: Photo) {
+    setSavingKey(`hero-${p.id}`);
+    const url = urlFor(p.storage_path);
+    await persistMedia({ heroImage: url });
+    setHeroUrl(url);
+    setSavingKey(null);
+  }
+
+  async function toggleGallery(p: Photo) {
+    setSavingKey(`gal-${p.id}`);
+    const url = urlFor(p.storage_path);
+    const next = gallery.includes(url) ? gallery.filter(u => u !== url) : [...gallery, url];
+    await persistMedia({ gallery: next });
+    setGallery(next);
+    setSavingKey(null);
+  }
+
+  async function clearHero() {
+    if (!confirm("¿Volver al hero por defecto?")) return;
+    await persistMedia({ heroImage: "" });
+    setHeroUrl("");
   }
 
   return (
     <div className="space-y-6">
+      {/* Uploader */}
       <div className="rounded-2xl border border-dashed border-border p-6 bg-card">
         <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Título (opcional)"
           className="w-full mb-3 rounded-lg border border-input px-3 py-2 text-sm" />
         <input type="file" accept="image/*" onChange={onUpload} disabled={uploading} className="text-sm" />
         {uploading && <p className="text-xs text-muted-foreground mt-2">Subiendo…</p>}
       </div>
-      <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-        {photos.map(p => (
-          <div key={p.id} className="rounded-2xl overflow-hidden border border-border bg-card group relative">
-            <img src={urlFor(p.storage_path)} alt={p.title ?? ""} className="w-full aspect-square object-cover" />
-            <div className="p-3">
-              <p className="text-xs truncate">{p.title || p.storage_path}</p>
-              <button onClick={() => remove(p)} className="text-xs text-destructive hover:underline mt-1">Eliminar</button>
-            </div>
+
+      {/* Estado actual */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="rounded-2xl border border-border bg-card p-4">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Foto de portada (hero)</p>
+            {heroUrl && <button onClick={clearHero} className="text-xs text-destructive hover:underline">Quitar</button>}
           </div>
-        ))}
+          {heroUrl ? (
+            <img src={heroUrl} alt="Hero" className="w-full aspect-[16/9] object-cover rounded-xl" />
+          ) : (
+            <p className="text-sm text-muted-foreground py-6 text-center">Usando la imagen por defecto. Elige una abajo para reemplazarla.</p>
+          )}
+        </div>
+        <div className="rounded-2xl border border-border bg-card p-4">
+          <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Galería en la web ({gallery.length})</p>
+          {gallery.length ? (
+            <div className="grid grid-cols-4 gap-1.5">
+              {gallery.map((u, i) => <img key={i} src={u} alt="" className="aspect-square object-cover rounded" />)}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground py-6 text-center">Aún no hay fotos en la galería. Marca fotos para agregarlas.</p>
+          )}
+        </div>
+      </div>
+
+      {/* Todas las fotos */}
+      <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        {photos.map(p => {
+          const url = urlFor(p.storage_path);
+          const isHero = heroUrl === url;
+          const inGallery = gallery.includes(url);
+          return (
+            <div key={p.id} className={`rounded-2xl overflow-hidden border bg-card ${isHero ? "border-primary ring-2 ring-primary/30" : "border-border"}`}>
+              <div className="relative">
+                <img src={url} alt={p.title ?? ""} className="w-full aspect-square object-cover" />
+                {isHero && <span className="absolute top-2 left-2 rounded-full bg-primary text-primary-foreground text-[10px] px-2 py-0.5">Hero</span>}
+                {inGallery && <span className="absolute top-2 right-2 rounded-full bg-foreground text-background text-[10px] px-2 py-0.5">Galería</span>}
+              </div>
+              <div className="p-3 space-y-2">
+                <p className="text-xs truncate">{p.title || p.storage_path}</p>
+                <div className="flex flex-wrap gap-2 text-xs">
+                  <button onClick={() => useAsHero(p)} disabled={isHero || savingKey === `hero-${p.id}`}
+                    className="rounded-full bg-primary text-primary-foreground px-3 py-1 disabled:opacity-50">
+                    {isHero ? "✓ Hero" : "Usar como hero"}
+                  </button>
+                  <button onClick={() => toggleGallery(p)} disabled={savingKey === `gal-${p.id}`}
+                    className={`rounded-full px-3 py-1 border ${inGallery ? "border-foreground bg-foreground text-background" : "border-border"}`}>
+                    {inGallery ? "Quitar galería" : "+ Galería"}
+                  </button>
+                </div>
+                <button onClick={() => remove(p)} className="text-xs text-destructive hover:underline">Eliminar</button>
+              </div>
+            </div>
+          );
+        })}
         {!photos.length && <p className="text-sm text-muted-foreground col-span-full">Sin fotos aún.</p>}
       </div>
     </div>
