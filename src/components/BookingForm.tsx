@@ -219,10 +219,37 @@ export function BookingForm({ open, onClose }: { open: boolean; onClose: () => v
                 <input maxLength={100} required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
                   className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm" />
               </Field>
-              <Field label="WhatsApp" error={errors.phone}>
-                <input maxLength={30} required inputMode="tel" placeholder="+56 9 ..."
-                  value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })}
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm" />
+              <Field label="WhatsApp" full error={errors.phone}>
+                {(() => {
+                  const c = COUNTRIES.find(x => x.code === form.country)!;
+                  return (
+                    <>
+                      <div className="flex gap-2">
+                        <select
+                          value={form.country}
+                          onChange={e => setForm({ ...form, country: e.target.value as CountryCode })}
+                          className="rounded-lg border border-input bg-background px-2 py-2.5 text-sm"
+                          aria-label="País"
+                        >
+                          {COUNTRIES.map(co => (
+                            <option key={co.code} value={co.code}>{co.flag} +{co.code}</option>
+                          ))}
+                        </select>
+                        <input
+                          maxLength={30} required inputMode="tel"
+                          placeholder={c.placeholder}
+                          value={form.phone}
+                          onChange={e => setForm({ ...form, phone: e.target.value.replace(/[^\d\s()-]/g, "") })}
+                          className="flex-1 rounded-lg border border-input bg-background px-3 py-2.5 text-sm"
+                        />
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Se guardará como <b>{normalizePhone(form.country, form.phone || "")}</b>
+                        {c.hint ? ` · ${c.hint}` : ""}
+                      </p>
+                    </>
+                  );
+                })()}
               </Field>
               <Field label="Email" full error={errors.email}>
                 <input maxLength={255} required type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })}
