@@ -93,6 +93,25 @@ export function WhatsappTab() {
     finally { setBusy(null); }
   }
 
+  async function handleReset() {
+    if (!confirm("Esto borra la instancia en Evolution y la vuelve a crear. ¿Continuar?")) return;
+    setBusy("reset"); setMsg(null); setQr(null);
+    try {
+      const r = await resetInstance();
+      if (r.ok) {
+        const q = r.qr?.base64 ?? null;
+        if (q) setQr(q.startsWith("data:") ? q : `data:image/png;base64,${q}`);
+        setMsg({ kind: "ok", text: `Instancia recreada: ${r.instance}. Escanea el QR.` });
+      } else {
+        setMsg({ kind: "err", text: r.error });
+      }
+      loadCfg();
+    } catch (e) {
+      setMsg({ kind: "err", text: (e as Error).message });
+    } finally { setBusy(null); }
+  }
+
+
   async function saveCfg(patch: Partial<Cfg>) {
     if (!cfg) return;
     const next = { ...cfg, ...patch };
