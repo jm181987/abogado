@@ -153,12 +153,13 @@ function Index() {
             {t.plans.items.map((plan, i) => {
               const popular = "popular" in plan && plan.popular;
               return (
-                <div
+                <Reveal
                   key={i}
-                  className={`relative rounded-3xl border p-7 flex flex-col ${
+                  delay={i * 70}
+                  className={`relative rounded-3xl border p-7 flex flex-col transition-transform duration-300 hover:-translate-y-1 ${
                     popular
                       ? "border-primary bg-primary/5 shadow-xl scale-[1.02]"
-                      : "border-border bg-card hover:border-primary/40 transition"
+                      : "border-border bg-card hover:border-primary/40"
                   }`}
                 >
                   {popular && (
@@ -197,7 +198,7 @@ function Index() {
                       {t.plans.consult}
                     </a>
                   </div>
-                </div>
+                </Reveal>
               );
             })}
           </div>
