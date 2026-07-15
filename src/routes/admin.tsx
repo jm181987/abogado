@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -450,6 +451,7 @@ function PhotosTab() {
   const [heroUrl, setHeroUrl] = useState<string>("");
   const [gallery, setGallery] = useState<string[]>([]);
   const [savingKey, setSavingKey] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
   async function load() {
     const [{ data: ph }, { data: content }] = await Promise.all([
@@ -477,6 +479,7 @@ function PhotosTab() {
         .upsert({ lang, data: merged, updated_at: new Date().toISOString() }, { onConflict: "lang" });
       if (error) { alert("Error al guardar media (" + lang + "): " + error.message); throw error; }
     }
+    queryClient.invalidateQueries({ queryKey: ["site_content"] });
   }
 
   async function onUpload(e: React.ChangeEvent<HTMLInputElement>) {

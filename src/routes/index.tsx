@@ -19,6 +19,8 @@ function Index() {
   const WHATS = `https://api.whatsapp.com/send/?phone=${phoneDigits}`;
   const brand = t.brand ?? { name1: "Vizcaya", name2: "Salud", logoUrl: "" };
   const heroSrc = t.media?.heroImage || heroImg;
+  const hasCustomHero = Boolean(t.media?.heroImage);
+  const isTransparentHero = hasCustomHero && /\.png(\?|$)/i.test(heroSrc);
   const gallery = t.media?.gallery ?? [];
 
 
@@ -76,12 +78,25 @@ function Index() {
       </div>
 
       {/* Hero */}
-      <section id="inicio" className="relative pt-32 pb-20 md:pt-40 md:pb-32 overflow-hidden">
-        <div className="absolute inset-0 -z-10">
-          <img src={heroSrc} alt="Clínica Vizcaya Salud" className="h-full w-full object-cover" width={1600} height={1200} />
-          <div className="absolute inset-0 bg-gradient-to-r from-background via-background/85 to-background/40" />
+      <section id="inicio" className="relative z-0 pt-32 pb-20 md:pt-40 md:pb-32 overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          {isTransparentHero ? (
+            <>
+              <div className="absolute inset-0 bg-background" />
+              <div
+                aria-hidden="true"
+                className="absolute inset-y-12 right-0 hidden w-[52%] bg-contain bg-center bg-no-repeat opacity-95 md:block"
+                style={{ backgroundImage: `url(${heroSrc})` }}
+              />
+            </>
+          ) : (
+            <>
+              <img src={heroSrc} alt="Clínica Vizcaya Salud" className="h-full w-full object-cover object-center" width={1600} height={1200} />
+              <div className={`absolute inset-0 ${hasCustomHero ? "bg-gradient-to-r from-background via-background/55 to-background/20" : "bg-gradient-to-r from-background via-background/85 to-background/40"}`} />
+            </>
+          )}
         </div>
-        <div className="mx-auto max-w-7xl px-6">
+        <div className="relative z-10 mx-auto max-w-7xl px-6">
           <div className="max-w-2xl">
             <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-6">{t.hero.badge}</p>
             <h1 className="font-display text-5xl md:text-7xl leading-[1.05] tracking-tight text-foreground">

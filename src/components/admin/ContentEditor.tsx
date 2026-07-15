@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { translations, type Lang } from "@/lib/i18n";
 import { deepMerge, type Content } from "@/lib/site-content";
@@ -9,6 +10,7 @@ export function ContentEditor() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const queryClient = useQueryClient();
 
   async function load(l: Lang) {
     setLoading(true); setSaved(false);
@@ -25,6 +27,7 @@ export function ContentEditor() {
       .upsert({ lang, data: content as any, updated_at: new Date().toISOString() }, { onConflict: "lang" });
     setSaving(false);
     if (error) { alert(error.message); return; }
+    queryClient.invalidateQueries({ queryKey: ["site_content"] });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   }
