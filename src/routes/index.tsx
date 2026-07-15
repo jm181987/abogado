@@ -78,8 +78,8 @@ function Index() {
       </div>
 
       {/* Hero */}
-      <section id="inicio" className="relative pt-32 pb-20 md:pt-40 md:pb-32 overflow-hidden">
-        <div className="absolute inset-0 -z-10">
+      <section id="inicio" className="relative z-0 pt-32 pb-20 md:pt-40 md:pb-32 overflow-hidden">
+        <div className="absolute inset-0 z-0">
           {isTransparentHero ? (
             <>
               <div className="absolute inset-0 bg-background" />
@@ -98,7 +98,7 @@ function Index() {
             </>
           )}
         </div>
-        <div className="mx-auto max-w-7xl px-6">
+        <div className="relative z-10 mx-auto max-w-7xl px-6">
           <div className="max-w-2xl">
             <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-6">{t.hero.badge}</p>
             <h1 className="font-display text-5xl md:text-7xl leading-[1.05] tracking-tight text-foreground">
