@@ -39,6 +39,7 @@ export function WhatsappTab() {
   const disconnect = useServerFn(waDisconnect);
   const testSend = useServerFn(waTestSend);
   const resetInstance = useServerFn(waResetInstance);
+  const saveConfig = useServerFn(waSaveConfig);
 
 
   async function loadCfg() {
