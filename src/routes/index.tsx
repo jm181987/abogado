@@ -13,7 +13,9 @@ const WHATS = "https://api.whatsapp.com/send/?phone=56977778778";
 
 function Index() {
   const [lang, setLang] = useState<Lang>("es");
+  const [bookingOpen, setBookingOpen] = useState(false);
   const { data: t = translations[lang] } = useSiteContent(lang);
+  const openBooking = () => setBookingOpen(true);
 
 
   return (
@@ -47,14 +49,12 @@ function Index() {
                 PT
               </button>
             </div>
-            <a
-              href={WHATS}
-              target="_blank"
-              rel="noreferrer"
+            <button
+              onClick={openBooking}
               className="rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition"
             >
               {t.nav.cta}
-            </a>
+            </button>
           </div>
         </nav>
       </header>
@@ -199,8 +199,8 @@ function Index() {
         </div>
       </section>
 
-      {/* Contact */}
-      <BookingForm />
+      {/* Booking modal */}
+      <BookingForm open={bookingOpen} onClose={() => setBookingOpen(false)} />
 
       {/* Contact */}
       <section id="contacto" className="py-24 md:py-32">

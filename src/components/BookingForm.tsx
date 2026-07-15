@@ -26,7 +26,7 @@ function todayStr() {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-export function BookingForm() {
+export function BookingForm({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [plans, setPlans] = useState<PlanOpt[]>([]);
   const [form, setForm] = useState({ name: "", email: "", phone: "", plan_id: "", date: "", time: "", message: "" });
   const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle");
@@ -38,6 +38,18 @@ export function BookingForm() {
       setPlans((data as PlanOpt[]) ?? []);
     });
   }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [open, onClose]);
 
   const minDate = useMemo(() => todayStr(), []);
 
@@ -69,71 +81,94 @@ export function BookingForm() {
     setForm({ name: "", email: "", phone: "", plan_id: "", date: "", time: "", message: "" });
   }
 
-  return (
-    <section id="agendar" className="py-24 md:py-32 bg-muted/40">
-      <div className="mx-auto max-w-3xl px-6">
-        <p className="text-xs uppercase tracking-[0.25em] text-primary mb-4">Agendar</p>
-        <h2 className="font-display text-4xl md:text-5xl tracking-tight mb-4">Reserva tu hora</h2>
-        <p className="text-muted-foreground mb-10">Elige el día y hora que prefieras. Confirmamos por WhatsApp.</p>
+  function handleClose() {
+    onClose();
+    setTimeout(() => { setState("idle"); setErrors({}); setServerErr(null); }, 200);
+  }
 
-        {state === "sent" ? (
-          <div className="rounded-3xl border border-primary/30 bg-primary/5 p-8 text-center">
-            <h3 className="font-display text-2xl mb-2">¡Solicitud recibida!</h3>
-            <p className="text-muted-foreground">Te confirmaremos por WhatsApp en las próximas horas.</p>
-            <button onClick={() => setState("idle")} className="mt-6 text-sm text-primary hover:underline">
-              Agendar otra
-            </button>
-          </div>
-        ) : (
-          <form onSubmit={onSubmit} noValidate className="grid gap-4 md:grid-cols-2 rounded-3xl border border-border bg-card p-6 md:p-8">
-            <Field label="Nombre completo" error={errors.name}>
-              <input maxLength={100} required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
-                className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm" />
-            </Field>
-            <Field label="WhatsApp" error={errors.phone}>
-              <input maxLength={30} required inputMode="tel" placeholder="+56 9 ..."
-                value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })}
-                className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm" />
-            </Field>
-            <Field label="Email" full error={errors.email}>
-              <input maxLength={255} required type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })}
-                className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm" />
-            </Field>
-            <Field label="Fecha" error={errors.date}>
-              <input type="date" required min={minDate} value={form.date}
-                onChange={e => setForm({ ...form, date: e.target.value })}
-                className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm" />
-            </Field>
-            <Field label="Hora" error={errors.time}>
-              <select required value={form.time} onChange={e => setForm({ ...form, time: e.target.value })}
-                className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm">
-                <option value="">Selecciona una hora</option>
-                {TIME_SLOTS.map(s => <option key={s} value={s}>{s} hrs</option>)}
-              </select>
-            </Field>
-            <Field label="Plan de interés (opcional)" full>
-              <select value={form.plan_id} onChange={e => setForm({ ...form, plan_id: e.target.value })}
-                className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm">
-                <option value="">Sin preferencia</option>
-                {plans.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-              </select>
-            </Field>
-            <Field label="Mensaje (opcional)" full error={errors.message}>
-              <textarea maxLength={1000} rows={3} value={form.message} onChange={e => setForm({ ...form, message: e.target.value })}
-                className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm" />
-            </Field>
-            {serverErr && <p className="md:col-span-2 text-sm text-destructive">{serverErr}</p>}
-            <div className="md:col-span-2 flex flex-wrap items-center justify-between gap-3">
-              <p className="text-xs text-muted-foreground">La hora queda como <b>pendiente</b> hasta que confirmemos disponibilidad.</p>
-              <button disabled={state === "sending"} type="submit"
-                className="rounded-full bg-primary text-primary-foreground px-8 py-3 text-sm font-medium disabled:opacity-50">
-                {state === "sending" ? "Enviando…" : "Solicitar hora"}
-              </button>
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="booking-title">
+      <button
+        aria-label="Cerrar"
+        onClick={handleClose}
+        className="absolute inset-0 bg-foreground/60 backdrop-blur-sm"
+      />
+      <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl border border-border bg-card shadow-2xl">
+        <button
+          onClick={handleClose}
+          aria-label="Cerrar"
+          className="absolute top-4 right-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-muted hover:bg-muted/70 text-foreground transition"
+        >
+          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 6l12 12M18 6l-12 12" strokeLinecap="round" /></svg>
+        </button>
+
+        <div className="p-6 md:p-8">
+          <p className="text-xs uppercase tracking-[0.25em] text-primary mb-3">Agendar</p>
+          <h2 id="booking-title" className="font-display text-3xl md:text-4xl tracking-tight mb-2">Reserva tu hora</h2>
+          <p className="text-muted-foreground text-sm mb-6">Elige el día y hora que prefieras. Confirmamos por WhatsApp.</p>
+
+          {state === "sent" ? (
+            <div className="rounded-2xl border border-primary/30 bg-primary/5 p-8 text-center">
+              <h3 className="font-display text-2xl mb-2">¡Solicitud recibida!</h3>
+              <p className="text-muted-foreground">Te confirmaremos por WhatsApp en las próximas horas.</p>
+              <div className="mt-6 flex justify-center gap-3">
+                <button onClick={() => setState("idle")} className="text-sm text-primary hover:underline">Agendar otra</button>
+                <button onClick={handleClose} className="rounded-full bg-foreground text-background px-5 py-2 text-sm">Cerrar</button>
+              </div>
             </div>
-          </form>
-        )}
+          ) : (
+            <form onSubmit={onSubmit} noValidate className="grid gap-4 md:grid-cols-2">
+              <Field label="Nombre completo" error={errors.name}>
+                <input maxLength={100} required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm" />
+              </Field>
+              <Field label="WhatsApp" error={errors.phone}>
+                <input maxLength={30} required inputMode="tel" placeholder="+56 9 ..."
+                  value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })}
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm" />
+              </Field>
+              <Field label="Email" full error={errors.email}>
+                <input maxLength={255} required type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })}
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm" />
+              </Field>
+              <Field label="Fecha" error={errors.date}>
+                <input type="date" required min={minDate} value={form.date}
+                  onChange={e => setForm({ ...form, date: e.target.value })}
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm" />
+              </Field>
+              <Field label="Hora" error={errors.time}>
+                <select required value={form.time} onChange={e => setForm({ ...form, time: e.target.value })}
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm">
+                  <option value="">Selecciona una hora</option>
+                  {TIME_SLOTS.map(s => <option key={s} value={s}>{s} hrs</option>)}
+                </select>
+              </Field>
+              <Field label="Plan de interés (opcional)" full>
+                <select value={form.plan_id} onChange={e => setForm({ ...form, plan_id: e.target.value })}
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm">
+                  <option value="">Sin preferencia</option>
+                  {plans.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+              </Field>
+              <Field label="Mensaje (opcional)" full error={errors.message}>
+                <textarea maxLength={1000} rows={3} value={form.message} onChange={e => setForm({ ...form, message: e.target.value })}
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm" />
+              </Field>
+              {serverErr && <p className="md:col-span-2 text-sm text-destructive">{serverErr}</p>}
+              <div className="md:col-span-2 flex flex-wrap items-center justify-between gap-3 pt-2">
+                <p className="text-xs text-muted-foreground max-w-xs">Queda como <b>pendiente</b> hasta que confirmemos disponibilidad.</p>
+                <button disabled={state === "sending"} type="submit"
+                  className="rounded-full bg-primary text-primary-foreground px-8 py-3 text-sm font-medium disabled:opacity-50">
+                  {state === "sending" ? "Enviando…" : "Solicitar hora"}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
       </div>
-    </section>
+    </div>
   );
 }
 
