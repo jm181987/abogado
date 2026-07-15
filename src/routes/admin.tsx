@@ -444,7 +444,7 @@ function PhotosTab() {
 
   async function load() {
     const [{ data: ph }, { data: content }] = await Promise.all([
-      supabase.from("site_photos").select("*").order("created_at", { ascending: false }),
+      supabase.from("site_photos").select("*").order("updated_at", { ascending: false }),
       supabase.from("site_content").select("data").eq("lang", "es").maybeSingle(),
     ]);
     setPhotos((ph as Photo[]) ?? []);
@@ -474,10 +474,19 @@ function PhotosTab() {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
-    const path = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+    const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+    const path = `${Date.now()}-${safeName}`;
     const { error: upErr } = await supabase.storage.from("site-photos").upload(path, file);
     if (upErr) { alert(upErr.message); setUploading(false); return; }
-    await supabase.from("site_photos").insert({ storage_path: path, title: title || null });
+    const slot = `photo-${Date.now()}`;
+    const altText = title || null;
+    const { error: insErr } = await supabase.from("site_photos").insert({
+      slot,
+      storage_path: path,
+      alt_es: altText,
+      alt_pt: altText,
+    });
+    if (insErr) { alert("Error al guardar: " + insErr.message); setUploading(false); return; }
     setTitle(""); setUploading(false);
     e.target.value = "";
     load();
