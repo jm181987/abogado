@@ -49,14 +49,12 @@ function Index() {
                 PT
               </button>
             </div>
-            <a
-              href={WHATS}
-              target="_blank"
-              rel="noreferrer"
+            <button
+              onClick={openBooking}
               className="rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition"
             >
               {t.nav.cta}
-            </a>
+            </button>
           </div>
         </nav>
       </header>
