@@ -67,6 +67,7 @@ export function BookingForm({ open, onClose }: { open: boolean; onClose: () => v
     const scheduledAt = new Date(`${form.date}T${form.time}:00`).toISOString();
     const payload = {
       name: parsed.data.name,
+      full_name: parsed.data.name,
       email: parsed.data.email,
       phone: parsed.data.phone,
       plan_id: form.plan_id || null,
