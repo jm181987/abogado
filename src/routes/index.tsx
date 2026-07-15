@@ -130,11 +130,11 @@ function Index() {
               { t: t.about.vision, d: t.about.visionBody },
               { t: t.about.philosophy, d: t.about.philosophyBody },
             ].map((item, i) => (
-              <div key={i} className="rounded-3xl border border-border bg-card p-8">
+              <Reveal key={i} delay={i * 80} className="rounded-3xl border border-border bg-card p-8">
                 <div className="h-1 w-10 bg-primary rounded-full mb-6" />
                 <h3 className="font-display text-2xl mb-3">{item.t}</h3>
                 <p className="text-muted-foreground leading-relaxed">{item.d}</p>
-              </div>
+              </Reveal>
             ))}
           </div>
         </div>
