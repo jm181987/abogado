@@ -67,6 +67,7 @@ export const waSaveConfig = createServerFn({ method: "POST" })
     owner_phone: z.string().trim().max(30).nullable().optional(),
     msg_new_client: z.string().max(2000).optional(),
     msg_new_owner: z.string().max(2000).optional(),
+    msg_new_owner_pt: z.string().max(2000).optional(),
     msg_confirmed: z.string().max(2000).optional(),
     msg_cancelled: z.string().max(2000).optional(),
     msg_reschedule: z.string().max(2000).optional(),

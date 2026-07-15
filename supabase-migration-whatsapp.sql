@@ -40,3 +40,7 @@ ALTER TABLE public.whatsapp_config
   ADD COLUMN IF NOT EXISTS msg_cancelled_pt  text NOT NULL DEFAULT 'Olá {{name}}, infelizmente seu horário do dia {{date}} às {{time}}h foi cancelado. Entre em contato para reagendar.',
   ADD COLUMN IF NOT EXISTS msg_reschedule_pt text NOT NULL DEFAULT 'Olá {{name}}, seu horário foi remarcado para {{date}} às {{time}}h. Esperamos você!',
   ADD COLUMN IF NOT EXISTS msg_reminder_pt   text NOT NULL DEFAULT 'Lembrete ⏰ Olá {{name}}, amanhã {{date}} às {{time}}h você tem seu horário agendado. Esperamos você!';
+
+-- 4) Plantilla PT del aviso al dueño (idioma según el teléfono del dueño)
+ALTER TABLE public.whatsapp_config
+  ADD COLUMN IF NOT EXISTS msg_new_owner_pt text NOT NULL DEFAULT '📩 Nova reserva: {{name}} — {{phone}} para {{date}} {{time}}h. Plano: {{plan}}.';

@@ -41,12 +41,18 @@ export const notifyNewBooking = createServerFn({ method: "POST" })
       plan: planName,
       brand: brand.name,
     };
-    // Dueño: siempre en ES
-    const { date: oDate, time: oTime } = formatDateForLang(appt.scheduled_at, "es");
+    // Dueño: idioma según su propio teléfono
+    const ownerLang = pickClientLang(cfg.owner_phone);
+    const { date: oDate, time: oTime } = formatDateForLang(appt.scheduled_at, ownerLang);
+    const ownerPlanName = ownerLang === "pt"
+      ? ((appt as any).plans?.name_pt ?? (appt as any).plans?.name_es ?? "Sem preferência")
+      : ((appt as any).plans?.name_es ?? "Sin preferencia");
     const ownerVars = {
-      ...clientVars,
+      name: appt.name ?? "",
+      phone: appt.phone ?? "",
       date: oDate, time: oTime,
-      plan: (appt as any).plans?.name_es ?? "Sin preferencia",
+      plan: ownerPlanName,
+      brand: brand.name,
     };
 
     const results = { client: false, owner: false, errors: [] as string[] };
@@ -58,7 +64,8 @@ export const notifyNewBooking = createServerFn({ method: "POST" })
 
     if (cfg.owner_phone) {
       try {
-        await evoSendText(brand.slug, cfg.owner_phone, fillTemplate(cfg.msg_new_owner, ownerVars));
+        const ownerTpl = pickTemplate(cfg as any, "msg_new_owner", ownerLang);
+        await evoSendText(brand.slug, cfg.owner_phone, fillTemplate(ownerTpl, ownerVars));
         results.owner = true;
       } catch (e) { results.errors.push(`dueño: ${(e as Error).message}`); }
     }

@@ -15,6 +15,7 @@ type Cfg = {
   msg_reschedule: string;
   msg_reminder: string;
   msg_new_client_pt: string;
+  msg_new_owner_pt: string;
   msg_confirmed_pt: string;
   msg_cancelled_pt: string;
   msg_reschedule_pt: string;
@@ -25,7 +26,7 @@ type TemplateField = { es: keyof Cfg; pt: keyof Cfg | null; label: string; hint:
 
 const TEMPLATE_FIELDS: TemplateField[] = [
  { es: "msg_new_client", pt: "msg_new_client_pt", label: "Nueva reserva → Cliente", hint: "{{brand}} {{name}} {{date}} {{time}} {{plan}}" },
- { es: "msg_new_owner", pt: null, label: "Nueva reserva → Dueño (siempre ES)", hint: "{{brand}} {{name}} {{phone}} {{date}} {{time}} {{plan}}" },
+ { es: "msg_new_owner", pt: "msg_new_owner_pt", label: "Nueva reserva → Dueño", hint: "{{brand}} {{name}} {{phone}} {{date}} {{time}} {{plan}}" },
  { es: "msg_confirmed", pt: "msg_confirmed_pt", label: "Reserva confirmada", hint: "{{brand}} {{name}} {{date}} {{time}}" },
  { es: "msg_cancelled", pt: "msg_cancelled_pt", label: "Reserva cancelada", hint: "{{brand}} {{name}} {{date}} {{time}}" },
  { es: "msg_reschedule", pt: "msg_reschedule_pt", label: "Cambio de horario", hint: "{{brand}} {{name}} {{date}} {{time}}" },
@@ -142,6 +143,7 @@ export function WhatsappTab() {
       msg_reschedule: cfg.msg_reschedule,
       msg_reminder: cfg.msg_reminder,
       msg_new_client_pt: cfg.msg_new_client_pt,
+      msg_new_owner_pt: cfg.msg_new_owner_pt,
       msg_confirmed_pt: cfg.msg_confirmed_pt,
       msg_cancelled_pt: cfg.msg_cancelled_pt,
       msg_reschedule_pt: cfg.msg_reschedule_pt,
