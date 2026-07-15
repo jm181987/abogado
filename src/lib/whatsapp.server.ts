@@ -106,17 +106,26 @@ export function slugifyBrand(s: string): string {
     .slice(0, 40) || "instance";
 }
 
-/** Lee la marca desde site_content (lang=es). Devuelve nombre visible y slug para instancia. */
+/** Lee la marca guardada en site_content. Prueba varios idiomas y devuelve
+ *  el primer nombre no vacío encontrado. Si no hay nada guardado, devuelve null. */
 export async function getBrandInfo(admin: any): Promise<{ name: string; slug: string }> {
   try {
-    const { data } = await admin.from("site_content").select("data").eq("lang", "es").maybeSingle();
-    const b = data?.data?.brand ?? {};
-    const n1 = String(b.name1 ?? "").trim();
-    const n2 = String(b.name2 ?? "").trim();
-    const name = [n1, n2].filter(Boolean).join(" ") || "Vizcaya Salud";
-    return { name, slug: slugifyBrand(name) };
-  } catch {
-    return { name: "Vizcaya Salud", slug: "vizcaya-salud" };
+    const { data: rows } = await admin.from("site_content").select("lang, data");
+    const list = Array.isArray(rows) ? rows : [];
+    // Priorizar 'es' si existe
+    list.sort((a: any, b: any) => (a.lang === "es" ? -1 : b.lang === "es" ? 1 : 0));
+    for (const r of list) {
+      const b = r?.data?.brand ?? {};
+      const n1 = String(b.name1 ?? "").trim();
+      const n2 = String(b.name2 ?? "").trim();
+      const name = [n1, n2].filter(Boolean).join(" ");
+      if (name) return { name, slug: slugifyBrand(name) };
+    }
+  } catch (e) {
+    console.warn("[wa] getBrandInfo:", (e as Error).message);
   }
+  // Sin marca configurada: nombre neutro
+  return { name: "Reservas", slug: "reservas" };
 }
+
 
