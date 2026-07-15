@@ -10,7 +10,7 @@ export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
 
-type Plan = { id: string; name: string; age_range: string; price: string; old_price: string; features: string[]; position: number; popular: boolean };
+type Plan = { id: string; name_es: string; name_pt: string; age_es: string; age_pt: string; price: string; old_price: string; features_es: string[]; features_pt: string[]; sort_order: number; popular: boolean; active: boolean };
 type Appointment = { id: string; created_at: string; name: string; email: string; phone: string; plan_id: string | null; message: string | null; status: string; scheduled_at: string | null; duration_minutes: number | null; admin_notes: string | null; preferred_date: string | null };
 type PlanOpt = { id: string; name: string };
 type Photo = { id: string; storage_path: string; title: string | null; created_at: string };
