@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import { notifyNewBooking } from "@/lib/booking-notify.functions";
 
 type PlanOpt = { id: string; name: string };
 
