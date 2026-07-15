@@ -115,7 +115,7 @@ export function WhatsappTab() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="font-display text-xl">Estado de WhatsApp</h3>
-            <p className="text-sm text-muted-foreground">Instancia: <code>{cfg.instance_name}</code></p>
+            <p className="text-sm text-muted-foreground">Instancia (auto desde la marca): <code>{cfg.instance_name}</code></p>
           </div>
           <span className={`text-xs uppercase tracking-wide px-3 py-1 rounded-full ${cfg.connected ? "bg-green-500/15 text-green-700 dark:text-green-400" : "bg-muted text-muted-foreground"}`}>
             {cfg.connected ? `Conectado${cfg.phone_number ? " · " + cfg.phone_number : ""}` : "Desconectado"}
