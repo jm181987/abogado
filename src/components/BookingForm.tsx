@@ -61,12 +61,11 @@ export function BookingForm({ open, onClose }: { open: boolean; onClose: () => v
         const rows = (data as { scheduled_at: string; duration_minutes: number | null }[]) ?? [];
         for (const slot of TIME_SLOTS) {
           const slotStart = new Date(`${form.date}T${slot}:00`).getTime();
-          const slotEnd = slotStart + newBookingDuration * 60 * 1000;
           for (const row of rows) {
             const bStart = new Date(row.scheduled_at).getTime();
             const bEnd = bStart + (row.duration_minutes ?? 60) * 60 * 1000;
-            // solape si intervalos se cruzan
-            if (slotStart < bEnd && bStart < slotEnd) {
+            // bloquear solo si el inicio del slot cae dentro de una reserva existente
+            if (slotStart >= bStart && slotStart < bEnd) {
               taken.add(slot);
               break;
             }
