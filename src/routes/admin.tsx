@@ -13,7 +13,7 @@ export const Route = createFileRoute("/admin")({
 type Plan = { id: string; name_es: string; name_pt: string; age_es: string; age_pt: string; price: string; old_price: string; features_es: string[]; features_pt: string[]; sort_order: number; popular: boolean; active: boolean };
 type Appointment = { id: string; created_at: string; name: string; email: string; phone: string; plan_id: string | null; message: string | null; status: string; scheduled_at: string | null; duration_minutes: number | null; admin_notes: string | null; preferred_date: string | null };
 type PlanOpt = { id: string; name: string };
-type Photo = { id: string; storage_path: string; title: string | null; created_at: string };
+type Photo = { id: string; slot: string; storage_path: string; alt_es: string | null; alt_pt: string | null; updated_at: string };
 
 function AdminPage() {
   const { user, isAdmin, loading, signOut } = useAuth();
@@ -444,7 +444,7 @@ function PhotosTab() {
 
   async function load() {
     const [{ data: ph }, { data: content }] = await Promise.all([
-      supabase.from("site_photos").select("*").order("created_at", { ascending: false }),
+      supabase.from("site_photos").select("*").order("updated_at", { ascending: false }),
       supabase.from("site_content").select("data").eq("lang", "es").maybeSingle(),
     ]);
     setPhotos((ph as Photo[]) ?? []);
@@ -474,10 +474,19 @@ function PhotosTab() {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
-    const path = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+    const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+    const path = `${Date.now()}-${safeName}`;
     const { error: upErr } = await supabase.storage.from("site-photos").upload(path, file);
     if (upErr) { alert(upErr.message); setUploading(false); return; }
-    await supabase.from("site_photos").insert({ storage_path: path, title: title || null });
+    const slot = `photo-${Date.now()}`;
+    const altText = title || null;
+    const { error: insErr } = await supabase.from("site_photos").insert({
+      slot,
+      storage_path: path,
+      alt_es: altText,
+      alt_pt: altText,
+    });
+    if (insErr) { alert("Error al guardar: " + insErr.message); setUploading(false); return; }
     setTitle(""); setUploading(false);
     e.target.value = "";
     load();
@@ -564,12 +573,12 @@ function PhotosTab() {
           return (
             <div key={p.id} className={`rounded-2xl overflow-hidden border bg-card ${isHero ? "border-primary ring-2 ring-primary/30" : "border-border"}`}>
               <div className="relative">
-                <img src={url} alt={p.title ?? ""} className="w-full aspect-square object-cover" />
+                <img src={url} alt={p.alt_es ?? ""} className="w-full aspect-square object-cover" />
                 {isHero && <span className="absolute top-2 left-2 rounded-full bg-primary text-primary-foreground text-[10px] px-2 py-0.5">Hero</span>}
                 {inGallery && <span className="absolute top-2 right-2 rounded-full bg-foreground text-background text-[10px] px-2 py-0.5">Galería</span>}
               </div>
               <div className="p-3 space-y-2">
-                <p className="text-xs truncate">{p.title || p.storage_path}</p>
+                <p className="text-xs truncate">{p.alt_es || p.storage_path}</p>
                 <div className="flex flex-wrap gap-2 text-xs">
                   <button onClick={() => useAsHero(p)} disabled={isHero || savingKey === `hero-${p.id}`}
                     className="rounded-full bg-primary text-primary-foreground px-3 py-1 disabled:opacity-50">
