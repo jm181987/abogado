@@ -38,6 +38,8 @@ export function WhatsappTab() {
   const refreshStatus = useServerFn(waStatus);
   const disconnect = useServerFn(waDisconnect);
   const testSend = useServerFn(waTestSend);
+  const resetInstance = useServerFn(waResetInstance);
+
 
   async function loadCfg() {
     const { data } = await supabase.from("whatsapp_config").select("*").eq("id", true).maybeSingle();
