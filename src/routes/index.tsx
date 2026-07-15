@@ -4,6 +4,7 @@ import { translations, type Lang } from "@/lib/i18n";
 import heroImg from "@/assets/hero-dental.jpg";
 import { BookingForm } from "@/components/BookingForm";
 import { useSiteContent } from "@/lib/site-content";
+import { Reveal } from "@/components/Reveal";
 
 export const Route = createFileRoute("/")({
   component: Index,
