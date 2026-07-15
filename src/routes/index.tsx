@@ -4,6 +4,7 @@ import { translations, type Lang } from "@/lib/i18n";
 import heroImg from "@/assets/hero-dental.jpg";
 import { BookingForm } from "@/components/BookingForm";
 import { useSiteContent } from "@/lib/site-content";
+import { Reveal } from "@/components/Reveal";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -40,11 +41,11 @@ function Index() {
             )}
           </a>
           <div className="hidden md:flex items-center gap-8 text-sm">
-            <a href="#inicio" className="hover:text-primary transition">{t.nav.home}</a>
-            <a href="#planes" className="hover:text-primary transition">{t.nav.plans}</a>
-            <a href="#nosotros" className="hover:text-primary transition">{t.nav.about}</a>
-            <a href="#diferenciadores" className="hover:text-primary transition">{t.nav.diff}</a>
-            <a href="#contacto" className="hover:text-primary transition">{t.nav.contact}</a>
+            <a href="#inicio" className="nav-link hover:text-primary transition">{t.nav.home}</a>
+            <a href="#planes" className="nav-link hover:text-primary transition">{t.nav.plans}</a>
+            <a href="#nosotros" className="nav-link hover:text-primary transition">{t.nav.about}</a>
+            <a href="#diferenciadores" className="nav-link hover:text-primary transition">{t.nav.diff}</a>
+            <a href="#contacto" className="nav-link hover:text-primary transition">{t.nav.contact}</a>
           </div>
           <div className="flex items-center gap-2">
             <div className="hidden sm:flex items-center rounded-full border border-border p-0.5 text-xs">
@@ -129,11 +130,11 @@ function Index() {
               { t: t.about.vision, d: t.about.visionBody },
               { t: t.about.philosophy, d: t.about.philosophyBody },
             ].map((item, i) => (
-              <div key={i} className="rounded-3xl border border-border bg-card p-8">
+              <Reveal key={i} delay={i * 80} className="rounded-3xl border border-border bg-card p-8">
                 <div className="h-1 w-10 bg-primary rounded-full mb-6" />
                 <h3 className="font-display text-2xl mb-3">{item.t}</h3>
                 <p className="text-muted-foreground leading-relaxed">{item.d}</p>
-              </div>
+              </Reveal>
             ))}
           </div>
         </div>
@@ -152,12 +153,13 @@ function Index() {
             {t.plans.items.map((plan, i) => {
               const popular = "popular" in plan && plan.popular;
               return (
-                <div
+                <Reveal
                   key={i}
-                  className={`relative rounded-3xl border p-7 flex flex-col ${
+                  delay={i * 70}
+                  className={`relative rounded-3xl border p-7 flex flex-col transition-transform duration-300 hover:-translate-y-1 ${
                     popular
                       ? "border-primary bg-primary/5 shadow-xl scale-[1.02]"
-                      : "border-border bg-card hover:border-primary/40 transition"
+                      : "border-border bg-card hover:border-primary/40"
                   }`}
                 >
                   {popular && (
@@ -196,7 +198,7 @@ function Index() {
                       {t.plans.consult}
                     </a>
                   </div>
-                </div>
+                </Reveal>
               );
             })}
           </div>
@@ -214,11 +216,11 @@ function Index() {
           </div>
           <div className="grid gap-px bg-background/10 sm:grid-cols-2 lg:grid-cols-3 rounded-3xl overflow-hidden border border-background/10">
             {t.diff.items.map((item, i) => (
-              <div key={i} className="bg-foreground p-8 hover:bg-background/5 transition">
+              <Reveal key={i} delay={i * 60} className="bg-foreground p-8 hover:bg-background/5 transition">
                 <span className="font-display text-4xl text-primary">{String(i + 1).padStart(2, "0")}</span>
                 <h3 className="font-display text-xl mt-4 mb-2">{item.t}</h3>
                 <p className="text-sm text-background/60 leading-relaxed">{item.d}</p>
-              </div>
+              </Reveal>
             ))}
           </div>
         </div>
