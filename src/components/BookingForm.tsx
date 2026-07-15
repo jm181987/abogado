@@ -163,7 +163,7 @@ export function BookingForm({ open, onClose }: { open: boolean; onClose: () => v
       name: parsed.data.name,
       full_name: parsed.data.name,
       email: parsed.data.email,
-      phone: parsed.data.phone,
+      phone: normalizePhone(form.country, form.phone),
       plan_id: form.plan_id || null,
       scheduled_at: scheduledAt,
       duration_minutes: 60,
@@ -173,7 +173,7 @@ export function BookingForm({ open, onClose }: { open: boolean; onClose: () => v
     const { error } = await supabase.from("appointments").insert(payload);
     if (error) { setServerErr(error.message); setState("error"); return; }
     setState("sent");
-    setForm({ name: "", email: "", phone: "", plan_id: "", date: "", time: "", message: "" });
+    setForm({ name: "", email: "", phone: "", country: "55", plan_id: "", date: "", time: "", message: "" });
   }
 
   function handleClose() {
