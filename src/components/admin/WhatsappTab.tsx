@@ -17,12 +17,13 @@ type Cfg = {
 };
 
 const TEMPLATE_FIELDS: { key: keyof Cfg; label: string; hint: string }[] = [
-  { key: "msg_new_client", label: "Nueva reserva → Cliente", hint: "Placeholders: {{name}} {{date}} {{time}} {{plan}}" },
-  { key: "msg_new_owner", label: "Nueva reserva → Dueño", hint: "{{name}} {{phone}} {{date}} {{time}} {{plan}}" },
-  { key: "msg_confirmed", label: "Reserva confirmada", hint: "{{name}} {{date}} {{time}}" },
-  { key: "msg_cancelled", label: "Reserva cancelada", hint: "{{name}} {{date}} {{time}}" },
-  { key: "msg_reschedule", label: "Cambio de horario", hint: "{{name}} {{date}} {{time}}" },
-  { key: "msg_reminder", label: "Recordatorio 24h", hint: "{{name}} {{date}} {{time}}" },
+ { key: "msg_new_client", label: "Nueva reserva → Cliente", hint: "{{brand}} {{name}} {{date}} {{time}} {{plan}}" },
+ { key: "msg_new_owner", label: "Nueva reserva → Dueño", hint: "{{brand}} {{name}} {{phone}} {{date}} {{time}} {{plan}}" },
+ { key: "msg_confirmed", label: "Reserva confirmada", hint: "{{brand}} {{name}} {{date}} {{time}}" },
+ { key: "msg_cancelled", label: "Reserva cancelada", hint: "{{brand}} {{name}} {{date}} {{time}}" },
+ { key: "msg_reschedule", label: "Cambio de horario", hint: "{{brand}} {{name}} {{date}} {{time}}" },
+ { key: "msg_reminder", label: "Recordatorio 24h", hint: "{{brand}} {{name}} {{date}} {{time}}" },
+
 ];
 
 export function WhatsappTab() {
