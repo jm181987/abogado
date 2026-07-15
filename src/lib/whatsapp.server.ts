@@ -99,3 +99,24 @@ export function formatDateEs(iso: string): { date: string; time: string } {
     time: `${pad(d.getHours())}:${pad(d.getMinutes())}`,
   };
 }
+
+export function slugifyBrand(s: string): string {
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
+    .slice(0, 40) || "instance";
+}
+
+/** Lee la marca desde site_content (lang=es). Devuelve nombre visible y slug para instancia. */
+export async function getBrandInfo(admin: any): Promise<{ name: string; slug: string }> {
+  try {
+    const { data } = await admin.from("site_content").select("data").eq("lang", "es").maybeSingle();
+    const b = data?.data?.brand ?? {};
+    const n1 = String(b.name1 ?? "").trim();
+    const n2 = String(b.name2 ?? "").trim();
+    const name = [n1, n2].filter(Boolean).join(" ") || "Vizcaya Salud";
+    return { name, slug: slugifyBrand(name) };
+  } catch {
+    return { name: "Vizcaya Salud", slug: "vizcaya-salud" };
+  }
+}
+
