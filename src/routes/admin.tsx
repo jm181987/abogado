@@ -352,10 +352,16 @@ function PlansTab() {
               className="rounded-lg border border-input px-3 py-2 text-sm" placeholder="Rango edad (ES)" />
             <input value={p.age_pt} onChange={e => update(p.id, { age_pt: e.target.value })}
               className="rounded-lg border border-input px-3 py-2 text-sm" placeholder="Faixa etária (PT)" />
-            <input value={p.price} onChange={e => update(p.id, { price: e.target.value })}
-              className="rounded-lg border border-input px-3 py-2 text-sm" placeholder="Precio" />
-            <input value={p.old_price ?? ""} onChange={e => update(p.id, { old_price: e.target.value })}
-              className="rounded-lg border border-input px-3 py-2 text-sm" placeholder="Precio anterior" />
+            <div>
+              <label className="block text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Precio (R$)</label>
+              <input value={p.price} onChange={e => update(p.id, { price: e.target.value })}
+                className="w-full rounded-lg border border-input px-3 py-2 text-sm" placeholder="R$ 180,00" />
+            </div>
+            <div>
+              <label className="block text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Precio anterior (R$)</label>
+              <input value={p.old_price ?? ""} onChange={e => update(p.id, { old_price: e.target.value })}
+                className="w-full rounded-lg border border-input px-3 py-2 text-sm" placeholder="R$ 240,00" />
+            </div>
             <input type="number" value={p.sort_order} onChange={e => update(p.id, { sort_order: Number(e.target.value) })}
               className="rounded-lg border border-input px-3 py-2 text-sm" placeholder="Orden" />
           </div>
