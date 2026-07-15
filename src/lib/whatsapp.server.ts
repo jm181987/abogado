@@ -120,10 +120,18 @@ export function fillTemplate(tpl: string, vars: Record<string, string>): string 
 
 export function formatDateEs(iso: string): { date: string; time: string } {
   const d = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, "0");
+  const tz = "America/Argentina/Buenos_Aires"; // UTC-3 fijo
+  const parts = new Intl.DateTimeFormat("es-AR", {
+    timeZone: tz,
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", hour12: false,
+  }).formatToParts(d).reduce<Record<string, string>>((acc, p) => {
+    if (p.type !== "literal") acc[p.type] = p.value;
+    return acc;
+  }, {});
   return {
-    date: `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`,
-    time: `${pad(d.getHours())}:${pad(d.getMinutes())}`,
+    date: `${parts.day}/${parts.month}/${parts.year}`,
+    time: `${parts.hour}:${parts.minute}`,
   };
 }
 

@@ -200,7 +200,7 @@ function AppointmentsTab() {
                       </span>
                       {when && (
                         <span className="text-sm font-medium">
-                          📅 {when.toLocaleString("es-CL", { dateStyle: "medium", timeStyle: "short" })}
+                          📅 {when.toLocaleString("es-AR", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Argentina/Buenos_Aires" })}
                           {a.duration_minutes ? ` · ${a.duration_minutes}min` : ""}
                         </span>
                       )}
