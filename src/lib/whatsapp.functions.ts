@@ -71,6 +71,11 @@ export const waSaveConfig = createServerFn({ method: "POST" })
     msg_cancelled: z.string().max(2000).optional(),
     msg_reschedule: z.string().max(2000).optional(),
     msg_reminder: z.string().max(2000).optional(),
+    msg_new_client_pt: z.string().max(2000).optional(),
+    msg_confirmed_pt: z.string().max(2000).optional(),
+    msg_cancelled_pt: z.string().max(2000).optional(),
+    msg_reschedule_pt: z.string().max(2000).optional(),
+    msg_reminder_pt: z.string().max(2000).optional(),
   }).parse(d))
   .handler(async ({ data }) => {
     const { requireAdmin, getAdminSupabase } = await import("./admin-auth.server");
