@@ -80,14 +80,23 @@ function Index() {
       {/* Hero */}
       <section id="inicio" className="relative pt-32 pb-20 md:pt-40 md:pb-32 overflow-hidden">
         <div className="absolute inset-0 -z-10">
-          <img
-            src={heroSrc}
-            alt="Clínica Vizcaya Salud"
-            className={`h-full w-full ${isTransparentHero ? "object-contain object-[80%_50%] p-8 md:p-20" : "object-cover object-center"}`}
-            width={1600}
-            height={1200}
-          />
-          <div className={`absolute inset-0 ${hasCustomHero ? "bg-gradient-to-r from-background via-background/55 to-background/20" : "bg-gradient-to-r from-background via-background/85 to-background/40"}`} />
+          {isTransparentHero ? (
+            <>
+              <div className="absolute inset-0 bg-background" />
+              <img
+                src={heroSrc}
+                alt="Clínica Vizcaya Salud"
+                className="absolute right-0 top-1/2 hidden max-h-[78%] w-[48%] -translate-y-1/2 object-contain object-center p-6 opacity-95 md:block"
+                width={1600}
+                height={1200}
+              />
+            </>
+          ) : (
+            <>
+              <img src={heroSrc} alt="Clínica Vizcaya Salud" className="h-full w-full object-cover object-center" width={1600} height={1200} />
+              <div className={`absolute inset-0 ${hasCustomHero ? "bg-gradient-to-r from-background via-background/55 to-background/20" : "bg-gradient-to-r from-background via-background/85 to-background/40"}`} />
+            </>
+          )}
         </div>
         <div className="mx-auto max-w-7xl px-6">
           <div className="max-w-2xl">
