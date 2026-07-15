@@ -9,13 +9,15 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-const WHATS = "https://api.whatsapp.com/send/?phone=5555999887766";
-
 function Index() {
   const [lang, setLang] = useState<Lang>("es");
   const [bookingOpen, setBookingOpen] = useState(false);
   const { data: t = translations[lang] } = useSiteContent(lang);
   const openBooking = () => setBookingOpen(true);
+
+  const phoneDigits = (t.whatsapp?.number || "5555999887766").replace(/\D/g, "");
+  const WHATS = `https://api.whatsapp.com/send/?phone=${phoneDigits}`;
+  const brand = t.brand ?? { name1: "Vizcaya", name2: "Salud", logoUrl: "" };
 
 
   return (
@@ -24,8 +26,14 @@ function Index() {
       <header className="fixed top-0 z-50 w-full backdrop-blur-md bg-background/70 border-b border-border/50">
         <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <a href="#" className="flex items-baseline gap-1.5">
-            <span className="font-display text-2xl font-semibold tracking-tight text-foreground">Vizcaya</span>
-            <span className="font-display text-2xl font-light italic text-primary">Salud</span>
+            {brand.logoUrl ? (
+              <img src={brand.logoUrl} alt={`${brand.name1} ${brand.name2}`} className="h-9 w-auto" />
+            ) : (
+              <>
+                <span className="font-display text-2xl font-semibold tracking-tight text-foreground">{brand.name1}</span>
+                <span className="font-display text-2xl font-light italic text-primary">{brand.name2}</span>
+              </>
+            )}
           </a>
           <div className="hidden md:flex items-center gap-8 text-sm">
             <a href="#inicio" className="hover:text-primary transition">{t.nav.home}</a>
@@ -237,7 +245,7 @@ function Index() {
             <div>
               <h3 className="font-display text-xl mb-3">{t.contact.whats}</h3>
               <a href={WHATS} target="_blank" rel="noreferrer" className="text-primary hover:underline text-sm">
-                +55 55 99988 7766
+                {t.whatsapp?.display || "+55 55 99988 7766"}
               </a>
             </div>
           </div>
@@ -246,7 +254,7 @@ function Index() {
 
       <footer className="border-t border-border py-8">
         <div className="mx-auto max-w-6xl px-6 flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
-          <span className="font-display italic">Vizcaya Salud</span>
+          <span className="font-display italic">{brand.name1} {brand.name2}</span>
           <span>{t.footer}</span>
           <span>© {new Date().getFullYear()}</span>
         </div>
