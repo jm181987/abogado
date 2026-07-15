@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { waCreateAndConnect, waStatus, waDisconnect, waTestSend } from "@/lib/whatsapp.functions";
+import { waCreateAndConnect, waStatus, waDisconnect, waTestSend, waResetInstance } from "@/lib/whatsapp.functions";
 
 type Cfg = {
   instance_name: string;
@@ -38,6 +38,8 @@ export function WhatsappTab() {
   const refreshStatus = useServerFn(waStatus);
   const disconnect = useServerFn(waDisconnect);
   const testSend = useServerFn(waTestSend);
+  const resetInstance = useServerFn(waResetInstance);
+
 
   async function loadCfg() {
     const { data } = await supabase.from("whatsapp_config").select("*").eq("id", true).maybeSingle();
@@ -91,6 +93,25 @@ export function WhatsappTab() {
     finally { setBusy(null); }
   }
 
+  async function handleReset() {
+    if (!confirm("Esto borra la instancia en Evolution y la vuelve a crear. ¿Continuar?")) return;
+    setBusy("reset"); setMsg(null); setQr(null);
+    try {
+      const r = await resetInstance();
+      if (r.ok) {
+        const q = r.qr?.base64 ?? null;
+        if (q) setQr(q.startsWith("data:") ? q : `data:image/png;base64,${q}`);
+        setMsg({ kind: "ok", text: `Instancia recreada: ${r.instance}. Escanea el QR.` });
+      } else {
+        setMsg({ kind: "err", text: r.error });
+      }
+      loadCfg();
+    } catch (e) {
+      setMsg({ kind: "err", text: (e as Error).message });
+    } finally { setBusy(null); }
+  }
+
+
   async function saveCfg(patch: Partial<Cfg>) {
     if (!cfg) return;
     const next = { ...cfg, ...patch };
@@ -137,7 +158,12 @@ export function WhatsappTab() {
               Desconectar
             </button>
           )}
+          <button disabled={!!busy} onClick={handleReset}
+            className="rounded-full border border-amber-500/40 text-amber-700 dark:text-amber-400 px-4 py-2 text-sm disabled:opacity-50">
+            {busy === "reset" ? "Reiniciando…" : "Reiniciar instancia"}
+          </button>
         </div>
+
         {msg && (
           <p className={`mt-3 text-sm ${msg.kind === "ok" ? "text-green-700 dark:text-green-400" : "text-destructive"}`}>{msg.text}</p>
         )}

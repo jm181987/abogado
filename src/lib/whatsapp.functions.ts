@@ -62,6 +62,45 @@ export const waDisconnect = createServerFn({ method: "POST" }).handler(async () 
   return { ok: true as const };
 });
 
+/** Borra la instancia en Evolution y la vuelve a crear. Útil para recuperarse
+ *  de estados rotos (error 1003, sesión Baileys corrupta, cambio de marca). */
+export const waResetInstance = createServerFn({ method: "POST" }).handler(async () => {
+  const { requireAdmin, getAdminSupabase } = await import("./admin-auth.server");
+  const { evoDelete, evoLogout, evoCreateInstance, evoConnect, evoState, getBrandInfo } = await import("./whatsapp.server");
+  await requireAdmin();
+  const admin = getAdminSupabase();
+  const brand = await getBrandInfo(admin);
+  const name = brand.slug;
+
+  // Intentar logout + delete de la instancia actual (aunque no exista)
+  try { await evoLogout(name); } catch (e) { console.warn("[wa] reset/logout:", (e as Error).message); }
+  try { await evoDelete(name); } catch (e) { console.warn("[wa] reset/delete:", (e as Error).message); }
+
+  // También limpiar el instance_name anterior si era distinto
+  const { data: cfg } = await admin.from("whatsapp_config").select("instance_name").eq("id", true).maybeSingle();
+  const prev = cfg?.instance_name;
+  if (prev && prev !== name) {
+    try { await evoLogout(prev); } catch (e) { console.warn("[wa] reset/logout prev:", (e as Error).message); }
+    try { await evoDelete(prev); } catch (e) { console.warn("[wa] reset/delete prev:", (e as Error).message); }
+  }
+
+  // Recrear + conectar
+  try { await evoCreateInstance(name); } catch (e) {
+    console.error("[wa] reset/create:", (e as Error).message);
+    return { ok: false as const, error: `No se pudo crear la instancia: ${(e as Error).message}` };
+  }
+  const qr = await evoConnect(name);
+  const state = await evoState(name);
+  await admin.from("whatsapp_config").update({
+    instance_name: name,
+    connected: state.state === "open",
+    phone_number: state.number ?? null,
+    updated_at: new Date().toISOString(),
+  }).eq("id", true);
+  return { ok: true as const, instance: name, brand: brand.name, qr, state };
+});
+
+
 export const waTestSend = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ to: z.string().min(6), text: z.string().min(1).max(1000) }).parse(d))
   .handler(async ({ data }) => {
