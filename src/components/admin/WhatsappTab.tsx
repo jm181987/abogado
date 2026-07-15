@@ -32,7 +32,7 @@ export function WhatsappTab() {
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
   const [testTo, setTestTo] = useState("");
-  const [testText, setTestText] = useState("Prueba desde el panel Vizcaya Salud ✅");
+  const [testText, setTestText] = useState("Prueba desde el panel ✅");
 
   const connect = useServerFn(waCreateAndConnect);
   const refreshStatus = useServerFn(waStatus);
