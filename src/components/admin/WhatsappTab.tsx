@@ -142,6 +142,7 @@ export function WhatsappTab() {
       msg_cancelled: cfg.msg_cancelled,
       msg_reschedule: cfg.msg_reschedule,
       msg_reminder: cfg.msg_reminder,
+      msg_new_client_pt: cfg.msg_new_client_pt,
       msg_new_owner_pt: cfg.msg_new_owner_pt,
       msg_confirmed_pt: cfg.msg_confirmed_pt,
       msg_cancelled_pt: cfg.msg_cancelled_pt,
