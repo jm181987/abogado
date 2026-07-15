@@ -18,6 +18,8 @@ function Index() {
   const phoneDigits = (t.whatsapp?.number || "5555999887766").replace(/\D/g, "");
   const WHATS = `https://api.whatsapp.com/send/?phone=${phoneDigits}`;
   const brand = t.brand ?? { name1: "Vizcaya", name2: "Salud", logoUrl: "" };
+  const heroSrc = t.media?.heroImage || heroImg;
+  const gallery = t.media?.gallery ?? [];
 
 
   return (
