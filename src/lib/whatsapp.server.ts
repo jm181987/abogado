@@ -114,14 +114,29 @@ export async function evoSendText(name: string, number: string, text: string) {
 }
 
 export function fillTemplate(tpl: string, vars: Record<string, string>): string {
-  const normalizedTpl = tpl.replace(/Vizcaya Salud/g, "{{brand}}");
+  const normalizedTpl = (tpl ?? "").replace(/Vizcaya Salud/g, "{{brand}}");
   return normalizedTpl.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, k) => vars[k] ?? "");
 }
 
-export function formatDateEs(iso: string): { date: string; time: string } {
+export type ClientLang = "es" | "pt";
+
+/** Detecta si un teléfono es brasilero (código país 55) para elegir idioma. */
+export function isBrazilPhone(phone: string | null | undefined): boolean {
+  if (!phone) return false;
+  const digits = phone.replace(/\D/g, "");
+  // Cubre entradas con o sin "+" al inicio. Brasil = 55, seguido de DDD (2) + número (8-9).
+  return digits.startsWith("55") && digits.length >= 12 && digits.length <= 13;
+}
+
+export function pickClientLang(phone: string | null | undefined): ClientLang {
+  return isBrazilPhone(phone) ? "pt" : "es";
+}
+
+export function formatDateForLang(iso: string, lang: ClientLang): { date: string; time: string } {
   const d = new Date(iso);
   const tz = "America/Argentina/Buenos_Aires"; // UTC-3 fijo
-  const parts = new Intl.DateTimeFormat("es-AR", {
+  const locale = lang === "pt" ? "pt-BR" : "es-AR";
+  const parts = new Intl.DateTimeFormat(locale, {
     timeZone: tz,
     year: "numeric", month: "2-digit", day: "2-digit",
     hour: "2-digit", minute: "2-digit", hour12: false,
@@ -133,6 +148,20 @@ export function formatDateEs(iso: string): { date: string; time: string } {
     date: `${parts.day}/${parts.month}/${parts.year}`,
     time: `${parts.hour}:${parts.minute}`,
   };
+}
+
+export function formatDateEs(iso: string): { date: string; time: string } {
+  return formatDateForLang(iso, "es");
+}
+
+/** Elige la plantilla adecuada según idioma del cliente, con fallback a ES si la PT está vacía. */
+export function pickTemplate(cfg: Record<string, unknown>, baseKey: string, lang: ClientLang): string {
+  if (lang === "pt") {
+    const pt = cfg[`${baseKey}_pt`];
+    if (typeof pt === "string" && pt.trim()) return pt;
+  }
+  const es = cfg[baseKey];
+  return typeof es === "string" ? es : "";
 }
 
 export function slugifyBrand(s: string): string {

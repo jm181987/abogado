@@ -32,3 +32,11 @@ CREATE POLICY "admins manage whatsapp_config" ON public.whatsapp_config
 -- 2) Columna para no repetir recordatorios
 ALTER TABLE public.appointments
   ADD COLUMN IF NOT EXISTS reminder_sent_at timestamptz;
+
+-- 3) Plantillas en portugués (para clientes con teléfono brasilero)
+ALTER TABLE public.whatsapp_config
+  ADD COLUMN IF NOT EXISTS msg_new_client_pt text NOT NULL DEFAULT 'Olá {{name}} 👋 Recebemos sua solicitação para o dia {{date}} às {{time}}h. Em breve confirmaremos por aqui. Obrigado por escolher {{brand}}!',
+  ADD COLUMN IF NOT EXISTS msg_confirmed_pt  text NOT NULL DEFAULT '✅ Seu horário está confirmado, {{name}}! Esperamos você no dia {{date}} às {{time}}h.',
+  ADD COLUMN IF NOT EXISTS msg_cancelled_pt  text NOT NULL DEFAULT 'Olá {{name}}, infelizmente seu horário do dia {{date}} às {{time}}h foi cancelado. Entre em contato para reagendar.',
+  ADD COLUMN IF NOT EXISTS msg_reschedule_pt text NOT NULL DEFAULT 'Olá {{name}}, seu horário foi remarcado para {{date}} às {{time}}h. Esperamos você!',
+  ADD COLUMN IF NOT EXISTS msg_reminder_pt   text NOT NULL DEFAULT 'Lembrete ⏰ Olá {{name}}, amanhã {{date}} às {{time}}h você tem seu horário agendado. Esperamos você!';

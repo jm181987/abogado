@@ -71,6 +71,11 @@ export const waSaveConfig = createServerFn({ method: "POST" })
     msg_cancelled: z.string().max(2000).optional(),
     msg_reschedule: z.string().max(2000).optional(),
     msg_reminder: z.string().max(2000).optional(),
+    msg_new_client_pt: z.string().max(2000).optional(),
+    msg_confirmed_pt: z.string().max(2000).optional(),
+    msg_cancelled_pt: z.string().max(2000).optional(),
+    msg_reschedule_pt: z.string().max(2000).optional(),
+    msg_reminder_pt: z.string().max(2000).optional(),
   }).parse(d))
   .handler(async ({ data }) => {
     const { requireAdmin, getAdminSupabase } = await import("./admin-auth.server");
@@ -148,27 +153,32 @@ export const waNotifyStatusChange = createServerFn({ method: "POST" })
   }).parse(d))
   .handler(async ({ data }) => {
     const { requireAdmin, getAdminSupabase } = await import("./admin-auth.server");
-    const { evoSendText, fillTemplate, formatDateEs, getBrandInfo } = await import("./whatsapp.server");
+    const { evoSendText, fillTemplate, formatDateForLang, getBrandInfo, pickClientLang, pickTemplate } = await import("./whatsapp.server");
     await requireAdmin();
     const admin = getAdminSupabase();
     const { data: cfg } = await admin.from("whatsapp_config").select("*").eq("id", true).maybeSingle();
     if (!cfg?.connected) return { ok: false as const, error: "WhatsApp no conectado" };
     const brand = await getBrandInfo(admin);
     const { data: appt } = await admin.from("appointments")
-      .select("id, name, phone, scheduled_at, plan_id, plans:plan_id(name_es)")
+      .select("id, name, phone, scheduled_at, plan_id, plans:plan_id(name_es, name_pt)")
       .eq("id", data.appointmentId).maybeSingle();
     if (!appt || !appt.scheduled_at) return { ok: false as const, error: "Cita no encontrada" };
-    const { date, time } = formatDateEs(appt.scheduled_at);
+    const lang = pickClientLang(appt.phone);
+    const { date, time } = formatDateForLang(appt.scheduled_at, lang);
+    const planName = lang === "pt"
+      ? ((appt as any).plans?.name_pt ?? (appt as any).plans?.name_es ?? "")
+      : ((appt as any).plans?.name_es ?? "");
     const vars = {
       name: appt.name ?? "",
       phone: appt.phone ?? "",
       date, time,
-      plan: (appt as any).plans?.name_es ?? "",
+      plan: planName,
       brand: brand.name,
     };
-    const tpl = data.kind === "confirmed" ? cfg.msg_confirmed
-      : data.kind === "cancelled" ? cfg.msg_cancelled
-      : cfg.msg_reschedule;
+    const baseKey = data.kind === "confirmed" ? "msg_confirmed"
+      : data.kind === "cancelled" ? "msg_cancelled"
+      : "msg_reschedule";
+    const tpl = pickTemplate(cfg as any, baseKey, lang);
     try {
       await evoSendText(brand.slug, appt.phone, fillTemplate(tpl, vars));
       return { ok: true as const };

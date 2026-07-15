@@ -14,16 +14,22 @@ type Cfg = {
   msg_cancelled: string;
   msg_reschedule: string;
   msg_reminder: string;
+  msg_new_client_pt: string;
+  msg_confirmed_pt: string;
+  msg_cancelled_pt: string;
+  msg_reschedule_pt: string;
+  msg_reminder_pt: string;
 };
 
-const TEMPLATE_FIELDS: { key: keyof Cfg; label: string; hint: string }[] = [
- { key: "msg_new_client", label: "Nueva reserva → Cliente", hint: "{{brand}} {{name}} {{date}} {{time}} {{plan}}" },
- { key: "msg_new_owner", label: "Nueva reserva → Dueño", hint: "{{brand}} {{name}} {{phone}} {{date}} {{time}} {{plan}}" },
- { key: "msg_confirmed", label: "Reserva confirmada", hint: "{{brand}} {{name}} {{date}} {{time}}" },
- { key: "msg_cancelled", label: "Reserva cancelada", hint: "{{brand}} {{name}} {{date}} {{time}}" },
- { key: "msg_reschedule", label: "Cambio de horario", hint: "{{brand}} {{name}} {{date}} {{time}}" },
- { key: "msg_reminder", label: "Recordatorio 24h", hint: "{{brand}} {{name}} {{date}} {{time}}" },
+type TemplateField = { es: keyof Cfg; pt: keyof Cfg | null; label: string; hint: string };
 
+const TEMPLATE_FIELDS: TemplateField[] = [
+ { es: "msg_new_client", pt: "msg_new_client_pt", label: "Nueva reserva → Cliente", hint: "{{brand}} {{name}} {{date}} {{time}} {{plan}}" },
+ { es: "msg_new_owner", pt: null, label: "Nueva reserva → Dueño (siempre ES)", hint: "{{brand}} {{name}} {{phone}} {{date}} {{time}} {{plan}}" },
+ { es: "msg_confirmed", pt: "msg_confirmed_pt", label: "Reserva confirmada", hint: "{{brand}} {{name}} {{date}} {{time}}" },
+ { es: "msg_cancelled", pt: "msg_cancelled_pt", label: "Reserva cancelada", hint: "{{brand}} {{name}} {{date}} {{time}}" },
+ { es: "msg_reschedule", pt: "msg_reschedule_pt", label: "Cambio de horario", hint: "{{brand}} {{name}} {{date}} {{time}}" },
+ { es: "msg_reminder", pt: "msg_reminder_pt", label: "Recordatorio 24h", hint: "{{brand}} {{name}} {{date}} {{time}}" },
 ];
 
 export function WhatsappTab() {
@@ -135,6 +141,11 @@ export function WhatsappTab() {
       msg_cancelled: cfg.msg_cancelled,
       msg_reschedule: cfg.msg_reschedule,
       msg_reminder: cfg.msg_reminder,
+      msg_new_client_pt: cfg.msg_new_client_pt,
+      msg_confirmed_pt: cfg.msg_confirmed_pt,
+      msg_cancelled_pt: cfg.msg_cancelled_pt,
+      msg_reschedule_pt: cfg.msg_reschedule_pt,
+      msg_reminder_pt: cfg.msg_reminder_pt,
     });
   }
 
@@ -226,18 +237,34 @@ export function WhatsappTab() {
       {/* Plantillas */}
       <section className="rounded-2xl border border-border bg-card p-6">
         <h3 className="font-display text-xl mb-1">Plantillas de mensajes</h3>
-        <p className="text-sm text-muted-foreground mb-4">Usa variables entre llaves. Pulsa <b>Guardar plantillas</b> para aplicar los cambios.</p>
-        <div className="grid gap-4">
+        <p className="text-sm text-muted-foreground mb-4">
+          Usa variables entre llaves. Los clientes con teléfono <b>+55…</b> (Brasil) reciben la versión en portugués;
+          los demás, la versión en español. Pulsa <b>Guardar plantillas</b> para aplicar los cambios.
+        </p>
+        <div className="grid gap-6">
           {TEMPLATE_FIELDS.map(f => (
-            <label key={f.key} className="block">
-              <div className="flex items-center justify-between mb-1">
+            <div key={f.es} className="rounded-xl border border-border/60 p-4">
+              <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium">{f.label}</span>
                 <span className="text-[10px] text-muted-foreground font-mono">{f.hint}</span>
               </div>
-              <textarea rows={3} value={cfg[f.key] as string}
-                onChange={(e) => setCfg({ ...cfg, [f.key]: e.target.value })}
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm font-mono" />
-            </label>
+              <div className={`grid gap-3 ${f.pt ? "md:grid-cols-2" : ""}`}>
+                <label className="block">
+                  <span className="text-[11px] uppercase tracking-wide text-muted-foreground">Español 🇪🇸</span>
+                  <textarea rows={3} value={cfg[f.es] as string}
+                    onChange={(e) => setCfg({ ...cfg, [f.es]: e.target.value })}
+                    className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm font-mono" />
+                </label>
+                {f.pt && (
+                  <label className="block">
+                    <span className="text-[11px] uppercase tracking-wide text-muted-foreground">Português 🇧🇷</span>
+                    <textarea rows={3} value={(cfg[f.pt] as string) ?? ""}
+                      onChange={(e) => setCfg({ ...cfg, [f.pt!]: e.target.value })}
+                      className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm font-mono" />
+                  </label>
+                )}
+              </div>
+            </div>
           ))}
         </div>
         <div className="mt-4 flex items-center gap-3">
