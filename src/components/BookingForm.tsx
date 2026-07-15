@@ -32,12 +32,39 @@ export function BookingForm({ open, onClose }: { open: boolean; onClose: () => v
   const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [serverErr, setServerErr] = useState<string | null>(null);
+  const [bookedTimes, setBookedTimes] = useState<Set<string>>(new Set());
+  const [loadingSlots, setLoadingSlots] = useState(false);
 
   useEffect(() => {
     supabase.from("plans").select("id, name").order("position").then(({ data }) => {
       setPlans((data as PlanOpt[]) ?? []);
     });
   }, []);
+
+  useEffect(() => {
+    if (!form.date) { setBookedTimes(new Set()); return; }
+    setLoadingSlots(true);
+    const start = new Date(`${form.date}T00:00:00`).toISOString();
+    const end = new Date(`${form.date}T23:59:59`).toISOString();
+    supabase
+      .from("appointments")
+      .select("scheduled_at, status")
+      .gte("scheduled_at", start)
+      .lte("scheduled_at", end)
+      .neq("status", "cancelled")
+      .then(({ data }) => {
+        const taken = new Set<string>();
+        for (const row of (data as { scheduled_at: string }[]) ?? []) {
+          const d = new Date(row.scheduled_at);
+          const hh = String(d.getHours()).padStart(2, "0");
+          const mm = String(d.getMinutes()).padStart(2, "0");
+          taken.add(`${hh}:${mm}`);
+        }
+        setBookedTimes(taken);
+        setLoadingSlots(false);
+        setForm(f => (f.time && taken.has(f.time) ? { ...f, time: "" } : f));
+      });
+  }, [form.date]);
 
   useEffect(() => {
     if (!open) return;
@@ -52,6 +79,7 @@ export function BookingForm({ open, onClose }: { open: boolean; onClose: () => v
   }, [open, onClose]);
 
   const minDate = useMemo(() => todayStr(), []);
+
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
