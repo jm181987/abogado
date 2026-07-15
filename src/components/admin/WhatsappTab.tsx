@@ -226,7 +226,7 @@ export function WhatsappTab() {
       {/* Plantillas */}
       <section className="rounded-2xl border border-border bg-card p-6">
         <h3 className="font-display text-xl mb-1">Plantillas de mensajes</h3>
-        <p className="text-sm text-muted-foreground mb-4">Se guardan al salir del campo.</p>
+        <p className="text-sm text-muted-foreground mb-4">Usa variables entre llaves. Pulsa <b>Guardar plantillas</b> para aplicar los cambios.</p>
         <div className="grid gap-4">
           {TEMPLATE_FIELDS.map(f => (
             <label key={f.key} className="block">
@@ -236,10 +236,19 @@ export function WhatsappTab() {
               </div>
               <textarea rows={3} value={cfg[f.key] as string}
                 onChange={(e) => setCfg({ ...cfg, [f.key]: e.target.value })}
-                onBlur={(e) => saveCfg({ [f.key]: e.target.value } as Partial<Cfg>)}
                 className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm font-mono" />
             </label>
           ))}
+        </div>
+        <div className="mt-4 flex items-center gap-3">
+          <button disabled={!!busy} onClick={handleSaveTemplates}
+            className="rounded-full bg-primary text-primary-foreground px-4 py-2 text-sm disabled:opacity-50">
+            {busy === "save" ? "Guardando…" : "Guardar plantillas"}
+          </button>
+          <button disabled={!!busy} onClick={loadCfg}
+            className="rounded-full border border-input px-4 py-2 text-sm disabled:opacity-50">
+            Descartar cambios
+          </button>
         </div>
       </section>
 
