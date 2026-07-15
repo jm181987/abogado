@@ -17,12 +17,13 @@ type Cfg = {
 };
 
 const TEMPLATE_FIELDS: { key: keyof Cfg; label: string; hint: string }[] = [
-  { key: "msg_new_client", label: "Nueva reserva → Cliente", hint: "Placeholders: {{name}} {{date}} {{time}} {{plan}}" },
-  { key: "msg_new_owner", label: "Nueva reserva → Dueño", hint: "{{name}} {{phone}} {{date}} {{time}} {{plan}}" },
-  { key: "msg_confirmed", label: "Reserva confirmada", hint: "{{name}} {{date}} {{time}}" },
-  { key: "msg_cancelled", label: "Reserva cancelada", hint: "{{name}} {{date}} {{time}}" },
-  { key: "msg_reschedule", label: "Cambio de horario", hint: "{{name}} {{date}} {{time}}" },
-  { key: "msg_reminder", label: "Recordatorio 24h", hint: "{{name}} {{date}} {{time}}" },
+ { key: "msg_new_client", label: "Nueva reserva → Cliente", hint: "{{brand}} {{name}} {{date}} {{time}} {{plan}}" },
+ { key: "msg_new_owner", label: "Nueva reserva → Dueño", hint: "{{brand}} {{name}} {{phone}} {{date}} {{time}} {{plan}}" },
+ { key: "msg_confirmed", label: "Reserva confirmada", hint: "{{brand}} {{name}} {{date}} {{time}}" },
+ { key: "msg_cancelled", label: "Reserva cancelada", hint: "{{brand}} {{name}} {{date}} {{time}}" },
+ { key: "msg_reschedule", label: "Cambio de horario", hint: "{{brand}} {{name}} {{date}} {{time}}" },
+ { key: "msg_reminder", label: "Recordatorio 24h", hint: "{{brand}} {{name}} {{date}} {{time}}" },
+
 ];
 
 export function WhatsappTab() {
@@ -115,7 +116,7 @@ export function WhatsappTab() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="font-display text-xl">Estado de WhatsApp</h3>
-            <p className="text-sm text-muted-foreground">Instancia: <code>{cfg.instance_name}</code></p>
+            <p className="text-sm text-muted-foreground">Instancia (auto desde la marca): <code>{cfg.instance_name}</code></p>
           </div>
           <span className={`text-xs uppercase tracking-wide px-3 py-1 rounded-full ${cfg.connected ? "bg-green-500/15 text-green-700 dark:text-green-400" : "bg-muted text-muted-foreground"}`}>
             {cfg.connected ? `Conectado${cfg.phone_number ? " · " + cfg.phone_number : ""}` : "Desconectado"}

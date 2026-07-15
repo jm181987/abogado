@@ -15,7 +15,7 @@ export const Route = createFileRoute("/api/public/cron/whatsapp-reminders")({
           return new Response("Unauthorized", { status: 401 });
         }
         const { createClient } = await import("@supabase/supabase-js");
-        const { evoSendText, fillTemplate, formatDateEs } = await import("@/lib/whatsapp.server");
+        const { evoSendText, fillTemplate, formatDateEs, getBrandInfo } = await import("@/lib/whatsapp.server");
 
         const admin = createClient(
           process.env.APP_SUPABASE_URL!,
@@ -26,6 +26,7 @@ export const Route = createFileRoute("/api/public/cron/whatsapp-reminders")({
         const { data: cfg } = await admin.from("whatsapp_config").select("*").eq("id", true).maybeSingle();
         if (!cfg?.connected) return Response.json({ ok: false, error: "WhatsApp no conectado" });
 
+        const brand = await getBrandInfo(admin);
         const now = Date.now();
         const start = new Date(now + 23 * 60 * 60 * 1000).toISOString();
         const end = new Date(now + 25 * 60 * 60 * 1000).toISOString();
@@ -46,9 +47,10 @@ export const Route = createFileRoute("/api/public/cron/whatsapp-reminders")({
             phone: a.phone ?? "",
             date, time,
             plan: (a as any).plans?.name_es ?? "",
+            brand: brand.name,
           };
           try {
-            await evoSendText(cfg.instance_name, a.phone, fillTemplate(cfg.msg_reminder, vars));
+            await evoSendText(brand.slug, a.phone, fillTemplate(cfg.msg_reminder, vars));
             await admin.from("appointments").update({ reminder_sent_at: new Date().toISOString() }).eq("id", a.id);
             results.push({ id: a.id, ok: true });
           } catch (e) {
@@ -56,6 +58,7 @@ export const Route = createFileRoute("/api/public/cron/whatsapp-reminders")({
           }
         }
         return Response.json({ ok: true, sent: results.filter(r => r.ok).length, total: results.length, results });
+
       },
     },
   },

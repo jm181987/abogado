@@ -9,7 +9,7 @@ export const notifyNewBooking = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ appointmentId: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     const { createClient } = await import("@supabase/supabase-js");
-    const { evoSendText, fillTemplate, formatDateEs } = await import("./whatsapp.server");
+    const { evoSendText, fillTemplate, formatDateEs, getBrandInfo } = await import("./whatsapp.server");
 
     const admin = createClient(
       process.env.APP_SUPABASE_URL!,
@@ -28,25 +28,28 @@ export const notifyNewBooking = createServerFn({ method: "POST" })
     const { data: cfg } = await admin.from("whatsapp_config").select("*").eq("id", true).maybeSingle();
     if (!cfg?.connected) return { ok: false as const, error: "WhatsApp no conectado" };
 
+    const brand = await getBrandInfo(admin);
     const { date, time } = formatDateEs(appt.scheduled_at);
     const vars = {
       name: appt.name ?? "",
       phone: appt.phone ?? "",
       date, time,
       plan: (appt as any).plans?.name_es ?? "Sin preferencia",
+      brand: brand.name,
     };
 
     const results = { client: false, owner: false, errors: [] as string[] };
     try {
-      await evoSendText(cfg.instance_name, appt.phone, fillTemplate(cfg.msg_new_client, vars));
+      await evoSendText(brand.slug, appt.phone, fillTemplate(cfg.msg_new_client, vars));
       results.client = true;
     } catch (e) { results.errors.push(`cliente: ${(e as Error).message}`); }
 
     if (cfg.owner_phone) {
       try {
-        await evoSendText(cfg.instance_name, cfg.owner_phone, fillTemplate(cfg.msg_new_owner, vars));
+        await evoSendText(brand.slug, cfg.owner_phone, fillTemplate(cfg.msg_new_owner, vars));
         results.owner = true;
       } catch (e) { results.errors.push(`dueño: ${(e as Error).message}`); }
     }
     return { ok: true as const, results };
   });
+
