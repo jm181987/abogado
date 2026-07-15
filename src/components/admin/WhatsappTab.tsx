@@ -14,16 +14,22 @@ type Cfg = {
   msg_cancelled: string;
   msg_reschedule: string;
   msg_reminder: string;
+  msg_new_client_pt: string;
+  msg_confirmed_pt: string;
+  msg_cancelled_pt: string;
+  msg_reschedule_pt: string;
+  msg_reminder_pt: string;
 };
 
-const TEMPLATE_FIELDS: { key: keyof Cfg; label: string; hint: string }[] = [
- { key: "msg_new_client", label: "Nueva reserva → Cliente", hint: "{{brand}} {{name}} {{date}} {{time}} {{plan}}" },
- { key: "msg_new_owner", label: "Nueva reserva → Dueño", hint: "{{brand}} {{name}} {{phone}} {{date}} {{time}} {{plan}}" },
- { key: "msg_confirmed", label: "Reserva confirmada", hint: "{{brand}} {{name}} {{date}} {{time}}" },
- { key: "msg_cancelled", label: "Reserva cancelada", hint: "{{brand}} {{name}} {{date}} {{time}}" },
- { key: "msg_reschedule", label: "Cambio de horario", hint: "{{brand}} {{name}} {{date}} {{time}}" },
- { key: "msg_reminder", label: "Recordatorio 24h", hint: "{{brand}} {{name}} {{date}} {{time}}" },
+type TemplateField = { es: keyof Cfg; pt: keyof Cfg | null; label: string; hint: string };
 
+const TEMPLATE_FIELDS: TemplateField[] = [
+ { es: "msg_new_client", pt: "msg_new_client_pt", label: "Nueva reserva → Cliente", hint: "{{brand}} {{name}} {{date}} {{time}} {{plan}}" },
+ { es: "msg_new_owner", pt: null, label: "Nueva reserva → Dueño (siempre ES)", hint: "{{brand}} {{name}} {{phone}} {{date}} {{time}} {{plan}}" },
+ { es: "msg_confirmed", pt: "msg_confirmed_pt", label: "Reserva confirmada", hint: "{{brand}} {{name}} {{date}} {{time}}" },
+ { es: "msg_cancelled", pt: "msg_cancelled_pt", label: "Reserva cancelada", hint: "{{brand}} {{name}} {{date}} {{time}}" },
+ { es: "msg_reschedule", pt: "msg_reschedule_pt", label: "Cambio de horario", hint: "{{brand}} {{name}} {{date}} {{time}}" },
+ { es: "msg_reminder", pt: "msg_reminder_pt", label: "Recordatorio 24h", hint: "{{brand}} {{name}} {{date}} {{time}}" },
 ];
 
 export function WhatsappTab() {
