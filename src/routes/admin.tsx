@@ -192,6 +192,18 @@ function AppointmentsTab() {
                       className="text-xs rounded-full border border-border px-3 py-1 bg-background">
                       {Object.entries(STATUS_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                     </select>
+                    <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      Duración:
+                      <select
+                        value={a.duration_minutes ?? 60}
+                        onChange={(e) => patch(a.id, { duration_minutes: Number(e.target.value) })}
+                        className="rounded-full border border-border px-2 py-1 bg-background text-foreground"
+                      >
+                        {[15, 30, 45, 60, 75, 90, 120].map(m => (
+                          <option key={m} value={m}>{m} min</option>
+                        ))}
+                      </select>
+                    </label>
                     <button onClick={() => setExpanded(isOpen ? null : a.id)}
                       className="text-xs text-primary hover:underline">
                       {isOpen ? "Cerrar" : "Editar agenda"}
