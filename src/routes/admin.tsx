@@ -11,7 +11,8 @@ export const Route = createFileRoute("/admin")({
 });
 
 type Plan = { id: string; name: string; age_range: string; price: string; old_price: string; features: string[]; position: number; popular: boolean };
-type Appointment = { id: string; created_at: string; name: string; email: string; phone: string; plan_id: string | null; message: string | null; status: string };
+type Appointment = { id: string; created_at: string; name: string; email: string; phone: string; plan_id: string | null; message: string | null; status: string; scheduled_at: string | null; duration_minutes: number | null; admin_notes: string | null; preferred_date: string | null };
+type PlanOpt = { id: string; name: string };
 type Photo = { id: string; storage_path: string; title: string | null; created_at: string };
 
 function AdminPage() {
@@ -74,20 +75,43 @@ VALUES ('${user.id}', 'admin');`}
   );
 }
 
+function toLocalInput(iso: string | null) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+const STATUS_LABEL: Record<string, string> = { pending: "Pendiente", confirmed: "Confirmada", completed: "Completada", cancelled: "Cancelada" };
+const STATUS_COLOR: Record<string, string> = {
+  pending: "bg-amber-100 text-amber-900",
+  confirmed: "bg-emerald-100 text-emerald-900",
+  completed: "bg-blue-100 text-blue-900",
+  cancelled: "bg-red-100 text-red-900",
+};
+
 function AppointmentsTab() {
   const [items, setItems] = useState<Appointment[]>([]);
+  const [plans, setPlans] = useState<PlanOpt[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<"upcoming" | "today" | "past" | "all">("upcoming");
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
 
   async function load() {
     setLoading(true);
-    const { data } = await supabase.from("appointments").select("*").order("created_at", { ascending: false });
-    setItems((data as Appointment[]) ?? []);
+    const [{ data: appts }, { data: pl }] = await Promise.all([
+      supabase.from("appointments").select("*").order("scheduled_at", { ascending: true, nullsFirst: false }).order("created_at", { ascending: false }),
+      supabase.from("plans").select("id, name").order("position"),
+    ]);
+    setItems((appts as Appointment[]) ?? []);
+    setPlans((pl as PlanOpt[]) ?? []);
     setLoading(false);
   }
   useEffect(() => { load(); }, []);
 
-  async function updateStatus(id: string, status: string) {
-    await supabase.from("appointments").update({ status }).eq("id", id);
+  async function patch(id: string, changes: Partial<Appointment>) {
+    await supabase.from("appointments").update(changes as any).eq("id", id);
     load();
   }
   async function remove(id: string) {
@@ -96,34 +120,176 @@ function AppointmentsTab() {
     load();
   }
 
+  const now = new Date();
+  const startOfToday = new Date(now); startOfToday.setHours(0, 0, 0, 0);
+  const endOfToday = new Date(startOfToday); endOfToday.setDate(endOfToday.getDate() + 1);
+
+  const filtered = items.filter(a => {
+    if (filter === "all") return true;
+    const t = a.scheduled_at ? new Date(a.scheduled_at) : null;
+    if (filter === "upcoming") return !t || t >= now;
+    if (filter === "today") return t && t >= startOfToday && t < endOfToday;
+    if (filter === "past") return t && t < now;
+    return true;
+  });
+
+  const planName = (id: string | null) => plans.find(p => p.id === id)?.name;
+
   if (loading) return <p className="text-sm text-muted-foreground">Cargando citas…</p>;
-  if (!items.length) return <p className="text-sm text-muted-foreground">No hay citas todavía.</p>;
 
   return (
-    <div className="space-y-3">
-      {items.map(a => (
-        <div key={a.id} className="rounded-2xl border border-border bg-card p-5">
-          <div className="flex flex-wrap justify-between gap-3">
-            <div>
-              <p className="font-medium">{a.name}</p>
-              <p className="text-xs text-muted-foreground">{new Date(a.created_at).toLocaleString("es-CL")}</p>
-              <p className="text-sm mt-2">📧 {a.email} · 📱 {a.phone}</p>
-              {a.message && <p className="text-sm text-muted-foreground mt-2 italic">"{a.message}"</p>}
-            </div>
-            <div className="flex flex-col items-end gap-2">
-              <select value={a.status} onChange={(e) => updateStatus(a.id, e.target.value)}
-                className="text-xs rounded-full border border-border px-3 py-1 bg-background">
-                <option value="pending">Pendiente</option>
-                <option value="confirmed">Confirmada</option>
-                <option value="completed">Completada</option>
-                <option value="cancelled">Cancelada</option>
-              </select>
-              <button onClick={() => remove(a.id)} className="text-xs text-destructive hover:underline">Eliminar</button>
-            </div>
-          </div>
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex rounded-full border border-border bg-background p-0.5 text-xs">
+          {(["upcoming", "today", "past", "all"] as const).map(f => (
+            <button key={f} onClick={() => setFilter(f)}
+              className={`rounded-full px-4 py-1.5 transition ${filter === f ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>
+              {f === "upcoming" ? "Próximas" : f === "today" ? "Hoy" : f === "past" ? "Pasadas" : "Todas"}
+            </button>
+          ))}
         </div>
-      ))}
+        <button onClick={() => setCreating(true)}
+          className="rounded-full bg-primary text-primary-foreground px-5 py-2 text-xs font-medium">
+          + Nueva cita
+        </button>
+      </div>
+
+      {creating && (
+        <NewAppointment plans={plans} onClose={() => setCreating(false)} onSaved={() => { setCreating(false); load(); }} />
+      )}
+
+      {!filtered.length ? (
+        <p className="text-sm text-muted-foreground py-8 text-center">Sin citas en este filtro.</p>
+      ) : (
+        <div className="space-y-3">
+          {filtered.map(a => {
+            const isOpen = expanded === a.id;
+            const when = a.scheduled_at ? new Date(a.scheduled_at) : null;
+            return (
+              <div key={a.id} className="rounded-2xl border border-border bg-card overflow-hidden">
+                <div className="p-5 flex flex-wrap items-start justify-between gap-3">
+                  <div className="flex-1 min-w-[200px]">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className={`text-[10px] uppercase tracking-wide rounded-full px-2 py-0.5 ${STATUS_COLOR[a.status] ?? "bg-muted"}`}>
+                        {STATUS_LABEL[a.status] ?? a.status}
+                      </span>
+                      {when && (
+                        <span className="text-sm font-medium">
+                          📅 {when.toLocaleString("es-CL", { dateStyle: "medium", timeStyle: "short" })}
+                          {a.duration_minutes ? ` · ${a.duration_minutes}min` : ""}
+                        </span>
+                      )}
+                      {!when && <span className="text-xs text-muted-foreground italic">Sin fecha asignada</span>}
+                    </div>
+                    <p className="font-medium mt-2">{a.name}</p>
+                    <p className="text-sm text-muted-foreground">📧 {a.email} · 📱 {a.phone}</p>
+                    {planName(a.plan_id) && <p className="text-xs text-primary mt-1">Plan: {planName(a.plan_id)}</p>}
+                    {a.preferred_date && <p className="text-xs text-muted-foreground mt-1">Preferencia paciente: {a.preferred_date}</p>}
+                    {a.message && <p className="text-sm text-muted-foreground mt-2 italic">"{a.message}"</p>}
+                  </div>
+                  <div className="flex flex-col items-end gap-2">
+                    <select value={a.status} onChange={(e) => patch(a.id, { status: e.target.value })}
+                      className="text-xs rounded-full border border-border px-3 py-1 bg-background">
+                      {Object.entries(STATUS_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                    </select>
+                    <button onClick={() => setExpanded(isOpen ? null : a.id)}
+                      className="text-xs text-primary hover:underline">
+                      {isOpen ? "Cerrar" : "Editar agenda"}
+                    </button>
+                    <button onClick={() => remove(a.id)} className="text-xs text-destructive hover:underline">Eliminar</button>
+                  </div>
+                </div>
+                {isOpen && (
+                  <div className="border-t border-border bg-muted/30 p-5 grid gap-3 md:grid-cols-3">
+                    <label className="block">
+                      <span className="block text-xs font-medium mb-1 text-muted-foreground">Fecha y hora</span>
+                      <input type="datetime-local" defaultValue={toLocalInput(a.scheduled_at)}
+                        onBlur={e => patch(a.id, { scheduled_at: e.target.value ? new Date(e.target.value).toISOString() : null })}
+                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+                    </label>
+                    <label className="block">
+                      <span className="block text-xs font-medium mb-1 text-muted-foreground">Duración (min)</span>
+                      <input type="number" min={15} step={15} defaultValue={a.duration_minutes ?? 60}
+                        onBlur={e => patch(a.id, { duration_minutes: Number(e.target.value) || 60 })}
+                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+                    </label>
+                    <label className="block">
+                      <span className="block text-xs font-medium mb-1 text-muted-foreground">Plan</span>
+                      <select defaultValue={a.plan_id ?? ""} onBlur={e => patch(a.id, { plan_id: e.target.value || null })}
+                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
+                        <option value="">—</option>
+                        {plans.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                      </select>
+                    </label>
+                    <label className="block md:col-span-3">
+                      <span className="block text-xs font-medium mb-1 text-muted-foreground">Notas internas</span>
+                      <textarea rows={2} defaultValue={a.admin_notes ?? ""}
+                        onBlur={e => patch(a.id, { admin_notes: e.target.value || null })}
+                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+                    </label>
+                    <p className="md:col-span-3 text-xs text-muted-foreground">Los cambios se guardan al salir del campo.</p>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
+  );
+}
+
+function NewAppointment({ plans, onClose, onSaved }: { plans: PlanOpt[]; onClose: () => void; onSaved: () => void }) {
+  const [form, setForm] = useState({ name: "", email: "", phone: "", plan_id: "", scheduled_at: "", duration_minutes: 60, admin_notes: "", status: "confirmed" });
+  const [saving, setSaving] = useState(false);
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault(); setSaving(true);
+    const payload = {
+      ...form,
+      plan_id: form.plan_id || null,
+      scheduled_at: form.scheduled_at ? new Date(form.scheduled_at).toISOString() : null,
+      duration_minutes: Number(form.duration_minutes) || 60,
+      admin_notes: form.admin_notes || null,
+    };
+    const { error } = await supabase.from("appointments").insert(payload as any);
+    setSaving(false);
+    if (error) { alert(error.message); return; }
+    onSaved();
+  }
+
+  return (
+    <form onSubmit={save} className="rounded-2xl border border-primary/40 bg-primary/5 p-5 grid gap-3 md:grid-cols-2">
+      <h3 className="md:col-span-2 font-display text-lg">Nueva cita</h3>
+      <input required placeholder="Nombre" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
+        className="rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+      <input required placeholder="Teléfono" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })}
+        className="rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+      <input required type="email" placeholder="Email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })}
+        className="rounded-lg border border-input bg-background px-3 py-2 text-sm md:col-span-2" />
+      <input type="datetime-local" value={form.scheduled_at} onChange={e => setForm({ ...form, scheduled_at: e.target.value })}
+        className="rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+      <input type="number" min={15} step={15} placeholder="Duración" value={form.duration_minutes}
+        onChange={e => setForm({ ...form, duration_minutes: Number(e.target.value) })}
+        className="rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+      <select value={form.plan_id} onChange={e => setForm({ ...form, plan_id: e.target.value })}
+        className="rounded-lg border border-input bg-background px-3 py-2 text-sm">
+        <option value="">Sin plan</option>
+        {plans.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+      </select>
+      <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}
+        className="rounded-lg border border-input bg-background px-3 py-2 text-sm">
+        {Object.entries(STATUS_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+      </select>
+      <textarea rows={2} placeholder="Notas internas" value={form.admin_notes} onChange={e => setForm({ ...form, admin_notes: e.target.value })}
+        className="rounded-lg border border-input bg-background px-3 py-2 text-sm md:col-span-2" />
+      <div className="md:col-span-2 flex justify-end gap-2">
+        <button type="button" onClick={onClose} className="text-xs px-4 py-2 text-muted-foreground hover:text-foreground">Cancelar</button>
+        <button disabled={saving} type="submit" className="rounded-full bg-primary text-primary-foreground px-5 py-2 text-xs font-medium disabled:opacity-50">
+          {saving ? "Guardando…" : "Crear cita"}
+        </button>
+      </div>
+    </form>
   );
 }
 
