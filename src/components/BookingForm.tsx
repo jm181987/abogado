@@ -244,8 +244,9 @@ export function BookingForm({ open, onClose }: { open: boolean; onClose: () => v
                         />
                       </div>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        Se guardará como <b>{normalizePhone(form.country, form.phone || "")}</b>
-                        {c.hint ? ` · ${c.hint}` : ""}
+                        {form.phone.trim()
+                          ? <>Se guardará como <b>{normalizePhone(form.country, form.phone)}</b></>
+                          : c.hint || `Ingresa tu número (prefijo +${form.country})`}
                       </p>
                     </>
                   );
