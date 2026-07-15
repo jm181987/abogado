@@ -247,6 +247,7 @@ function NewAppointment({ plans, onClose, onSaved }: { plans: PlanOpt[]; onClose
     e.preventDefault(); setSaving(true);
     const payload = {
       ...form,
+      full_name: form.name,
       plan_id: form.plan_id || null,
       scheduled_at: form.scheduled_at ? new Date(form.scheduled_at).toISOString() : null,
       duration_minutes: Number(form.duration_minutes) || 60,
