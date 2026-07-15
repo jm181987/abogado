@@ -22,8 +22,7 @@ export function ContentEditor() {
     if (!content) return;
     setSaving(true); setSaved(false);
     const { error } = await supabase.from("site_content")
-      .update({ data: content as any, updated_at: new Date().toISOString() })
-      .eq("lang", lang);
+      .upsert({ lang, data: content as any, updated_at: new Date().toISOString() }, { onConflict: "lang" });
     setSaving(false);
     if (error) { alert(error.message); return; }
     setSaved(true);
