@@ -117,7 +117,25 @@ export function WhatsappTab() {
     if (!cfg) return;
     const next = { ...cfg, ...patch };
     setCfg(next);
-    await supabase.from("whatsapp_config").update(patch).eq("id", true);
+    setBusy("save"); setMsg(null);
+    try {
+      const r = await saveConfig({ data: patch as any });
+      setMsg(r.ok ? { kind: "ok", text: "Guardado ✅" } : { kind: "err", text: r.error });
+    } catch (e) {
+      setMsg({ kind: "err", text: (e as Error).message });
+    } finally { setBusy(null); }
+  }
+
+  async function handleSaveTemplates() {
+    if (!cfg) return;
+    await saveCfg({
+      msg_new_client: cfg.msg_new_client,
+      msg_new_owner: cfg.msg_new_owner,
+      msg_confirmed: cfg.msg_confirmed,
+      msg_cancelled: cfg.msg_cancelled,
+      msg_reschedule: cfg.msg_reschedule,
+      msg_reminder: cfg.msg_reminder,
+    });
   }
 
   async function handleTest() {
