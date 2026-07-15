@@ -5,7 +5,7 @@ type PlanOpt = { id: string; name: string };
 
 export function BookingForm() {
   const [plans, setPlans] = useState<PlanOpt[]>([]);
-  const [form, setForm] = useState({ name: "", email: "", phone: "", plan_id: "", message: "" });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", plan_id: "", preferred_date: "", message: "" });
   const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [err, setErr] = useState<string | null>(null);
 
@@ -18,11 +18,11 @@ export function BookingForm() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setState("sending"); setErr(null);
-    const payload = { ...form, plan_id: form.plan_id || null, status: "pending" as const };
+    const payload = { ...form, plan_id: form.plan_id || null, preferred_date: form.preferred_date || null, status: "pending" as const };
     const { error } = await supabase.from("appointments").insert(payload);
     if (error) { setErr(error.message); setState("error"); return; }
     setState("sent");
-    setForm({ name: "", email: "", phone: "", plan_id: "", message: "" });
+    setForm({ name: "", email: "", phone: "", plan_id: "", preferred_date: "", message: "" });
   }
 
   return (
