@@ -44,21 +44,33 @@ export function BookingForm({ open, onClose }: { open: boolean; onClose: () => v
   useEffect(() => {
     if (!form.date) { setBookedTimes(new Set()); return; }
     setLoadingSlots(true);
-    const start = new Date(`${form.date}T00:00:00`).toISOString();
-    const end = new Date(`${form.date}T23:59:59`).toISOString();
+    // Traer también reservas del día anterior por si su duración se extiende al día seleccionado
+    const start = new Date(`${form.date}T00:00:00`);
+    const end = new Date(`${form.date}T23:59:59`);
+    const queryStart = new Date(start.getTime() - 24 * 60 * 60 * 1000).toISOString();
+    const queryEnd = end.toISOString();
+    const newBookingDuration = 60; // duración por defecto de nuevas reservas
     supabase
       .from("appointments")
-      .select("scheduled_at, status")
-      .gte("scheduled_at", start)
-      .lte("scheduled_at", end)
+      .select("scheduled_at, duration_minutes, status")
+      .gte("scheduled_at", queryStart)
+      .lte("scheduled_at", queryEnd)
       .neq("status", "cancelled")
       .then(({ data }) => {
         const taken = new Set<string>();
-        for (const row of (data as { scheduled_at: string }[]) ?? []) {
-          const d = new Date(row.scheduled_at);
-          const hh = String(d.getHours()).padStart(2, "0");
-          const mm = String(d.getMinutes()).padStart(2, "0");
-          taken.add(`${hh}:${mm}`);
+        const rows = (data as { scheduled_at: string; duration_minutes: number | null }[]) ?? [];
+        for (const slot of TIME_SLOTS) {
+          const slotStart = new Date(`${form.date}T${slot}:00`).getTime();
+          const slotEnd = slotStart + newBookingDuration * 60 * 1000;
+          for (const row of rows) {
+            const bStart = new Date(row.scheduled_at).getTime();
+            const bEnd = bStart + (row.duration_minutes ?? 60) * 60 * 1000;
+            // solape si intervalos se cruzan
+            if (slotStart < bEnd && bStart < slotEnd) {
+              taken.add(slot);
+              break;
+            }
+          }
         }
         setBookedTimes(taken);
         setLoadingSlots(false);
@@ -94,15 +106,26 @@ export function BookingForm({ open, onClose }: { open: boolean; onClose: () => v
     setState("sending");
     const scheduledAt = new Date(`${form.date}T${form.time}:00`).toISOString();
 
-    // Revalidar disponibilidad justo antes de insertar
-    const { data: clash } = await supabase
+    const newDuration = 60;
+    const newStart = new Date(scheduledAt).getTime();
+    const newEnd = newStart + newDuration * 60 * 1000;
+    const rangeStart = new Date(newStart - 24 * 60 * 60 * 1000).toISOString();
+    const rangeEnd = new Date(newEnd).toISOString();
+
+    // Revalidar disponibilidad considerando solape con duración
+    const { data: nearby } = await supabase
       .from("appointments")
-      .select("id")
-      .eq("scheduled_at", scheduledAt)
-      .neq("status", "cancelled")
-      .limit(1);
-    if (clash && clash.length > 0) {
-      setServerErr("Ese horario acaba de ser reservado. Por favor elige otro.");
+      .select("scheduled_at, duration_minutes")
+      .gte("scheduled_at", rangeStart)
+      .lte("scheduled_at", rangeEnd)
+      .neq("status", "cancelled");
+    const clash = (nearby ?? []).some(r => {
+      const bStart = new Date(r.scheduled_at as string).getTime();
+      const bEnd = bStart + ((r.duration_minutes as number | null) ?? 60) * 60 * 1000;
+      return newStart < bEnd && bStart < newEnd;
+    });
+    if (clash) {
+      setServerErr("Ese horario acaba de ser reservado o se solapa con otra reserva. Elige otro.");
       setBookedTimes(prev => new Set(prev).add(form.time));
       setForm(f => ({ ...f, time: "" }));
       setState("error");
