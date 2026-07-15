@@ -114,7 +114,8 @@ export async function evoSendText(name: string, number: string, text: string) {
 }
 
 export function fillTemplate(tpl: string, vars: Record<string, string>): string {
-  return tpl.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, k) => vars[k] ?? "");
+  const normalizedTpl = tpl.replace(/Vizcaya Salud/g, "{{brand}}");
+  return normalizedTpl.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, k) => vars[k] ?? "");
 }
 
 export function formatDateEs(iso: string): { date: string; time: string } {
