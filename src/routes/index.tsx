@@ -9,7 +9,7 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-const WHATS = "https://api.whatsapp.com/send/?phone=56977778778";
+const WHATS = "https://api.whatsapp.com/send/?phone=5555999887766";
 
 function Index() {
   const [lang, setLang] = useState<Lang>("es");
