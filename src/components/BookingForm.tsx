@@ -131,7 +131,7 @@ export function BookingForm({ open, onClose }: { open: boolean; onClose: () => v
       return;
     }
     setState("sending");
-    const scheduledAt = new Date(`${form.date}T${form.time}:00`).toISOString();
+    const scheduledAt = new Date(`${form.date}T${form.time}:00-03:00`).toISOString();
 
     const newDuration = 60;
     const newStart = new Date(scheduledAt).getTime();
