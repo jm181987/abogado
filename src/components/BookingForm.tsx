@@ -13,7 +13,7 @@ const TIME_SLOTS = [
 type CountryCode = "55" | "598" | "56" | "54" | "51";
 const COUNTRIES: { code: CountryCode; label: string; flag: string; placeholder: string; hint: string }[] = [
   { code: "55", label: "Brasil", flag: "🇧🇷", placeholder: "11 98765 4321", hint: "DDD + número (agregamos el 9 si falta)" },
-  { code: "598", label: "Uruguay", flag: "🇺🇾", placeholder: "93 867 429", hint: "Sin el 0 inicial" },
+  { code: "598", label: "Uruguay", flag: "🇺🇾", placeholder: "99123456", hint: "Sin el 0 inicial" },
   { code: "56", label: "Chile", flag: "🇨🇱", placeholder: "9 1234 5678", hint: "" },
   { code: "54", label: "Argentina", flag: "🇦🇷", placeholder: "11 1234 5678", hint: "" },
   { code: "51", label: "Perú", flag: "🇵🇪", placeholder: "912 345 678", hint: "" },
