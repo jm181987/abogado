@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { translations, type Lang } from "@/lib/i18n";
 import heroImg from "@/assets/hero-dental.jpg";
+import { BookingForm } from "@/components/BookingForm";
 
 export const Route = createFileRoute("/")({
   component: Index,
