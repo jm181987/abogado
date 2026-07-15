@@ -141,6 +141,11 @@ export function WhatsappTab() {
       msg_cancelled: cfg.msg_cancelled,
       msg_reschedule: cfg.msg_reschedule,
       msg_reminder: cfg.msg_reminder,
+      msg_new_client_pt: cfg.msg_new_client_pt,
+      msg_confirmed_pt: cfg.msg_confirmed_pt,
+      msg_cancelled_pt: cfg.msg_cancelled_pt,
+      msg_reschedule_pt: cfg.msg_reschedule_pt,
+      msg_reminder_pt: cfg.msg_reminder_pt,
     });
   }
 
