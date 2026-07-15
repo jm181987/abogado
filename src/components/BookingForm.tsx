@@ -93,6 +93,22 @@ export function BookingForm({ open, onClose }: { open: boolean; onClose: () => v
     }
     setState("sending");
     const scheduledAt = new Date(`${form.date}T${form.time}:00`).toISOString();
+
+    // Revalidar disponibilidad justo antes de insertar
+    const { data: clash } = await supabase
+      .from("appointments")
+      .select("id")
+      .eq("scheduled_at", scheduledAt)
+      .neq("status", "cancelled")
+      .limit(1);
+    if (clash && clash.length > 0) {
+      setServerErr("Ese horario acaba de ser reservado. Por favor elige otro.");
+      setBookedTimes(prev => new Set(prev).add(form.time));
+      setForm(f => ({ ...f, time: "" }));
+      setState("error");
+      return;
+    }
+
     const payload = {
       name: parsed.data.name,
       full_name: parsed.data.name,
