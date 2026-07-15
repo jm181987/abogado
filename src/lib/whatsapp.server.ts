@@ -80,6 +80,11 @@ export async function evoLogout(name: string) {
   return evo(`/instance/logout/${encodeURIComponent(name)}`, { method: "DELETE" });
 }
 
+export async function evoDelete(name: string) {
+  return evo(`/instance/delete/${encodeURIComponent(name)}`, { method: "DELETE" });
+}
+
+
 export async function evoSendText(name: string, number: string, text: string) {
   return evo(`/message/sendText/${encodeURIComponent(name)}`, {
     method: "POST",
