@@ -212,6 +212,23 @@ function Index() {
       {/* Booking modal */}
       <BookingForm open={bookingOpen} onClose={() => setBookingOpen(false)} />
 
+      {/* Gallery (opcional, gestionada desde admin) */}
+      {gallery.length > 0 && (
+        <section id="galeria" className="py-20 md:py-28 bg-muted/30">
+          <div className="mx-auto max-w-6xl px-6">
+            <p className="text-xs uppercase tracking-[0.25em] text-primary mb-3">Galería</p>
+            <h2 className="font-display text-3xl md:text-5xl tracking-tight mb-10">Nuestro consultorio</h2>
+            <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+              {gallery.map((url, i) => (
+                <img key={i} src={url} alt="" loading="lazy"
+                  className="w-full aspect-square object-cover rounded-2xl border border-border" />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+
       {/* Contact */}
       <section id="contacto" className="py-24 md:py-32">
 
