@@ -41,11 +41,11 @@ function Index() {
             )}
           </a>
           <div className="hidden md:flex items-center gap-8 text-sm">
-            <a href="#inicio" className="hover:text-primary transition">{t.nav.home}</a>
-            <a href="#planes" className="hover:text-primary transition">{t.nav.plans}</a>
-            <a href="#nosotros" className="hover:text-primary transition">{t.nav.about}</a>
-            <a href="#diferenciadores" className="hover:text-primary transition">{t.nav.diff}</a>
-            <a href="#contacto" className="hover:text-primary transition">{t.nav.contact}</a>
+            <a href="#inicio" className="nav-link hover:text-primary transition">{t.nav.home}</a>
+            <a href="#planes" className="nav-link hover:text-primary transition">{t.nav.plans}</a>
+            <a href="#nosotros" className="nav-link hover:text-primary transition">{t.nav.about}</a>
+            <a href="#diferenciadores" className="nav-link hover:text-primary transition">{t.nav.diff}</a>
+            <a href="#contacto" className="nav-link hover:text-primary transition">{t.nav.contact}</a>
           </div>
           <div className="flex items-center gap-2">
             <div className="hidden sm:flex items-center rounded-full border border-border p-0.5 text-xs">
