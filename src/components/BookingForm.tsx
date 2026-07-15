@@ -10,10 +10,37 @@ const TIME_SLOTS = [
   "17:00", "17:30", "18:00", "18:30",
 ];
 
+type CountryCode = "55" | "598" | "56" | "54" | "51";
+const COUNTRIES: { code: CountryCode; label: string; flag: string; placeholder: string; hint: string }[] = [
+  { code: "55", label: "Brasil", flag: "🇧🇷", placeholder: "11 98765 4321", hint: "DDD + número (agregamos el 9 si falta)" },
+  { code: "598", label: "Uruguay", flag: "🇺🇾", placeholder: "93 867 429", hint: "Sin el 0 inicial" },
+  { code: "56", label: "Chile", flag: "🇨🇱", placeholder: "9 1234 5678", hint: "" },
+  { code: "54", label: "Argentina", flag: "🇦🇷", placeholder: "11 1234 5678", hint: "" },
+  { code: "51", label: "Perú", flag: "🇵🇪", placeholder: "912 345 678", hint: "" },
+];
+
+function normalizePhone(country: CountryCode, raw: string): string {
+  let digits = raw.replace(/\D/g, "");
+  if (country === "598") {
+    // Uruguay: quitar 0 inicial
+    digits = digits.replace(/^0+/, "");
+  } else if (country === "55") {
+    // Brasil: DDD (2) + 9 + número. Insertar 9 si falta tras el DDD.
+    digits = digits.replace(/^0+/, "");
+    if (digits.length >= 3 && digits[2] !== "9") {
+      digits = digits.slice(0, 2) + "9" + digits.slice(2);
+    }
+  } else {
+    digits = digits.replace(/^0+/, "");
+  }
+  return `+${country}${digits}`;
+}
+
 const schema = z.object({
   name: z.string().trim().min(2, "Nombre muy corto").max(100),
   email: z.string().trim().email("Email inválido").max(255),
-  phone: z.string().trim().min(6, "Teléfono inválido").max(30).regex(/^[+\d\s()-]+$/, "Solo números y símbolos"),
+  phone: z.string().trim().min(6, "Teléfono inválido").max(30),
+  country: z.enum(["55", "598", "56", "54", "51"]),
   date: z.string().min(1, "Elige una fecha"),
   time: z.string().min(1, "Elige una hora"),
   plan_id: z.string().optional(),
