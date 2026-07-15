@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { waCreateAndConnect, waStatus, waDisconnect, waTestSend, waResetInstance } from "@/lib/whatsapp.functions";
+import { waCreateAndConnect, waStatus, waDisconnect, waTestSend, waResetInstance, waSaveConfig } from "@/lib/whatsapp.functions";
 
 type Cfg = {
   instance_name: string;
