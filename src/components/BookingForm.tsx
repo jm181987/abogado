@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import { notifyNewBooking } from "@/lib/booking-notify.functions";
 
 type PlanOpt = { id: string; name: string };
 
@@ -170,10 +171,14 @@ export function BookingForm({ open, onClose }: { open: boolean; onClose: () => v
       message: form.message.trim() || null,
       status: "pending" as const,
     };
-    const { error } = await supabase.from("appointments").insert(payload);
+    const { data: inserted, error } = await supabase.from("appointments").insert(payload).select("id").single();
     if (error) { setServerErr(error.message); setState("error"); return; }
     setState("sent");
     setForm({ name: "", email: "", phone: "", country: "55", plan_id: "", date: "", time: "", message: "" });
+    // Notificar por WhatsApp en segundo plano (no bloquea el flujo del usuario)
+    if (inserted?.id) {
+      notifyNewBooking({ data: { appointmentId: inserted.id } }).catch(err => console.warn("[wa notify]", err));
+    }
   }
 
   function handleClose() {

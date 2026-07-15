@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiPublicCronWhatsappRemindersRouteImport } from './routes/api/public/cron/whatsapp-reminders'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -28,35 +29,50 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicCronWhatsappRemindersRoute =
+  ApiPublicCronWhatsappRemindersRouteImport.update({
+    id: '/api/public/cron/whatsapp-reminders',
+    path: '/api/public/cron/whatsapp-reminders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/api/public/cron/whatsapp-reminders': typeof ApiPublicCronWhatsappRemindersRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/api/public/cron/whatsapp-reminders': typeof ApiPublicCronWhatsappRemindersRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/api/public/cron/whatsapp-reminders': typeof ApiPublicCronWhatsappRemindersRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/admin' | '/auth'
+  fullPaths: '/' | '/admin' | '/auth' | '/api/public/cron/whatsapp-reminders'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/auth'
-  id: '__root__' | '/' | '/admin' | '/auth'
+  to: '/' | '/admin' | '/auth' | '/api/public/cron/whatsapp-reminders'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/auth'
+    | '/api/public/cron/whatsapp-reminders'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
+  ApiPublicCronWhatsappRemindersRoute: typeof ApiPublicCronWhatsappRemindersRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -82,6 +98,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/whatsapp-reminders': {
+      id: '/api/public/cron/whatsapp-reminders'
+      path: '/api/public/cron/whatsapp-reminders'
+      fullPath: '/api/public/cron/whatsapp-reminders'
+      preLoaderRoute: typeof ApiPublicCronWhatsappRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -89,6 +112,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
+  ApiPublicCronWhatsappRemindersRoute: ApiPublicCronWhatsappRemindersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

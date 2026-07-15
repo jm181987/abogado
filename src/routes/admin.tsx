@@ -1,10 +1,13 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { ContentEditor } from "@/components/admin/ContentEditor";
+import { WhatsappTab } from "@/components/admin/WhatsappTab";
 import { useSiteContent } from "@/lib/site-content";
+import { waNotifyStatusChange } from "@/lib/whatsapp.functions";
 
 export const Route = createFileRoute("/admin")({
   ssr: false,
@@ -20,7 +23,7 @@ type Photo = { id: string; slot: string; storage_path: string; alt_es: string | 
 function AdminPage() {
   const { user, isAdmin, loading, signOut } = useAuth();
   const navigate = useNavigate();
-  const [tab, setTab] = useState<"appointments" | "content" | "plans" | "photos">("appointments");
+  const [tab, setTab] = useState<"appointments" | "content" | "plans" | "photos" | "whatsapp">("appointments");
   const { data: siteContent } = useSiteContent("es");
   const brand = siteContent?.brand ?? { name1: "Vizcaya", name2: "Salud", logoUrl: "" };
 
@@ -67,10 +70,10 @@ VALUES ('${user.id}', 'admin');`}
           </div>
         </div>
         <nav className="mx-auto max-w-7xl px-6 flex gap-1 border-t border-border">
-          {(["appointments", "content", "plans", "photos"] as const).map(t => (
+          {(["appointments", "content", "plans", "photos", "whatsapp"] as const).map(t => (
             <button key={t} onClick={() => setTab(t)}
               className={`px-4 py-3 text-sm border-b-2 transition ${tab === t ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
-              {t === "appointments" ? "Citas" : t === "content" ? "Contenido" : t === "plans" ? "Planes" : "Fotos"}
+              {t === "appointments" ? "Citas" : t === "content" ? "Contenido" : t === "plans" ? "Planes" : t === "photos" ? "Fotos" : "WhatsApp"}
             </button>
           ))}
         </nav>
@@ -80,6 +83,7 @@ VALUES ('${user.id}', 'admin');`}
         {tab === "content" && <ContentEditor />}
         {tab === "plans" && <PlansTab />}
         {tab === "photos" && <PhotosTab />}
+        {tab === "whatsapp" && <WhatsappTab />}
       </main>
     </div>
   );
@@ -107,6 +111,7 @@ function AppointmentsTab() {
   const [filter, setFilter] = useState<"upcoming" | "today" | "past" | "all">("upcoming");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const notifyChange = useServerFn(waNotifyStatusChange);
 
   async function load() {
     setLoading(true);
@@ -121,7 +126,17 @@ function AppointmentsTab() {
   useEffect(() => { load(); }, []);
 
   async function patch(id: string, changes: Partial<Appointment>) {
+    const prev = items.find(a => a.id === id);
     await supabase.from("appointments").update(changes as any).eq("id", id);
+    // Disparar notificaciones de WhatsApp según lo que cambió
+    try {
+      if (changes.status && prev && changes.status !== prev.status) {
+        if (changes.status === "confirmed") await notifyChange({ data: { appointmentId: id, kind: "confirmed" } });
+        else if (changes.status === "cancelled") await notifyChange({ data: { appointmentId: id, kind: "cancelled" } });
+      } else if (changes.scheduled_at && prev && changes.scheduled_at !== prev.scheduled_at) {
+        await notifyChange({ data: { appointmentId: id, kind: "reschedule" } });
+      }
+    } catch (e) { console.warn("[wa notify]", e); }
     load();
   }
   async function remove(id: string) {
