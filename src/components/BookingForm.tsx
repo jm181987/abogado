@@ -10,10 +10,37 @@ const TIME_SLOTS = [
   "17:00", "17:30", "18:00", "18:30",
 ];
 
+type CountryCode = "55" | "598" | "56" | "54" | "51";
+const COUNTRIES: { code: CountryCode; label: string; flag: string; placeholder: string; hint: string }[] = [
+  { code: "55", label: "Brasil", flag: "🇧🇷", placeholder: "11 98765 4321", hint: "DDD + número (agregamos el 9 si falta)" },
+  { code: "598", label: "Uruguay", flag: "🇺🇾", placeholder: "93 867 429", hint: "Sin el 0 inicial" },
+  { code: "56", label: "Chile", flag: "🇨🇱", placeholder: "9 1234 5678", hint: "" },
+  { code: "54", label: "Argentina", flag: "🇦🇷", placeholder: "11 1234 5678", hint: "" },
+  { code: "51", label: "Perú", flag: "🇵🇪", placeholder: "912 345 678", hint: "" },
+];
+
+function normalizePhone(country: CountryCode, raw: string): string {
+  let digits = raw.replace(/\D/g, "");
+  if (country === "598") {
+    // Uruguay: quitar 0 inicial
+    digits = digits.replace(/^0+/, "");
+  } else if (country === "55") {
+    // Brasil: DDD (2) + 9 + número. Insertar 9 si falta tras el DDD.
+    digits = digits.replace(/^0+/, "");
+    if (digits.length >= 3 && digits[2] !== "9") {
+      digits = digits.slice(0, 2) + "9" + digits.slice(2);
+    }
+  } else {
+    digits = digits.replace(/^0+/, "");
+  }
+  return `+${country}${digits}`;
+}
+
 const schema = z.object({
   name: z.string().trim().min(2, "Nombre muy corto").max(100),
   email: z.string().trim().email("Email inválido").max(255),
-  phone: z.string().trim().min(6, "Teléfono inválido").max(30).regex(/^[+\d\s()-]+$/, "Solo números y símbolos"),
+  phone: z.string().trim().min(6, "Teléfono inválido").max(30),
+  country: z.enum(["55", "598", "56", "54", "51"]),
   date: z.string().min(1, "Elige una fecha"),
   time: z.string().min(1, "Elige una hora"),
   plan_id: z.string().optional(),
@@ -28,7 +55,7 @@ function todayStr() {
 
 export function BookingForm({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [plans, setPlans] = useState<PlanOpt[]>([]);
-  const [form, setForm] = useState({ name: "", email: "", phone: "", plan_id: "", date: "", time: "", message: "" });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", country: "55" as CountryCode, plan_id: "", date: "", time: "", message: "" });
   const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [serverErr, setServerErr] = useState<string | null>(null);
@@ -136,7 +163,7 @@ export function BookingForm({ open, onClose }: { open: boolean; onClose: () => v
       name: parsed.data.name,
       full_name: parsed.data.name,
       email: parsed.data.email,
-      phone: parsed.data.phone,
+      phone: normalizePhone(form.country, form.phone),
       plan_id: form.plan_id || null,
       scheduled_at: scheduledAt,
       duration_minutes: 60,
@@ -146,7 +173,7 @@ export function BookingForm({ open, onClose }: { open: boolean; onClose: () => v
     const { error } = await supabase.from("appointments").insert(payload);
     if (error) { setServerErr(error.message); setState("error"); return; }
     setState("sent");
-    setForm({ name: "", email: "", phone: "", plan_id: "", date: "", time: "", message: "" });
+    setForm({ name: "", email: "", phone: "", country: "55", plan_id: "", date: "", time: "", message: "" });
   }
 
   function handleClose() {
@@ -192,10 +219,37 @@ export function BookingForm({ open, onClose }: { open: boolean; onClose: () => v
                 <input maxLength={100} required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
                   className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm" />
               </Field>
-              <Field label="WhatsApp" error={errors.phone}>
-                <input maxLength={30} required inputMode="tel" placeholder="+56 9 ..."
-                  value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })}
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm" />
+              <Field label="WhatsApp" full error={errors.phone}>
+                {(() => {
+                  const c = COUNTRIES.find(x => x.code === form.country)!;
+                  return (
+                    <>
+                      <div className="flex gap-2">
+                        <select
+                          value={form.country}
+                          onChange={e => setForm({ ...form, country: e.target.value as CountryCode })}
+                          className="rounded-lg border border-input bg-background px-2 py-2.5 text-sm"
+                          aria-label="País"
+                        >
+                          {COUNTRIES.map(co => (
+                            <option key={co.code} value={co.code}>{co.flag} +{co.code}</option>
+                          ))}
+                        </select>
+                        <input
+                          maxLength={30} required inputMode="tel"
+                          placeholder={c.placeholder}
+                          value={form.phone}
+                          onChange={e => setForm({ ...form, phone: e.target.value.replace(/[^\d\s()-]/g, "") })}
+                          className="flex-1 rounded-lg border border-input bg-background px-3 py-2.5 text-sm"
+                        />
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Se guardará como <b>{normalizePhone(form.country, form.phone || "")}</b>
+                        {c.hint ? ` · ${c.hint}` : ""}
+                      </p>
+                    </>
+                  );
+                })()}
               </Field>
               <Field label="Email" full error={errors.email}>
                 <input maxLength={255} required type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })}
