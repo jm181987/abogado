@@ -245,7 +245,7 @@ function Index() {
             <div>
               <h3 className="font-display text-xl mb-3">{t.contact.whats}</h3>
               <a href={WHATS} target="_blank" rel="noreferrer" className="text-primary hover:underline text-sm">
-                +55 55 99988 7766
+                {t.whatsapp?.display || "+55 55 99988 7766"}
               </a>
             </div>
           </div>
