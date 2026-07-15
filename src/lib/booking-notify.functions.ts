@@ -9,7 +9,7 @@ export const notifyNewBooking = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ appointmentId: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     const { createClient } = await import("@supabase/supabase-js");
-    const { evoSendText, fillTemplate, formatDateEs, getBrandInfo } = await import("./whatsapp.server");
+    const { evoSendText, fillTemplate, formatDateForLang, getBrandInfo, pickClientLang, pickTemplate } = await import("./whatsapp.server");
 
     const admin = createClient(
       process.env.APP_SUPABASE_URL!,
@@ -18,7 +18,7 @@ export const notifyNewBooking = createServerFn({ method: "POST" })
     );
 
     const { data: appt } = await admin.from("appointments")
-      .select("id, name, phone, scheduled_at, created_at, plans:plan_id(name_es)")
+      .select("id, name, phone, scheduled_at, created_at, plans:plan_id(name_es, name_pt)")
       .eq("id", data.appointmentId).maybeSingle();
     if (!appt || !appt.scheduled_at) return { ok: false as const, error: "Cita no encontrada" };
 
@@ -29,24 +29,36 @@ export const notifyNewBooking = createServerFn({ method: "POST" })
     if (!cfg?.connected) return { ok: false as const, error: "WhatsApp no conectado" };
 
     const brand = await getBrandInfo(admin);
-    const { date, time } = formatDateEs(appt.scheduled_at);
-    const vars = {
+    const clientLang = pickClientLang(appt.phone);
+    const planName = clientLang === "pt"
+      ? ((appt as any).plans?.name_pt ?? (appt as any).plans?.name_es ?? "Sem preferência")
+      : ((appt as any).plans?.name_es ?? "Sin preferencia");
+    const { date: cDate, time: cTime } = formatDateForLang(appt.scheduled_at, clientLang);
+    const clientVars = {
       name: appt.name ?? "",
       phone: appt.phone ?? "",
-      date, time,
-      plan: (appt as any).plans?.name_es ?? "Sin preferencia",
+      date: cDate, time: cTime,
+      plan: planName,
       brand: brand.name,
+    };
+    // Dueño: siempre en ES
+    const { date: oDate, time: oTime } = formatDateForLang(appt.scheduled_at, "es");
+    const ownerVars = {
+      ...clientVars,
+      date: oDate, time: oTime,
+      plan: (appt as any).plans?.name_es ?? "Sin preferencia",
     };
 
     const results = { client: false, owner: false, errors: [] as string[] };
     try {
-      await evoSendText(brand.slug, appt.phone, fillTemplate(cfg.msg_new_client, vars));
+      const tpl = pickTemplate(cfg as any, "msg_new_client", clientLang);
+      await evoSendText(brand.slug, appt.phone, fillTemplate(tpl, clientVars));
       results.client = true;
     } catch (e) { results.errors.push(`cliente: ${(e as Error).message}`); }
 
     if (cfg.owner_phone) {
       try {
-        await evoSendText(brand.slug, cfg.owner_phone, fillTemplate(cfg.msg_new_owner, vars));
+        await evoSendText(brand.slug, cfg.owner_phone, fillTemplate(cfg.msg_new_owner, ownerVars));
         results.owner = true;
       } catch (e) { results.errors.push(`dueño: ${(e as Error).message}`); }
     }
