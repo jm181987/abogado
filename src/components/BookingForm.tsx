@@ -169,10 +169,23 @@ export function BookingForm({ open, onClose }: { open: boolean; onClose: () => v
               </Field>
               <Field label="Hora" error={errors.time}>
                 <select required value={form.time} onChange={e => setForm({ ...form, time: e.target.value })}
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm">
-                  <option value="">Selecciona una hora</option>
-                  {TIME_SLOTS.map(s => <option key={s} value={s}>{s} hrs</option>)}
+                  disabled={!form.date || loadingSlots}
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm disabled:opacity-60">
+                  <option value="">
+                    {!form.date ? "Elige una fecha primero" : loadingSlots ? "Cargando horarios…" : "Selecciona una hora"}
+                  </option>
+                  {TIME_SLOTS.map(s => {
+                    const taken = bookedTimes.has(s);
+                    return (
+                      <option key={s} value={s} disabled={taken}>
+                        {s} hrs{taken ? " — no disponible" : ""}
+                      </option>
+                    );
+                  })}
                 </select>
+                {form.date && !loadingSlots && bookedTimes.size > 0 && (
+                  <p className="mt-1 text-xs text-muted-foreground">{bookedTimes.size} horario(s) ya reservados ese día.</p>
+                )}
               </Field>
               <Field label="Plan de interés (opcional)" full>
                 <select value={form.plan_id} onChange={e => setForm({ ...form, plan_id: e.target.value })}
