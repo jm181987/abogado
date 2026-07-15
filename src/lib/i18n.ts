@@ -133,6 +133,8 @@ export const translations = {
       whats: "WhatsApp",
     },
     footer: "Odontología consciente · Frontera de la Paz",
+    brand: { name1: "Vizcaya", name2: "Salud", logoUrl: "" },
+    whatsapp: { number: "5555999887766", display: "+55 55 99988 7766" },
   },
   pt: {
     nav: {
