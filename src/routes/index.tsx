@@ -199,8 +199,8 @@ function Index() {
         </div>
       </section>
 
-      {/* Contact */}
-      <BookingForm />
+      {/* Booking modal */}
+      <BookingForm open={bookingOpen} onClose={() => setBookingOpen(false)} />
 
       {/* Contact */}
       <section id="contacto" className="py-24 md:py-32">
