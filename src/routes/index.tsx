@@ -3,6 +3,7 @@ import { useState } from "react";
 import { translations, type Lang } from "@/lib/i18n";
 import heroImg from "@/assets/hero-dental.jpg";
 import { BookingForm } from "@/components/BookingForm";
+import { useSiteContent } from "@/lib/site-content";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -12,7 +13,8 @@ const WHATS = "https://api.whatsapp.com/send/?phone=56977778778";
 
 function Index() {
   const [lang, setLang] = useState<Lang>("es");
-  const t = translations[lang];
+  const { data: t = translations[lang] } = useSiteContent(lang);
+
 
   return (
     <div className="min-h-screen bg-background font-sans text-foreground antialiased">
