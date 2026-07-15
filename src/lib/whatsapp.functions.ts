@@ -62,6 +62,29 @@ export const waDisconnect = createServerFn({ method: "POST" }).handler(async () 
   return { ok: true as const };
 });
 
+export const waSaveConfig = createServerFn({ method: "POST" })
+  .inputValidator((d) => z.object({
+    owner_phone: z.string().trim().max(30).nullable().optional(),
+    msg_new_client: z.string().max(2000).optional(),
+    msg_new_owner: z.string().max(2000).optional(),
+    msg_confirmed: z.string().max(2000).optional(),
+    msg_cancelled: z.string().max(2000).optional(),
+    msg_reschedule: z.string().max(2000).optional(),
+    msg_reminder: z.string().max(2000).optional(),
+  }).parse(d))
+  .handler(async ({ data }) => {
+    const { requireAdmin, getAdminSupabase } = await import("./admin-auth.server");
+    await requireAdmin();
+    const admin = getAdminSupabase();
+    const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    for (const [k, v] of Object.entries(data)) {
+      if (v !== undefined) patch[k] = v;
+    }
+    const { error } = await admin.from("whatsapp_config").update(patch).eq("id", true);
+    if (error) return { ok: false as const, error: error.message };
+    return { ok: true as const };
+  });
+
 /** Borra la instancia en Evolution y la vuelve a crear. Útil para recuperarse
  *  de estados rotos (error 1003, sesión Baileys corrupta, cambio de marca). */
 export const waResetInstance = createServerFn({ method: "POST" }).handler(async () => {
