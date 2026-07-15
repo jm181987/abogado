@@ -158,7 +158,12 @@ export function WhatsappTab() {
               Desconectar
             </button>
           )}
+          <button disabled={!!busy} onClick={handleReset}
+            className="rounded-full border border-amber-500/40 text-amber-700 dark:text-amber-400 px-4 py-2 text-sm disabled:opacity-50">
+            {busy === "reset" ? "Reiniciando…" : "Reiniciar instancia"}
+          </button>
         </div>
+
         {msg && (
           <p className={`mt-3 text-sm ${msg.kind === "ok" ? "text-green-700 dark:text-green-400" : "text-destructive"}`}>{msg.text}</p>
         )}
