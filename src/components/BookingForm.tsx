@@ -61,12 +61,11 @@ export function BookingForm({ open, onClose }: { open: boolean; onClose: () => v
         const rows = (data as { scheduled_at: string; duration_minutes: number | null }[]) ?? [];
         for (const slot of TIME_SLOTS) {
           const slotStart = new Date(`${form.date}T${slot}:00`).getTime();
-          const slotEnd = slotStart + newBookingDuration * 60 * 1000;
           for (const row of rows) {
             const bStart = new Date(row.scheduled_at).getTime();
             const bEnd = bStart + (row.duration_minutes ?? 60) * 60 * 1000;
-            // solape si intervalos se cruzan
-            if (slotStart < bEnd && bStart < slotEnd) {
+            // bloquear solo si el inicio del slot cae dentro de una reserva existente
+            if (slotStart >= bStart && slotStart < bEnd) {
               taken.add(slot);
               break;
             }
@@ -122,7 +121,8 @@ export function BookingForm({ open, onClose }: { open: boolean; onClose: () => v
     const clash = (nearby ?? []).some(r => {
       const bStart = new Date(r.scheduled_at as string).getTime();
       const bEnd = bStart + ((r.duration_minutes as number | null) ?? 60) * 60 * 1000;
-      return newStart < bEnd && bStart < newEnd;
+      // el inicio de la nueva reserva cae dentro de una existente
+      return newStart >= bStart && newStart < bEnd;
     });
     if (clash) {
       setServerErr("Ese horario acaba de ser reservado o se solapa con otra reserva. Elige otro.");
