@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { waCreateAndConnect, waStatus, waDisconnect, waTestSend, waResetInstance } from "@/lib/whatsapp.functions";
+import { waCreateAndConnect, waStatus, waDisconnect, waTestSend, waResetInstance, waSaveConfig } from "@/lib/whatsapp.functions";
 
 type Cfg = {
   instance_name: string;
@@ -39,6 +39,7 @@ export function WhatsappTab() {
   const disconnect = useServerFn(waDisconnect);
   const testSend = useServerFn(waTestSend);
   const resetInstance = useServerFn(waResetInstance);
+  const saveConfig = useServerFn(waSaveConfig);
 
 
   async function loadCfg() {
@@ -116,7 +117,25 @@ export function WhatsappTab() {
     if (!cfg) return;
     const next = { ...cfg, ...patch };
     setCfg(next);
-    await supabase.from("whatsapp_config").update(patch).eq("id", true);
+    setBusy("save"); setMsg(null);
+    try {
+      const r = await saveConfig({ data: patch as any });
+      setMsg(r.ok ? { kind: "ok", text: "Guardado ✅" } : { kind: "err", text: r.error });
+    } catch (e) {
+      setMsg({ kind: "err", text: (e as Error).message });
+    } finally { setBusy(null); }
+  }
+
+  async function handleSaveTemplates() {
+    if (!cfg) return;
+    await saveCfg({
+      msg_new_client: cfg.msg_new_client,
+      msg_new_owner: cfg.msg_new_owner,
+      msg_confirmed: cfg.msg_confirmed,
+      msg_cancelled: cfg.msg_cancelled,
+      msg_reschedule: cfg.msg_reschedule,
+      msg_reminder: cfg.msg_reminder,
+    });
   }
 
   async function handleTest() {
@@ -207,7 +226,7 @@ export function WhatsappTab() {
       {/* Plantillas */}
       <section className="rounded-2xl border border-border bg-card p-6">
         <h3 className="font-display text-xl mb-1">Plantillas de mensajes</h3>
-        <p className="text-sm text-muted-foreground mb-4">Se guardan al salir del campo.</p>
+        <p className="text-sm text-muted-foreground mb-4">Usa variables entre llaves. Pulsa <b>Guardar plantillas</b> para aplicar los cambios.</p>
         <div className="grid gap-4">
           {TEMPLATE_FIELDS.map(f => (
             <label key={f.key} className="block">
@@ -217,10 +236,19 @@ export function WhatsappTab() {
               </div>
               <textarea rows={3} value={cfg[f.key] as string}
                 onChange={(e) => setCfg({ ...cfg, [f.key]: e.target.value })}
-                onBlur={(e) => saveCfg({ [f.key]: e.target.value } as Partial<Cfg>)}
                 className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm font-mono" />
             </label>
           ))}
+        </div>
+        <div className="mt-4 flex items-center gap-3">
+          <button disabled={!!busy} onClick={handleSaveTemplates}
+            className="rounded-full bg-primary text-primary-foreground px-4 py-2 text-sm disabled:opacity-50">
+            {busy === "save" ? "Guardando…" : "Guardar plantillas"}
+          </button>
+          <button disabled={!!busy} onClick={loadCfg}
+            className="rounded-full border border-input px-4 py-2 text-sm disabled:opacity-50">
+            Descartar cambios
+          </button>
         </div>
       </section>
 
