@@ -573,12 +573,12 @@ function PhotosTab() {
           return (
             <div key={p.id} className={`rounded-2xl overflow-hidden border bg-card ${isHero ? "border-primary ring-2 ring-primary/30" : "border-border"}`}>
               <div className="relative">
-                <img src={url} alt={p.title ?? ""} className="w-full aspect-square object-cover" />
+                <img src={url} alt={p.alt_es ?? ""} className="w-full aspect-square object-cover" />
                 {isHero && <span className="absolute top-2 left-2 rounded-full bg-primary text-primary-foreground text-[10px] px-2 py-0.5">Hero</span>}
                 {inGallery && <span className="absolute top-2 right-2 rounded-full bg-foreground text-background text-[10px] px-2 py-0.5">Galería</span>}
               </div>
               <div className="p-3 space-y-2">
-                <p className="text-xs truncate">{p.title || p.storage_path}</p>
+                <p className="text-xs truncate">{p.alt_es || p.storage_path}</p>
                 <div className="flex flex-wrap gap-2 text-xs">
                   <button onClick={() => useAsHero(p)} disabled={isHero || savingKey === `hero-${p.id}`}
                     className="rounded-full bg-primary text-primary-foreground px-3 py-1 disabled:opacity-50">
