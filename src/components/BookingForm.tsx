@@ -106,15 +106,26 @@ export function BookingForm({ open, onClose }: { open: boolean; onClose: () => v
     setState("sending");
     const scheduledAt = new Date(`${form.date}T${form.time}:00`).toISOString();
 
-    // Revalidar disponibilidad justo antes de insertar
-    const { data: clash } = await supabase
+    const newDuration = 60;
+    const newStart = new Date(scheduledAt).getTime();
+    const newEnd = newStart + newDuration * 60 * 1000;
+    const rangeStart = new Date(newStart - 24 * 60 * 60 * 1000).toISOString();
+    const rangeEnd = new Date(newEnd).toISOString();
+
+    // Revalidar disponibilidad considerando solape con duración
+    const { data: nearby } = await supabase
       .from("appointments")
-      .select("id")
-      .eq("scheduled_at", scheduledAt)
-      .neq("status", "cancelled")
-      .limit(1);
-    if (clash && clash.length > 0) {
-      setServerErr("Ese horario acaba de ser reservado. Por favor elige otro.");
+      .select("scheduled_at, duration_minutes")
+      .gte("scheduled_at", rangeStart)
+      .lte("scheduled_at", rangeEnd)
+      .neq("status", "cancelled");
+    const clash = (nearby ?? []).some(r => {
+      const bStart = new Date(r.scheduled_at as string).getTime();
+      const bEnd = bStart + ((r.duration_minutes as number | null) ?? 60) * 60 * 1000;
+      return newStart < bEnd && bStart < newEnd;
+    });
+    if (clash) {
+      setServerErr("Ese horario acaba de ser reservado o se solapa con otra reserva. Elige otro.");
       setBookedTimes(prev => new Set(prev).add(form.time));
       setForm(f => ({ ...f, time: "" }));
       setState("error");
