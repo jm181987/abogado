@@ -88,7 +88,7 @@ export function BookingForm({ open, onClose }: { open: boolean; onClose: () => v
         const taken = new Set<string>();
         const rows = (data as { scheduled_at: string; duration_minutes: number | null }[]) ?? [];
         for (const slot of TIME_SLOTS) {
-          const slotStart = new Date(`${form.date}T${slot}:00`).getTime();
+          const slotStart = new Date(`${form.date}T${slot}:00-03:00`).getTime();
           for (const row of rows) {
             const bStart = new Date(row.scheduled_at).getTime();
             const bEnd = bStart + (row.duration_minutes ?? 60) * 60 * 1000;
