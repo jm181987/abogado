@@ -87,6 +87,24 @@ export function ContentEditor() {
         </div>
       </div>
 
+      {/* Brand & WhatsApp */}
+      <Section title="Marca & WhatsApp">
+        <p className="text-xs text-muted-foreground mb-3">Nombre del sistema, logo y número de WhatsApp usados en toda la web.</p>
+        <Grid>
+          <Field label="Nombre principal" v={get("brand.name1")} on={v => set("brand.name1", v)} />
+          <Field label="Nombre secundario (itálico)" v={get("brand.name2")} on={v => set("brand.name2", v)} />
+          <Field label="URL del logo (opcional, PNG/SVG)" v={get("brand.logoUrl")} on={v => set("brand.logoUrl", v)} full />
+          <Field label="WhatsApp — solo dígitos (ej: 5555999887766)" v={get("whatsapp.number")} on={v => set("whatsapp.number", v)} />
+          <Field label="WhatsApp — cómo se muestra (ej: +55 55 99988 7766)" v={get("whatsapp.display")} on={v => set("whatsapp.display", v)} />
+        </Grid>
+        {get("brand.logoUrl") && (
+          <div className="mt-3 flex items-center gap-3 rounded-lg border border-border bg-muted/40 p-3">
+            <span className="text-xs text-muted-foreground">Vista previa:</span>
+            <img src={get("brand.logoUrl")} alt="logo" className="h-10 w-auto" onError={(e) => (e.currentTarget.style.display = "none")} />
+          </div>
+        )}
+      </Section>
+
       {/* Nav */}
       <Section title="Navegación">
         <Grid>
