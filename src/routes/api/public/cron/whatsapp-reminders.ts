@@ -55,7 +55,7 @@ export const Route = createFileRoute("/api/public/cron/whatsapp-reminders")({
           };
           try {
             const tpl = pickTemplate(cfg as any, "msg_reminder", lang);
-            await evoSendText(brand.slug, a.phone, fillTemplate(tpl, vars));
+            await evoSendText(brand.name, a.phone, fillTemplate(tpl, vars));
             await admin.from("appointments").update({ reminder_sent_at: new Date().toISOString() }).eq("id", a.id);
             results.push({ id: a.id, ok: true });
           } catch (e) {
