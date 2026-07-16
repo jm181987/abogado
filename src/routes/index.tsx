@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { translations, type Lang } from "@/lib/i18n";
-import heroImg from "@/assets/hero-dental.jpg";
+import heroImg from "@/assets/hero-law.jpg";
 import { BookingForm } from "@/components/BookingForm";
 import { useSiteContent } from "@/lib/site-content";
 import { Reveal } from "@/components/Reveal";
@@ -92,7 +92,7 @@ function Index() {
             </>
           ) : (
             <>
-              <img src={heroSrc} alt="Clínica Vizcaya Salud" className="h-full w-full object-cover object-center" width={1600} height={1200} />
+              <img src={heroSrc} alt="Estudio Jurídico Vizcaya Abogados" className="h-full w-full object-cover object-center" width={1600} height={1200} />
               <div className={`absolute inset-0 ${hasCustomHero ? "bg-gradient-to-r from-background via-background/55 to-background/20" : "bg-gradient-to-r from-background via-background/85 to-background/40"}`} />
             </>
           )}
