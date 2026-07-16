@@ -170,9 +170,17 @@ export function slugifyBrand(s: string): string {
     .slice(0, 40) || "instance";
 }
 
+/** Normaliza el nombre de la marca para usarlo como nombre de instancia en Evolution:
+ *  quita acentos, reemplaza espacios/caracteres inválidos por "-", conserva mayúsculas. */
+export function normalizeInstanceName(s: string): string {
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^A-Za-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "")
+    .slice(0, 40) || "instance";
+}
+
 /** Lee la marca guardada en site_content. Prueba varios idiomas y devuelve
  *  el primer nombre no vacío encontrado. Si no hay nada guardado, devuelve null. */
-export async function getBrandInfo(admin: any): Promise<{ name: string; slug: string }> {
+export async function getBrandInfo(admin: any): Promise<{ name: string; slug: string; instance: string }> {
   try {
     const { data: rows } = await admin.from("site_content").select("lang, data");
     const list = Array.isArray(rows) ? rows : [];
@@ -183,13 +191,13 @@ export async function getBrandInfo(admin: any): Promise<{ name: string; slug: st
       const n1 = String(b.name1 ?? "").trim();
       const n2 = String(b.name2 ?? "").trim();
       const name = [n1, n2].filter(Boolean).join(" ");
-      if (name) return { name, slug: slugifyBrand(name) };
+      if (name) return { name, slug: slugifyBrand(name), instance: normalizeInstanceName(name) };
     }
   } catch (e) {
     console.warn("[wa] getBrandInfo:", (e as Error).message);
   }
   // Sin marca configurada: nombre neutro
-  return { name: "Reservas", slug: "reservas" };
+  return { name: "Reservas", slug: "reservas", instance: "Reservas" };
 }
 
 
