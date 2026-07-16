@@ -7,7 +7,7 @@ export const waCreateAndConnect = createServerFn({ method: "POST" }).handler(asy
   await requireAdmin();
   const admin = getAdminSupabase();
   const brand = await getBrandInfo(admin);
-  const name = brand.slug;
+  const name = brand.name;
   try {
     const exists = await evoInstanceExists(name);
     if (!exists) await evoCreateInstance(name);
@@ -31,7 +31,7 @@ export const waStatus = createServerFn({ method: "POST" }).handler(async () => {
   await requireAdmin();
   const admin = getAdminSupabase();
   const brand = await getBrandInfo(admin);
-  const name = brand.slug;
+  const name = brand.name;
   try {
     const state = await evoState(name);
     await admin.from("whatsapp_config").update({
@@ -52,7 +52,7 @@ export const waDisconnect = createServerFn({ method: "POST" }).handler(async () 
   await requireAdmin();
   const admin = getAdminSupabase();
   const brand = await getBrandInfo(admin);
-  const name = brand.slug;
+  const name = brand.name;
   try {
     await evoLogout(name);
   } catch (e) {
@@ -99,7 +99,7 @@ export const waResetInstance = createServerFn({ method: "POST" }).handler(async 
   await requireAdmin();
   const admin = getAdminSupabase();
   const brand = await getBrandInfo(admin);
-  const name = brand.slug;
+  const name = brand.name;
 
   // Intentar logout + delete de la instancia actual (aunque no exista)
   try { await evoLogout(name); } catch (e) { console.warn("[wa] reset/logout:", (e as Error).message); }
@@ -138,7 +138,7 @@ export const waTestSend = createServerFn({ method: "POST" })
     await requireAdmin();
     const admin = getAdminSupabase();
     const brand = await getBrandInfo(admin);
-    const name = brand.slug;
+    const name = brand.name;
     try {
       await evoSendText(name, data.to, data.text);
       return { ok: true as const };
@@ -181,7 +181,7 @@ export const waNotifyStatusChange = createServerFn({ method: "POST" })
       : "msg_reschedule";
     const tpl = pickTemplate(cfg as any, baseKey, lang);
     try {
-      await evoSendText(brand.slug, appt.phone, fillTemplate(tpl, vars));
+      await evoSendText(brand.name, appt.phone, fillTemplate(tpl, vars));
       return { ok: true as const };
     } catch (e) {
       console.error("[wa] notify status:", (e as Error).message);
