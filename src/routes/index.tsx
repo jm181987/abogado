@@ -28,6 +28,7 @@ function Index() {
 
   return (
     <div className="min-h-screen bg-background font-sans text-foreground antialiased">
+      <ThemeInjector theme={(t as any).theme} />
       {/* Nav */}
       <header className="fixed top-0 z-50 w-full backdrop-blur-md bg-background/70 border-b border-border/50">
         <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
