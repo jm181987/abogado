@@ -5,6 +5,7 @@ import heroImg from "@/assets/hero-law.jpg";
 import { BookingForm } from "@/components/BookingForm";
 import { useSiteContent } from "@/lib/site-content";
 import { Reveal } from "@/components/Reveal";
+import { ThemeInjector } from "@/components/ThemeInjector";
 
 export const Route = createFileRoute("/")({
   component: Index,
