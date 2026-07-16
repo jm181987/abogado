@@ -201,6 +201,24 @@ export function ContentEditor() {
         </Grid>
       </Section>
 
+      {/* Colors */}
+      <Section title="Colores del sitio">
+        <p className="text-xs text-muted-foreground mb-3">
+          Personaliza los colores principales del sitio. Usa códigos HEX (ej: <code>#4a9d85</code>). Deja en blanco para usar el color por defecto.
+        </p>
+        <Grid>
+          <ColorField label="Primario (botones, acentos)" v={get("theme.primary")} on={v => set("theme.primary", v)} />
+          <ColorField label="Texto sobre primario" v={get("theme.primaryForeground")} on={v => set("theme.primaryForeground", v)} />
+          <ColorField label="Secundario" v={get("theme.secondary")} on={v => set("theme.secondary", v)} />
+          <ColorField label="Acento" v={get("theme.accent")} on={v => set("theme.accent", v)} />
+          <ColorField label="Fondo general" v={get("theme.background")} on={v => set("theme.background", v)} />
+          <ColorField label="Texto general" v={get("theme.foreground")} on={v => set("theme.foreground", v)} />
+          <ColorField label="Fondo suave (muted)" v={get("theme.muted")} on={v => set("theme.muted", v)} />
+          <ColorField label="Texto suave (muted)" v={get("theme.mutedForeground")} on={v => set("theme.mutedForeground", v)} />
+          <ColorField label="Bordes" v={get("theme.border")} on={v => set("theme.border", v)} />
+        </Grid>
+      </Section>
+
       {/* Footer */}
       <Section title="Footer">
         <Grid>
@@ -210,6 +228,40 @@ export function ContentEditor() {
     </div>
   );
 }
+
+function ColorField({ label, v, on }: { label: string; v: string; on: (v: string) => void }) {
+  const isHex = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(v);
+  return (
+    <label className="block">
+      <span className="block text-xs font-medium mb-1 text-muted-foreground">{label}</span>
+      <div className="flex items-center gap-2">
+        <input
+          type="color"
+          value={isHex ? v : "#4a9d85"}
+          onChange={e => on(e.target.value)}
+          className="h-9 w-12 rounded border border-input bg-background cursor-pointer"
+        />
+        <input
+          value={v}
+          onChange={e => on(e.target.value)}
+          placeholder="#4a9d85 o vacío"
+          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm font-mono"
+        />
+        {v && (
+          <button
+            type="button"
+            onClick={() => on("")}
+            className="text-xs text-muted-foreground hover:text-foreground px-2"
+            title="Limpiar"
+          >
+            ✕
+          </button>
+        )}
+      </div>
+    </label>
+  );
+}
+
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
