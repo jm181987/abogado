@@ -181,7 +181,7 @@ export const waNotifyStatusChange = createServerFn({ method: "POST" })
       : "msg_reschedule";
     const tpl = pickTemplate(cfg as any, baseKey, lang);
     try {
-      await evoSendText(brand.slug, appt.phone, fillTemplate(tpl, vars));
+      await evoSendText(brand.name, appt.phone, fillTemplate(tpl, vars));
       return { ok: true as const };
     } catch (e) {
       console.error("[wa] notify status:", (e as Error).message);
