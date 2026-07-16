@@ -58,14 +58,14 @@ export const notifyNewBooking = createServerFn({ method: "POST" })
     const results = { client: false, owner: false, errors: [] as string[] };
     try {
       const tpl = pickTemplate(cfg as any, "msg_new_client", clientLang);
-      await evoSendText(brand.name, appt.phone, fillTemplate(tpl, clientVars));
+      await evoSendText(brand.instance, appt.phone, fillTemplate(tpl, clientVars));
       results.client = true;
     } catch (e) { results.errors.push(`cliente: ${(e as Error).message}`); }
 
     if (cfg.owner_phone) {
       try {
         const ownerTpl = pickTemplate(cfg as any, "msg_new_owner", ownerLang);
-        await evoSendText(brand.name, cfg.owner_phone, fillTemplate(ownerTpl, ownerVars));
+        await evoSendText(brand.instance, cfg.owner_phone, fillTemplate(ownerTpl, ownerVars));
         results.owner = true;
       } catch (e) { results.errors.push(`dueño: ${(e as Error).message}`); }
     }
