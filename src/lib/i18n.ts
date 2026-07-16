@@ -133,6 +133,17 @@ export const translations = {
     brand: { name1: "Vizcaya", name2: "Abogados", logoUrl: "" },
     whatsapp: { number: "5555999887766", display: "+55 55 99988 7766" },
     media: { heroImage: "", gallery: [] as string[] },
+    theme: {
+      primary: "",
+      primaryForeground: "",
+      secondary: "",
+      accent: "",
+      background: "",
+      foreground: "",
+      muted: "",
+      mutedForeground: "",
+      border: "",
+    },
   },
   pt: {
     nav: {
