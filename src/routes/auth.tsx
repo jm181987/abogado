@@ -36,8 +36,8 @@ function AuthPage() {
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <Link to="/" className="block text-center mb-8">
-          <span className="font-display text-3xl font-semibold">B</span>
-          <span className="font-display text-3xl font-light italic text-primary">SP</span>
+          <span className="font-display text-3xl font-semibold"></span>
+          <span className="font-display text-3xl font-light italic text-primary">Bouchacourt e Simões Pires Advocacia</span>
         </Link>
         <div className="rounded-3xl border border-border bg-card p-8 shadow-sm">
           <h1 className="font-display text-2xl mb-1">{mode === "signin" ? "Iniciar sesión" : "Crear cuenta"}</h1>
