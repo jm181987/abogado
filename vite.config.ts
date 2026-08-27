@@ -23,6 +23,11 @@ const siteEnhancementsPlugin = {
       .replaceAll("/og-social.png", "/og-social.jpg")
       .replaceAll('content: "image/png"', 'content: "image/jpeg"');
 
+    if (isIndexRoute) {
+      const oldFooter = /\n\s*<footer className="border-t border-border bg-muted\/20 py-8">[\s\S]*?<\/footer>/;
+      transformed = transformed.replace(oldFooter, "");
+    }
+
     if (isRootRoute) {
       if (!transformed.includes('from "@/components/LegalFooter"')) {
         transformed = transformed.replace(
