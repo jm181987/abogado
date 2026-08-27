@@ -74,7 +74,7 @@ export function LegalFooter() {
         </div>
 
         <div className="mt-10 flex flex-col gap-3 border-t border-border pt-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-          <span>© {new Date().getFullYear()} Bouchacourt · Simões Pires. {es ? "Todos los derechos reservados." : "Todos os direitos reservados."}</span>
+          <span>{es ? "Abogacía consciente · Frontera de la Paz" : "Advocacia consciente · Fronteira da Paz"}</span>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
             <a href="https://www.marketingknj.site/" target="_blank" rel="noreferrer" className="font-semibold text-foreground/60 transition hover:text-primary">{es ? "Desarrollado por KNJ" : "Desenvolvido por KNJ"}</a>
             <a href="#inicio" className="font-semibold uppercase tracking-[0.16em] text-foreground/60 hover:text-primary">{es ? "Volver al inicio" : "Voltar ao início"}</a>
