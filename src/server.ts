@@ -1,7 +1,12 @@
-import { fetchServerEntry } from "@tanstack/react-start/server";
+import {
+  createStartHandler,
+  defaultStreamHandler,
+} from "@tanstack/react-start/server";
+
+const handler = createStartHandler(defaultStreamHandler);
 
 export default {
-  async fetch(request: Request, env: unknown, ctx: unknown) {
-    return fetchServerEntry(request, env, ctx);
+  fetch(request: Request) {
+    return handler(request);
   },
 };
