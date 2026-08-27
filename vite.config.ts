@@ -5,9 +5,10 @@ const siteEnhancementsPlugin = {
   enforce: "pre" as const,
   transform(code: string, id: string) {
     const normalizedId = id.replace(/\\/g, "/");
-    const isIndexRoute = normalizedId.endsWith("/src/routes/index.tsx");
-    const isRootRoute = normalizedId.endsWith("/src/routes/__root.tsx");
-    const isAdminRoute = normalizedId.endsWith("/src/routes/admin.tsx");
+    const cleanId = normalizedId.split("?")[0];
+    const isIndexRoute = cleanId.endsWith("/src/routes/index.tsx");
+    const isRootRoute = cleanId.endsWith("/src/routes/__root.tsx");
+    const isAdminRoute = cleanId.endsWith("/src/routes/admin.tsx");
     if (!isIndexRoute && !isRootRoute && !isAdminRoute) return null;
 
     let transformed = code
@@ -54,10 +55,12 @@ const siteEnhancementsPlugin = {
           'import { ContentEditor } from "@/components/admin/ContentEditor";\nimport { MobileHeroAdmin } from "@/components/admin/MobileHeroAdmin";',
         );
       }
-      transformed = transformed.replace(
-        '<div className="admin-photo-uploader rounded-2xl border border-dashed border-border p-6 bg-card">',
-        '<MobileHeroAdmin lang={lang} />\n      <div className="admin-photo-uploader rounded-2xl border border-dashed border-border p-6 bg-card">',
-      );
+      if (!transformed.includes('<MobileHeroAdmin lang={lang} />')) {
+        transformed = transformed.replace(
+          '<div className="admin-photo-uploader rounded-2xl border border-dashed border-border p-6 bg-card">',
+          '<MobileHeroAdmin lang={lang} />\n      <div className="admin-photo-uploader rounded-2xl border border-dashed border-border p-6 bg-card">',
+        );
+      }
     }
 
     if (isRootRoute) {
