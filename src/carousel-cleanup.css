@@ -10,3 +10,8 @@
 #galeria [data-gallery-track="true"] {
   margin-top: 0 !important;
 }
+
+/* About section: remove decorative 01/02/03 labels while preserving cards and icons. */
+#nosotros .flex.items-start.justify-between.gap-4 > span:first-child {
+  display: none !important;
+}
