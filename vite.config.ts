@@ -7,7 +7,8 @@ const siteEnhancementsPlugin = {
     const normalizedId = id.replace(/\\/g, "/");
     const isIndexRoute = normalizedId.endsWith("/src/routes/index.tsx");
     const isRootRoute = normalizedId.endsWith("/src/routes/__root.tsx");
-    if (!isIndexRoute && !isRootRoute) return null;
+    const isAdminRoute = normalizedId.endsWith("/src/routes/admin.tsx");
+    if (!isIndexRoute && !isRootRoute && !isAdminRoute) return null;
 
     let transformed = code
       .replaceAll("Asesoría Jurídica Brasil–Uruguay | Abogacía Bilingüe", "Bouchacourt · Simões Pires | Advocacia & Assessoria Jurídica")
@@ -25,17 +26,38 @@ const siteEnhancementsPlugin = {
 
     if (isIndexRoute) {
       transformed = transformed
-        .replaceAll(
-          'className="absolute inset-y-8 right-0 hidden w-[52%] bg-contain bg-center bg-no-repeat opacity-95 md:block"',
-          'className="absolute inset-0 bg-contain bg-right bg-no-repeat opacity-45 sm:opacity-60 md:inset-y-8 md:left-auto md:right-0 md:w-[72%] md:bg-right md:opacity-85 lg:w-[52%] lg:opacity-95"',
+        .replace(
+          'const heroSrc = t.media?.heroImage || heroImg;',
+          'const heroSrc = t.media?.heroImage || heroImg;\n  const mobileHeroSrc = (t.media as any)?.heroMobileImage || heroSrc;',
+        )
+        .replace(
+          '<img src={heroSrc} alt="Estudio jurídico" className="h-full w-full object-cover object-center" width={1600} height={1200} />',
+          '<picture className="block h-full w-full"><source media="(max-width: 1023px)" srcSet={mobileHeroSrc} /><img src={heroSrc} alt="Estudio jurídico" className="h-full w-full object-cover object-right lg:object-center" width={1600} height={1200} /></picture>',
         )
         .replaceAll(
-          'className="h-full w-full object-cover object-center"',
-          'className="h-full w-full object-contain object-right lg:object-cover lg:object-center"',
+          'className="absolute inset-y-8 right-0 hidden w-[52%] bg-contain bg-center bg-no-repeat opacity-95 md:block"',
+          'className="absolute inset-y-8 right-0 hidden w-[52%] bg-contain bg-right bg-no-repeat opacity-95 lg:block"',
+        )
+        .replace(
+          '<div aria-hidden="true" className="absolute inset-y-8 right-0 hidden w-[52%] bg-contain bg-right bg-no-repeat opacity-95 lg:block" style={{ backgroundImage: `url(${heroSrc})` }} />',
+          '<div aria-hidden="true" className="absolute inset-0 bg-contain bg-right bg-no-repeat opacity-60 lg:hidden" style={{ backgroundImage: `url(${mobileHeroSrc})` }} /><div aria-hidden="true" className="absolute inset-y-8 right-0 hidden w-[52%] bg-contain bg-right bg-no-repeat opacity-95 lg:block" style={{ backgroundImage: `url(${heroSrc})` }} />',
         );
 
       const oldFooter = /\n\s*<footer className="border-t border-border bg-muted\/20 py-8">[\s\S]*?<\/footer>/;
       transformed = transformed.replace(oldFooter, "");
+    }
+
+    if (isAdminRoute) {
+      if (!transformed.includes('from "@/components/admin/MobileHeroAdmin"')) {
+        transformed = transformed.replace(
+          'import { ContentEditor } from "@/components/admin/ContentEditor";',
+          'import { ContentEditor } from "@/components/admin/ContentEditor";\nimport { MobileHeroAdmin } from "@/components/admin/MobileHeroAdmin";',
+        );
+      }
+      transformed = transformed.replace(
+        '<div className="admin-photo-uploader rounded-2xl border border-dashed border-border p-6 bg-card">',
+        '<MobileHeroAdmin lang={lang} />\n      <div className="admin-photo-uploader rounded-2xl border border-dashed border-border p-6 bg-card">',
+      );
     }
 
     if (isRootRoute) {
