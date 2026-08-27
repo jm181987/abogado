@@ -15,6 +15,7 @@ import carouselScrollbarCss from "../carousel-scrollbar.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider } from "@/hooks/use-auth";
 import { UiEnhancer } from "@/components/UiEnhancer";
+import { SiteContentGate } from "@/components/SiteContentGate";
 
 function NotFoundComponent() {
   return (
@@ -94,7 +95,12 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider><UiEnhancer /><Outlet /></AuthProvider>
+      <AuthProvider>
+        <UiEnhancer />
+        <SiteContentGate>
+          <Outlet />
+        </SiteContentGate>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
