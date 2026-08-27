@@ -15,3 +15,12 @@
 #nosotros .flex.items-start.justify-between.gap-4 > span:first-child {
   display: none !important;
 }
+
+/* Practice areas: remove decorative 01/02/03/04 labels while preserving service cards. */
+#planes .group > div:first-of-type > span:first-child {
+  display: none !important;
+}
+
+#planes .group > div:first-of-type > h3 {
+  margin-top: 0 !important;
+}
