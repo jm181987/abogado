@@ -2,7 +2,6 @@
 -- MIGRACIÓN BASE — SITIO JURÍDICO
 -- Ejecutar en Supabase → SQL Editor
 -- Incluye únicamente roles, planes, contenido editable y fotos.
--- No incluye agenda, reservas, recordatorios ni Evolution API.
 -- =====================================================================
 
 -- ---------------------------------------------------------------------
