@@ -97,19 +97,24 @@ export function useSiteContent(lang: Lang) {
       }
 
       const persisted = removeLegacyBrand(data.data);
-      const content = deepMerge(translations[lang], persisted) as Content;
+      const baseContent = deepMerge(translations[lang], persisted) as any;
+      const content = (!plansResult.error && plansResult.data?.length)
+        ? {
+            ...baseContent,
+            plans: {
+              ...baseContent.plans,
+              items: mapEditablePlans(plansResult.data, lang),
+            },
+          }
+        : baseContent;
 
-      if (!plansResult.error && plansResult.data?.length) {
-        content.plans = {
-          ...content.plans,
-          items: mapEditablePlans(plansResult.data, lang),
-        } as Content["plans"];
-      } else if (plansResult.error) {
+      if (plansResult.error) {
         console.warn("[site plans] No se pudieron cargar los planes editables", plansResult.error);
       }
 
-      writeCachedContent(lang, content);
-      return content;
+      const typedContent = content as Content;
+      writeCachedContent(lang, typedContent);
+      return typedContent;
     },
     placeholderData: (previousData) => previousData ?? readCachedContent(lang),
     staleTime: 10_000,
