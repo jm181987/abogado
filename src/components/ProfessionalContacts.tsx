@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { professionalContactCopy, type ProfessionalContactLang } from "@/components/ProfessionalContacts.i18n";
 
 const PROFESSIONALS = [
   { name: "Dra. Macarena Bouchacourt", href: "https://wa.me/5551993254208" },
@@ -6,21 +7,31 @@ const PROFESSIONALS = [
   { name: "Dr. Matheus Figueiredo", href: "https://wa.me/5555996378776" },
 ] as const;
 
-function professionalCard(name: string, href: string) {
+function detectLanguage(): ProfessionalContactLang {
+  const selected = Array.from(document.querySelectorAll<HTMLButtonElement>("button"))
+    .find((button) => {
+      const text = button.textContent?.trim().toLowerCase();
+      return (text === "es" || text === "pt") && button.className.includes("bg-foreground");
+    });
+  return selected?.textContent?.trim().toLowerCase() === "pt" ? "pt" : "es";
+}
+
+function professionalCard(name: string, href: string, lang: ProfessionalContactLang) {
+  const copySet = professionalContactCopy[lang];
   const card = document.createElement("a");
   card.href = href;
   card.target = "_blank";
   card.rel = "noreferrer";
   card.className = "group flex min-h-20 items-center justify-between gap-4 rounded-2xl border border-border bg-card px-5 py-4 transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg";
-  card.setAttribute("aria-label", `Contactar por WhatsApp con ${name}`);
+  card.setAttribute("aria-label", copySet.aria(name));
 
   const copy = document.createElement("span");
   copy.className = "min-w-0";
-  copy.innerHTML = `<strong class="block text-sm font-semibold text-foreground">${name}</strong><span class="mt-1 block text-xs text-muted-foreground">WhatsApp directo</span>`;
+  copy.innerHTML = `<strong class="block text-sm font-semibold text-foreground">${name}</strong><span class="mt-1 block text-xs text-muted-foreground">${copySet.direct}</span>`;
 
   const action = document.createElement("span");
   action.className = "shrink-0 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground";
-  action.textContent = "Contactar";
+  action.textContent = copySet.action;
 
   card.append(copy, action);
   return card;
@@ -30,26 +41,36 @@ export function ProfessionalContacts() {
   useEffect(() => {
     if (window.location.pathname !== "/") return;
 
-    const mount = () => {
+    let currentLang: ProfessionalContactLang | null = null;
+
+    const render = () => {
+      const lang = detectLanguage();
+      if (lang === currentLang && document.querySelector("[data-professional-contacts='true']")) return;
+      currentLang = lang;
+      const copySet = professionalContactCopy[lang];
+
+      document.querySelector("[data-professional-contacts='true']")?.remove();
+      document.querySelector("[data-professional-footer='true']")?.remove();
+
       const contact = document.querySelector<HTMLElement>("#contacto > div");
-      if (contact && !document.querySelector("[data-professional-contacts='true']")) {
+      if (contact) {
         const block = document.createElement("div");
         block.dataset.professionalContacts = "true";
         block.className = "mt-6 rounded-[2rem] border border-border bg-muted/25 p-5 sm:p-7";
 
         const intro = document.createElement("div");
         intro.className = "mb-5";
-        intro.innerHTML = `<p class="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Equipo profesional</p><h3 class="mt-2 font-display text-2xl text-foreground sm:text-3xl">Contacto directo por WhatsApp</h3><p class="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">Elige con quién deseas comunicarte. Cada botón abre una conversación directa con el profesional seleccionado.</p>`;
+        intro.innerHTML = `<p class="text-xs font-semibold uppercase tracking-[0.2em] text-primary">${copySet.kicker}</p><h3 class="mt-2 font-display text-2xl text-foreground sm:text-3xl">${copySet.title}</h3><p class="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">${copySet.description}</p>`;
 
         const grid = document.createElement("div");
         grid.className = "grid gap-3 md:grid-cols-3";
-        PROFESSIONALS.forEach(({ name, href }) => grid.appendChild(professionalCard(name, href)));
+        PROFESSIONALS.forEach(({ name, href }) => grid.appendChild(professionalCard(name, href, lang)));
         block.append(intro, grid);
         contact.appendChild(block);
       }
 
       const footer = document.querySelector<HTMLElement>("footer > div");
-      if (footer && !document.querySelector("[data-professional-footer='true']")) {
+      if (footer) {
         const links = document.createElement("div");
         links.dataset.professionalFooter = "true";
         links.className = "flex flex-wrap items-center gap-x-4 gap-y-2 text-xs";
@@ -60,19 +81,27 @@ export function ProfessionalContacts() {
           link.rel = "noreferrer";
           link.className = "font-medium text-foreground/65 transition hover:text-primary";
           link.textContent = name.replace(/^Dra?\.\s/, "");
-          link.setAttribute("aria-label", `WhatsApp de ${name}`);
+          link.setAttribute("aria-label", copySet.footerAria(name));
           links.appendChild(link);
         });
         footer.insertBefore(links, footer.lastElementChild);
       }
     };
 
-    mount();
-    const observer = new MutationObserver(mount);
-    observer.observe(document.body, { childList: true, subtree: true });
+    render();
+    const observer = new MutationObserver(render);
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
+
+    const onLanguageClick = (event: Event) => {
+      const button = (event.target as HTMLElement | null)?.closest("button");
+      const text = button?.textContent?.trim().toLowerCase();
+      if (text === "es" || text === "pt") window.setTimeout(render, 0);
+    };
+    document.addEventListener("click", onLanguageClick, true);
 
     return () => {
       observer.disconnect();
+      document.removeEventListener("click", onLanguageClick, true);
       document.querySelector("[data-professional-contacts='true']")?.remove();
       document.querySelector("[data-professional-footer='true']")?.remove();
     };
