@@ -55,5 +55,63 @@ export function PlansBootstrap() {
     })();
   }, [authLoading, isAdmin, es, pt, queryClient]);
 
+  useEffect(() => {
+    if (window.location.pathname !== "/admin" || authLoading || !isAdmin) return;
+
+    const refreshPlansTab = () => {
+      const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>("header nav button"));
+      const contentButton = buttons.find((button) => button.textContent?.trim() === "Contenido");
+      const plansButton = buttons.find((button) => button.textContent?.trim() === "Planes");
+      contentButton?.click();
+      window.setTimeout(() => plansButton?.click(), 40);
+    };
+
+    const handleClick = (event: MouseEvent) => {
+      const button = (event.target as HTMLElement | null)?.closest<HTMLButtonElement>("button");
+      if (!button) return;
+      const text = button.textContent?.trim() ?? "";
+
+      if (text === "+ Nuevo plan") {
+        event.preventDefault();
+        event.stopPropagation();
+
+        void (async () => {
+          const { data } = await supabase.from("plans").select("sort_order").order("sort_order", { ascending: false }).limit(1);
+          const nextOrder = ((data?.[0] as any)?.sort_order ?? 0) + 1;
+          const { error } = await supabase.from("plans").insert({
+            name: "Nuevo plan",
+            name_es: "Nuevo plan",
+            name_pt: "Novo plano",
+            age_es: "",
+            age_pt: "",
+            price: "R$ 0",
+            old_price: "",
+            features_es: [],
+            features_pt: [],
+            popular: false,
+            sort_order: nextOrder,
+            active: true,
+          } as any);
+          if (error) {
+            alert("Error creando plan: " + error.message);
+            return;
+          }
+          await queryClient.invalidateQueries({ queryKey: ["site_content"] });
+          refreshPlansTab();
+        })();
+        return;
+      }
+
+      if (text === "Guardar" || text === "Eliminar") {
+        window.setTimeout(() => {
+          void queryClient.invalidateQueries({ queryKey: ["site_content"] });
+        }, 800);
+      }
+    };
+
+    document.addEventListener("click", handleClick, true);
+    return () => document.removeEventListener("click", handleClick, true);
+  }, [authLoading, isAdmin, queryClient]);
+
   return null;
 }
