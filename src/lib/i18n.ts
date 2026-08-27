@@ -42,7 +42,7 @@ export const translations = {
       howto: "Cómo llegar", howto1: "Sant'Ana do Livramento, RS", howto2: "Frontera Brasil–Uruguay", howto3: "Atención presencial en Sala 2",
       hours: "Horarios", hours1: "Lunes a viernes: 9:00 – 18:00", hours2: "Sábados: 9:00 – 12:00 (con cita)", hours3: "Urgencias fuera de horario por WhatsApp", whats: "WhatsApp",
     },
-    footer: "Abogacía consciente · Frontera de la Paz",
+    footer: "\n",
     brand: { name1: "Estudio", name2: "Jurídico", logoUrl: "" },
     whatsapp: { number: "", display: "" }, media: { heroImage: "", gallery: [] as string[] },
     theme: { primary: "", primaryForeground: "", secondary: "", accent: "", background: "", foreground: "", muted: "", mutedForeground: "", border: "" },
@@ -59,6 +59,6 @@ export const translations = {
     ] },
     diff: { kicker: "No que nos diferenciamos?", title: "Direito com propósito", subtitle: "Na advocacia tradicional a proximidade se perdeu. Nossa abordagem devolve clareza e ética a cada caso na fronteira.", items: [{ t: "Honorários transparentes", d: "Orçamento claro antes de começar, sem surpresas." }, { t: "Bilíngue PT/ES", d: "Atendemos você no seu idioma, seja de Livramento ou de Rivera." }, { t: "Foco preventivo", d: "Evitar o conflito é sempre mais barato do que litigar." }, { t: "Educação do cliente", d: "Explicamos cada passo em linguagem simples." }, { t: "Experiência binacional", d: "Casos com implicações no Brasil e no Uruguai." }, { t: "Atendimento humano", d: "Relações de confiança de longo prazo com cada cliente." }] },
     contact: { kicker: "Contato", title: "Esperamos você em Livramento", location: "Endereço", address1: "Rua Uruguai, 1248 · Sala 2", address2: "Sant'Ana do Livramento, RS", parking: "Estacionamento disponível em frente ao prédio", howto: "Como chegar", howto1: "Sant'Ana do Livramento, RS", howto2: "Fronteira Brasil–Uruguai", howto3: "Atendimento presencial na Sala 2", hours: "Horários", hours1: "Segunda a sexta: 9:00 – 18:00", hours2: "Sábados: 9:00 – 12:00 (com hora marcada)", hours3: "Urgências fora do horário via WhatsApp", whats: "WhatsApp" },
-    footer: "Advocacia consciente · Fronteira da Paz", brand: { name1: "Escritório", name2: "Jurídico", logoUrl: "" }, whatsapp: { number: "", display: "" }, media: { heroImage: "", gallery: [] as string[] }, theme: { primary: "", primaryForeground: "", secondary: "", accent: "", background: "", foreground: "", muted: "", mutedForeground: "", border: "" },
+    footer: "\n", brand: { name1: "Escritório", name2: "Jurídico", logoUrl: "" }, whatsapp: { number: "", display: "" }, media: { heroImage: "", gallery: [] as string[] }, theme: { primary: "", primaryForeground: "", secondary: "", accent: "", background: "", foreground: "", muted: "", mutedForeground: "", border: "" },
   },
 } as const;

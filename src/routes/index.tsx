@@ -314,9 +314,9 @@ function Index() {
           <div className="flex items-center gap-2"><Scale className="size-4 text-primary" /><span>{t.footer}</span></div>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
             <a href="https://www.marketingknj.site/" target="_blank" rel="noreferrer" className="text-xs font-semibold text-foreground/60 transition hover:text-primary">
-              {lang === "es" ? "Desarrollado por KNJ" : "Desenvolvido por KNJ"}
+              {"\n"}
             </a>
-            <a href="#inicio" className="text-xs font-semibold uppercase tracking-[0.16em] text-foreground/60 hover:text-primary">{lang === "es" ? "Volver al inicio" : "Voltar ao início"}</a>
+            <a href="#inicio" className="text-xs font-semibold uppercase tracking-[0.16em] text-foreground/60 hover:text-primary">{"\n"}</a>
           </div>
         </div>
       </footer>
