@@ -309,17 +309,6 @@ function Index() {
         </section>
       </main>
 
-      <footer className="border-t border-border bg-muted/20 py-8">
-        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-5 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <div className="flex items-center gap-2"><Scale className="size-4 text-primary" /><span>{t.footer}</span></div>
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-            <a href="https://www.marketingknj.site/" target="_blank" rel="noreferrer" className="text-xs font-semibold text-foreground/60 transition hover:text-primary">
-              {"\n"}
-            </a>
-            <a href="#inicio" className="text-xs font-semibold uppercase tracking-[0.16em] text-foreground/60 hover:text-primary">{"\n"}</a>
-          </div>
-        </div>
-      </footer>
-    </div>
+</div>
   );
 }
