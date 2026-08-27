@@ -1,7 +1,8 @@
 -- =====================================================================
--- MIGRACIÓN COMPLETA — Vizcaya Salud
--- Ejecutá TODO este SQL en Supabase → SQL Editor (una sola vez)
--- Proyecto: viczgilshgsqtbbvykgi
+-- MIGRACIÓN BASE — SITIO JURÍDICO
+-- Ejecutar en Supabase → SQL Editor
+-- Incluye únicamente roles, planes, contenido editable y fotos.
+-- No incluye agenda, reservas, recordatorios ni Evolution API.
 -- =====================================================================
 
 -- ---------------------------------------------------------------------
@@ -39,11 +40,11 @@ $$;
 GRANT EXECUTE ON FUNCTION public.has_role(uuid, public.app_role) TO authenticated, anon, service_role;
 
 -- ---------------------------------------------------------------------
--- 2) PLANES
+-- 2) PLANES / SERVICIOS
 -- ---------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.plans (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  name text,                       -- alias legacy (usado en algunos selects)
+  name text,
   name_es text NOT NULL DEFAULT '',
   name_pt text NOT NULL DEFAULT '',
   age_es text NOT NULL DEFAULT '',
@@ -76,53 +77,10 @@ CREATE POLICY "admins manage plans" ON public.plans
   WITH CHECK (public.has_role(auth.uid(), 'admin'));
 
 -- ---------------------------------------------------------------------
--- 3) CITAS (appointments)
--- ---------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS public.appointments (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  name text NOT NULL,
-  full_name text,
-  email text,
-  phone text,
-  plan_id uuid REFERENCES public.plans(id) ON DELETE SET NULL,
-  scheduled_at timestamptz,
-  duration_minutes int NOT NULL DEFAULT 60,
-  message text,
-  status text NOT NULL DEFAULT 'pending',   -- pending|confirmed|completed|cancelled
-  reminder_sent_at timestamptz,
-  created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now()
-);
-
-CREATE INDEX IF NOT EXISTS appointments_scheduled_at_idx ON public.appointments(scheduled_at);
-CREATE INDEX IF NOT EXISTS appointments_status_idx ON public.appointments(status);
-
-GRANT INSERT ON public.appointments TO anon;                       -- reservas públicas
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.appointments TO authenticated;
-GRANT ALL ON public.appointments TO service_role;
-ALTER TABLE public.appointments ENABLE ROW LEVEL SECURITY;
-
--- Cualquiera puede crear una reserva desde la web
-DROP POLICY IF EXISTS "public insert appointments" ON public.appointments;
-CREATE POLICY "public insert appointments" ON public.appointments
-  FOR INSERT TO anon, authenticated WITH CHECK (true);
-
--- Chequeo de solape (SELECT restringido a columnas mínimas vía policy amplia; el cliente sólo pide scheduled_at, duration_minutes)
-DROP POLICY IF EXISTS "public read appointments slots" ON public.appointments;
-CREATE POLICY "public read appointments slots" ON public.appointments
-  FOR SELECT TO anon, authenticated USING (true);
-
-DROP POLICY IF EXISTS "admins manage appointments" ON public.appointments;
-CREATE POLICY "admins manage appointments" ON public.appointments
-  FOR ALL TO authenticated
-  USING (public.has_role(auth.uid(), 'admin'))
-  WITH CHECK (public.has_role(auth.uid(), 'admin'));
-
--- ---------------------------------------------------------------------
--- 4) CONTENIDO EDITABLE DEL SITIO (site_content)
+-- 3) CONTENIDO EDITABLE DEL SITIO
 -- ---------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.site_content (
-  lang text PRIMARY KEY,             -- 'es' | 'pt'
+  lang text PRIMARY KEY,
   data jsonb NOT NULL DEFAULT '{}'::jsonb,
   updated_at timestamptz NOT NULL DEFAULT now()
 );
@@ -142,11 +100,16 @@ CREATE POLICY "admins manage site_content" ON public.site_content
   USING (public.has_role(auth.uid(), 'admin'))
   WITH CHECK (public.has_role(auth.uid(), 'admin'));
 
-INSERT INTO public.site_content (lang, data) VALUES ('es', '{}'::jsonb) ON CONFLICT DO NOTHING;
-INSERT INTO public.site_content (lang, data) VALUES ('pt', '{}'::jsonb) ON CONFLICT DO NOTHING;
+INSERT INTO public.site_content (lang, data)
+VALUES ('es', '{}'::jsonb)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public.site_content (lang, data)
+VALUES ('pt', '{}'::jsonb)
+ON CONFLICT DO NOTHING;
 
 -- ---------------------------------------------------------------------
--- 5) FOTOS DEL SITIO (site_photos) + BUCKET
+-- 4) FOTOS DEL SITIO + STORAGE
 -- ---------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.site_photos (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -173,7 +136,6 @@ CREATE POLICY "admins manage site_photos" ON public.site_photos
   USING (public.has_role(auth.uid(), 'admin'))
   WITH CHECK (public.has_role(auth.uid(), 'admin'));
 
--- Bucket público para las fotos
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('site-photos', 'site-photos', true)
 ON CONFLICT (id) DO UPDATE SET public = true;
@@ -189,46 +151,9 @@ CREATE POLICY "admins write site-photos" ON storage.objects
   USING (bucket_id = 'site-photos' AND public.has_role(auth.uid(), 'admin'))
   WITH CHECK (bucket_id = 'site-photos' AND public.has_role(auth.uid(), 'admin'));
 
--- ---------------------------------------------------------------------
--- 6) CONFIG DE WHATSAPP / EVOLUTION API (español + portugués)
--- ---------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS public.whatsapp_config (
-  id boolean PRIMARY KEY DEFAULT true CHECK (id = true),
-  instance_name text NOT NULL DEFAULT 'vizcaya-salud',
-  owner_phone text,
-  connected boolean NOT NULL DEFAULT false,
-  phone_number text,
-  msg_new_client text NOT NULL DEFAULT 'Hola {{name}} 👋 Recibimos tu solicitud para el {{date}} a las {{time}} hrs. Te confirmaremos por este medio muy pronto. ¡Gracias por elegir Vizcaya Salud!',
-  msg_new_owner  text NOT NULL DEFAULT '📩 Nueva reserva: {{name}} — {{phone}} para {{date}} {{time}} hrs. Plan: {{plan}}.',
-  msg_confirmed  text NOT NULL DEFAULT '✅ ¡Tu hora está confirmada, {{name}}! Te esperamos el {{date}} a las {{time}} hrs.',
-  msg_cancelled  text NOT NULL DEFAULT 'Hola {{name}}, lamentamos informarte que tu hora del {{date}} {{time}} hrs fue cancelada. Contáctanos para reagendar.',
-  msg_reschedule text NOT NULL DEFAULT 'Hola {{name}}, tu hora fue reagendada para el {{date}} a las {{time}} hrs. ¡Te esperamos!',
-  msg_reminder   text NOT NULL DEFAULT 'Recordatorio ⏰ Hola {{name}}, mañana {{date}} a las {{time}} hrs tienes tu hora agendada. ¡Te esperamos!',
-  msg_new_client_pt text NOT NULL DEFAULT 'Olá {{name}} 👋 Recebemos sua solicitação para o dia {{date}} às {{time}}h. Em breve confirmaremos por aqui. Obrigado por escolher {{brand}}!',
-  msg_new_owner_pt  text NOT NULL DEFAULT '📩 Nova reserva: {{name}} — {{phone}} para {{date}} {{time}}h. Plano: {{plan}}.',
-  msg_confirmed_pt  text NOT NULL DEFAULT '✅ Seu horário está confirmado, {{name}}! Esperamos você no dia {{date}} às {{time}}h.',
-  msg_cancelled_pt  text NOT NULL DEFAULT 'Olá {{name}}, infelizmente seu horário do dia {{date}} às {{time}}h foi cancelado. Entre em contato para reagendar.',
-  msg_reschedule_pt text NOT NULL DEFAULT 'Olá {{name}}, seu horário foi remarcado para {{date}} às {{time}}h. Esperamos você!',
-  msg_reminder_pt   text NOT NULL DEFAULT 'Lembrete ⏰ Olá {{name}}, amanhã {{date}} às {{time}}h você tem seu horário agendado. Esperamos você!',
-  updated_at timestamptz NOT NULL DEFAULT now()
-);
-
-INSERT INTO public.whatsapp_config (id) VALUES (true) ON CONFLICT DO NOTHING;
-
-GRANT SELECT, INSERT, UPDATE ON public.whatsapp_config TO authenticated;
-GRANT ALL ON public.whatsapp_config TO service_role;
-ALTER TABLE public.whatsapp_config ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "admins manage whatsapp_config" ON public.whatsapp_config;
-CREATE POLICY "admins manage whatsapp_config" ON public.whatsapp_config
-  FOR ALL TO authenticated
-  USING (public.has_role(auth.uid(), 'admin'))
-  WITH CHECK (public.has_role(auth.uid(), 'admin'));
-
 -- =====================================================================
--- ✅ LISTO. Después de correr esto:
---   1. Creá tu usuario en Authentication → Users (o registrate en /auth).
---   2. Corré:  INSERT INTO public.user_roles (user_id, role)
---              VALUES ('<TU_USER_ID_UUID>', 'admin');
---   3. Ya podés entrar a /admin.
+-- LISTO
+-- Para dar acceso al panel:
+-- INSERT INTO public.user_roles (user_id, role)
+-- VALUES ('<USER_ID>', 'admin');
 -- =====================================================================
