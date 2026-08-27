@@ -8,12 +8,13 @@ export const waCreateAndConnect = createServerFn({ method: "POST" }).handler(asy
   const admin = getAdminSupabase();
   const brand = await getBrandInfo(admin);
   const name = brand.instance;
-  try {
-    const exists = await evoInstanceExists(name);
-    if (!exists) await evoCreateInstance(name);
-  } catch (e) {
-    console.warn("[wa] create/fetch:", (e as Error).message);
-  }
+
+  // No ocultar errores de fetch/configuración como si la instancia no existiera.
+  // Si Evolution no responde o la URL es inválida, el panel debe mostrar el error real
+  // y detener el flujo antes de intentar crear/conectar otra instancia.
+  const exists = await evoInstanceExists(name);
+  if (!exists) await evoCreateInstance(name);
+
   const qr = await evoConnect(name);
   const state = await evoState(name);
   await admin.from("whatsapp_config").update({
@@ -128,7 +129,6 @@ export const waResetInstance = createServerFn({ method: "POST" }).handler(async 
   }).eq("id", true);
   return { ok: true as const, instance: name, brand: brand.name, qr, state };
 });
-
 
 export const waTestSend = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ to: z.string().min(6), text: z.string().min(1).max(1000) }).parse(d))
