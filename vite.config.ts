@@ -33,7 +33,7 @@ const siteEnhancementsPlugin = {
         )
         .replace(
           '<img src={heroSrc} alt="Estudio jurídico" className="h-full w-full object-cover object-center" width={1600} height={1200} />',
-          '<picture className="block h-full w-full"><source media="(max-width: 1023px)" srcSet={mobileHeroSrc} /><img src={heroSrc} alt="Estudio jurídico" className="h-full w-full object-cover object-right lg:object-center" width={1600} height={1200} /></picture>',
+          '<picture className="block h-full w-full"><source media="(max-width: 1023px)" srcSet={mobileHeroSrc} /><img src={heroSrc} alt="Estudio jurídico" className="h-full w-full object-cover object-right lg:object-center" width={1600} height={1200} loading="eager" fetchPriority="high" decoding="async" /></picture>',
         )
         .replaceAll(
           'className="absolute inset-y-8 right-0 hidden w-[52%] bg-contain bg-center bg-no-repeat opacity-95 md:block"',
@@ -64,6 +64,9 @@ const siteEnhancementsPlugin = {
     }
 
     if (isRootRoute) {
+      // El favicon ya existe como archivo estático: evita incrustar ~20 KB base64 en el JS inicial.
+      transformed = transformed.replace(/const FAVICON = "data:image\/png;base64,[^"]+";/, 'const FAVICON = "/favicon.ico";');
+
       if (!transformed.includes('from "@/components/LegalFooter"')) {
         transformed = transformed.replace(
           'import { PlansBootstrap } from "@/components/admin/PlansBootstrap";',
