@@ -2,7 +2,7 @@ export type Lang = "es" | "pt";
 
 export const translations = {
   es: {
-    nav: { home: "Inicio", plans: "Servicios", about: "Nosotros", diff: "Diferenciadores", contact: "Contacto", cta: "Agendar Consulta" },
+    nav: { home: "Inicio", plans: "Servicios", about: "Nosotros", diff: "Diferenciadores", contact: "Contacto", cta: "Contactar" },
     hero: {
       badge: "Estudio Jurídico · Sant'Ana do Livramento, RS",
       title1: "Defensa legal con", title2: "criterio y cercanía",
@@ -48,7 +48,7 @@ export const translations = {
     theme: { primary: "", primaryForeground: "", secondary: "", accent: "", background: "", foreground: "", muted: "", mutedForeground: "", border: "" },
   },
   pt: {
-    nav: { home: "Início", plans: "Serviços", about: "Sobre nós", diff: "Diferenciais", contact: "Contato", cta: "Agendar Consulta" },
+    nav: { home: "Início", plans: "Serviços", about: "Sobre nós", diff: "Diferenciais", contact: "Contato", cta: "Entrar em contato" },
     hero: { badge: "Escritório de Advocacia · Sant'Ana do Livramento, RS", title1: "Defesa jurídica com", title2: "critério e proximidade", desc: "Assessoria jurídica ética e estratégica na fronteira Brasil–Uruguai. Acompanhamos pessoas e empresas com soluções claras, honorários transparentes e atendimento em português e espanhol.", ctaPlans: "Ver Serviços", ctaWhats: "WhatsApp" },
     about: { kicker: "Quem Somos", title: "Advocacia consciente na Fronteira da Paz", body: "Somos um escritório de advocacia binacional que nasce em Sant'Ana do Livramento com uma visão clara: oferecer defesa jurídica com tempo, ética e excelência técnica. Atendemos clientes de Livramento e Rivera no seu idioma, com foco preventivo e estratégias adaptadas a cada caso.", mission: "Missão", missionBody: "Defender os direitos dos nossos clientes com rigor técnico, transparência e um atendimento humano real, dos dois lados da fronteira.", vision: "Visão", visionBody: "Ser o escritório de advocacia de referência na Campanha Gaúcha, reconhecido pela solidez das estratégias e pelo cuidado com cada cliente.", philosophy: "Filosofia", philosophyBody: "Não buscamos volume: buscamos resultados reais e relações de confiança duradouras com cada pessoa que atendemos." },
     plans: { kicker: "Áreas de Atuação", title: "Serviços jurídicos sob medida", subtitle: "Planos de assessoria pensados para acompanhar você durante todo o processo, com honorários claros e atendimento bilíngue de segunda a sábado.", perYear: "a partir de", popular: "Mais procurado", consult: "Consultar via WhatsApp", footnote: "Valores de referência em reais (R$). Cada caso é orçado após a consulta inicial. Atendimento em português e espanhol.", items: [

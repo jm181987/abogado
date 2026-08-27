@@ -1,37 +1,63 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { ContentEditor } from "@/components/admin/ContentEditor";
-import { WhatsappTab } from "@/components/admin/WhatsappTab";
 import { useSiteContent } from "@/lib/site-content";
-import { waNotifyStatusChange } from "@/lib/whatsapp.functions";
 
 export const Route = createFileRoute("/admin")({
   ssr: false,
-  head: () => ({ meta: [{ title: "Panel · Vizcaya Salud" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({ meta: [{ title: "Panel · Asesoría Jurídica" }, { name: "robots", content: "noindex" }] }),
   component: AdminPage,
 });
 
-type Plan = { id: string; name_es: string; name_pt: string; age_es: string; age_pt: string; price: string; old_price: string; features_es: string[]; features_pt: string[]; sort_order: number; popular: boolean; active: boolean };
-type Appointment = { id: string; created_at: string; name: string; email: string; phone: string; plan_id: string | null; message: string | null; status: string; scheduled_at: string | null; duration_minutes: number | null; admin_notes: string | null; preferred_date: string | null };
-type PlanOpt = { id: string; name: string };
-type Photo = { id: string; slot: string; storage_path: string; alt_es: string | null; alt_pt: string | null; updated_at: string };
+type Plan = {
+  id: string;
+  name_es: string;
+  name_pt: string;
+  age_es: string;
+  age_pt: string;
+  price: string;
+  old_price: string;
+  features_es: string[];
+  features_pt: string[];
+  sort_order: number;
+  popular: boolean;
+  active: boolean;
+};
+
+type Photo = {
+  id: string;
+  slot: string;
+  storage_path: string;
+  alt_es: string | null;
+  alt_pt: string | null;
+  updated_at: string;
+};
+
+type AdminTab = "content" | "plans" | "photos";
+
+const ADMIN_TABS: Array<{ id: AdminTab; label: string; description: string }> = [
+  { id: "content", label: "Contenido", description: "Textos, marca y datos del sitio" },
+  { id: "plans", label: "Planes", description: "Servicios, precios y orden" },
+  { id: "photos", label: "Fotos", description: "Portada y galería" },
+];
 
 function AdminPage() {
   const { user, isAdmin, loading, signOut } = useAuth();
   const navigate = useNavigate();
-  const [tab, setTab] = useState<"appointments" | "content" | "plans" | "photos" | "whatsapp">("appointments");
+  const [tab, setTab] = useState<AdminTab>("content");
   const { data: siteContent } = useSiteContent("es");
-  const brand = siteContent?.brand ?? { name1: "Vizcaya", name2: "Salud", logoUrl: "" };
+  const brand = siteContent?.brand ?? { name1: "Asesoría", name2: "Jurídica", logoUrl: "" };
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth" });
   }, [user, loading, navigate]);
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center text-sm text-muted-foreground">Cargando…</div>;
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center text-sm text-muted-foreground">Cargando…</div>;
+  }
   if (!user) return null;
   if (!isAdmin) {
     return (
@@ -51,283 +77,51 @@ VALUES ('${user.id}', 'admin');`}
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <header className="border-b border-border bg-background">
-        <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-baseline gap-1.5">
+      <header className="border-b border-border bg-background sticky top-0 z-40">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
+          <Link to="/" className="flex min-w-0 items-center gap-3">
             {brand.logoUrl ? (
-              <img src={brand.logoUrl} alt={`${brand.name1} ${brand.name2}`} className="h-8 w-auto" />
+              <img src={brand.logoUrl} alt={`${brand.name1} ${brand.name2}`} className="h-9 w-auto max-w-48 object-contain" />
             ) : (
-              <>
-                <span className="font-display text-xl font-semibold">{brand.name1}</span>
-                <span className="font-display text-xl italic text-primary">{brand.name2}</span>
-              </>
+              <span className="min-w-0 leading-none">
+                <span className="block truncate font-display text-xl font-semibold">{brand.name1}</span>
+                <span className="mt-1 block truncate text-[10px] font-semibold uppercase tracking-[0.22em] text-primary">{brand.name2}</span>
+              </span>
             )}
-            <span className="ml-3 text-xs uppercase tracking-widest text-muted-foreground">Admin</span>
+            <span className="hidden sm:inline-flex rounded-full border border-border bg-muted/50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Admin</span>
           </Link>
           <div className="flex items-center gap-3 text-sm">
-            <span className="text-muted-foreground hidden sm:inline">{user.email}</span>
-            <button onClick={signOut} className="text-xs text-muted-foreground hover:text-foreground">Salir</button>
+            <span className="text-muted-foreground hidden md:inline truncate max-w-56">{user.email}</span>
+            <button onClick={signOut} className="min-h-10 rounded-full border border-border px-4 text-xs font-semibold text-foreground transition hover:border-primary/40 hover:bg-muted">Salir</button>
           </div>
         </div>
-        <nav className="mx-auto max-w-7xl px-6 flex gap-1 border-t border-border">
-          {(["appointments", "content", "plans", "photos", "whatsapp"] as const).map(t => (
-            <button key={t} onClick={() => setTab(t)}
-              className={`px-4 py-3 text-sm border-b-2 transition ${tab === t ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
-              {t === "appointments" ? "Citas" : t === "content" ? "Contenido" : t === "plans" ? "Planes" : t === "photos" ? "Fotos" : "WhatsApp"}
-            </button>
-          ))}
+
+        <nav className="mx-auto max-w-7xl overflow-x-auto px-4 sm:px-6" aria-label="Secciones del panel">
+          <div className="flex min-w-max gap-2 pb-3">
+            {ADMIN_TABS.map(item => (
+              <button
+                key={item.id}
+                onClick={() => setTab(item.id)}
+                className={`min-h-12 rounded-xl border px-4 py-2 text-left transition ${
+                  tab === item.id
+                    ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                    : "border-border bg-card text-foreground hover:border-primary/35 hover:bg-muted/50"
+                }`}
+              >
+                <span className="block text-sm font-semibold">{item.label}</span>
+                <span className={`mt-0.5 block text-[10px] ${tab === item.id ? "text-primary-foreground/75" : "text-muted-foreground"}`}>{item.description}</span>
+              </button>
+            ))}
+          </div>
         </nav>
       </header>
-      <main className="mx-auto max-w-7xl px-6 py-8">
-        {tab === "appointments" && <AppointmentsTab />}
+
+      <main className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
         {tab === "content" && <ContentEditor />}
         {tab === "plans" && <PlansTab />}
         {tab === "photos" && <PhotosTab />}
-        {tab === "whatsapp" && <WhatsappTab />}
       </main>
     </div>
-  );
-}
-
-function toLocalInput(iso: string | null) {
-  if (!iso) return "";
-  const d = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
-const STATUS_LABEL: Record<string, string> = { pending: "Pendiente", confirmed: "Confirmada", completed: "Completada", cancelled: "Cancelada" };
-const STATUS_COLOR: Record<string, string> = {
-  pending: "bg-amber-100 text-amber-900",
-  confirmed: "bg-emerald-100 text-emerald-900",
-  completed: "bg-blue-100 text-blue-900",
-  cancelled: "bg-red-100 text-red-900",
-};
-
-function AppointmentsTab() {
-  const [items, setItems] = useState<Appointment[]>([]);
-  const [plans, setPlans] = useState<PlanOpt[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"upcoming" | "today" | "past" | "all">("upcoming");
-  const [expanded, setExpanded] = useState<string | null>(null);
-  const [creating, setCreating] = useState(false);
-  const notifyChange = useServerFn(waNotifyStatusChange);
-
-  async function load() {
-    setLoading(true);
-    const [{ data: appts }, { data: pl }] = await Promise.all([
-      supabase.from("appointments").select("*").order("scheduled_at", { ascending: true, nullsFirst: false }).order("created_at", { ascending: false }),
-      supabase.from("plans").select("id, name").order("position"),
-    ]);
-    setItems((appts as Appointment[]) ?? []);
-    setPlans((pl as PlanOpt[]) ?? []);
-    setLoading(false);
-  }
-  useEffect(() => { load(); }, []);
-
-  async function patch(id: string, changes: Partial<Appointment>) {
-    const prev = items.find(a => a.id === id);
-    await supabase.from("appointments").update(changes as any).eq("id", id);
-    // Disparar notificaciones de WhatsApp según lo que cambió
-    try {
-      if (changes.status && prev && changes.status !== prev.status) {
-        if (changes.status === "confirmed") await notifyChange({ data: { appointmentId: id, kind: "confirmed" } });
-        else if (changes.status === "cancelled") await notifyChange({ data: { appointmentId: id, kind: "cancelled" } });
-      } else if (changes.scheduled_at && prev && changes.scheduled_at !== prev.scheduled_at) {
-        await notifyChange({ data: { appointmentId: id, kind: "reschedule" } });
-      }
-    } catch (e) { console.warn("[wa notify]", e); }
-    load();
-  }
-  async function remove(id: string) {
-    if (!confirm("¿Eliminar esta cita?")) return;
-    await supabase.from("appointments").delete().eq("id", id);
-    load();
-  }
-
-  const now = new Date();
-  const startOfToday = new Date(now); startOfToday.setHours(0, 0, 0, 0);
-  const endOfToday = new Date(startOfToday); endOfToday.setDate(endOfToday.getDate() + 1);
-
-  const filtered = items.filter(a => {
-    if (filter === "all") return true;
-    const t = a.scheduled_at ? new Date(a.scheduled_at) : null;
-    if (filter === "upcoming") return !t || t >= now;
-    if (filter === "today") return t && t >= startOfToday && t < endOfToday;
-    if (filter === "past") return t && t < now;
-    return true;
-  });
-
-  const planName = (id: string | null) => plans.find(p => p.id === id)?.name;
-
-  if (loading) return <p className="text-sm text-muted-foreground">Cargando citas…</p>;
-
-  return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex rounded-full border border-border bg-background p-0.5 text-xs">
-          {(["upcoming", "today", "past", "all"] as const).map(f => (
-            <button key={f} onClick={() => setFilter(f)}
-              className={`rounded-full px-4 py-1.5 transition ${filter === f ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>
-              {f === "upcoming" ? "Próximas" : f === "today" ? "Hoy" : f === "past" ? "Pasadas" : "Todas"}
-            </button>
-          ))}
-        </div>
-        <button onClick={() => setCreating(true)}
-          className="rounded-full bg-primary text-primary-foreground px-5 py-2 text-xs font-medium">
-          + Nueva cita
-        </button>
-      </div>
-
-      {creating && (
-        <NewAppointment plans={plans} onClose={() => setCreating(false)} onSaved={() => { setCreating(false); load(); }} />
-      )}
-
-      {!filtered.length ? (
-        <p className="text-sm text-muted-foreground py-8 text-center">Sin citas en este filtro.</p>
-      ) : (
-        <div className="space-y-3">
-          {filtered.map(a => {
-            const isOpen = expanded === a.id;
-            const when = a.scheduled_at ? new Date(a.scheduled_at) : null;
-            return (
-              <div key={a.id} className="rounded-2xl border border-border bg-card overflow-hidden">
-                <div className="p-5 flex flex-wrap items-start justify-between gap-3">
-                  <div className="flex-1 min-w-[200px]">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className={`text-[10px] uppercase tracking-wide rounded-full px-2 py-0.5 ${STATUS_COLOR[a.status] ?? "bg-muted"}`}>
-                        {STATUS_LABEL[a.status] ?? a.status}
-                      </span>
-                      {when && (
-                        <span className="text-sm font-medium">
-                          📅 {when.toLocaleString("es-AR", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Argentina/Buenos_Aires" })}
-                          {a.duration_minutes ? ` · ${a.duration_minutes}min` : ""}
-                        </span>
-                      )}
-                      {!when && <span className="text-xs text-muted-foreground italic">Sin fecha asignada</span>}
-                    </div>
-                    <p className="font-medium mt-2">{a.name}</p>
-                    <p className="text-sm text-muted-foreground">📧 {a.email} · 📱 {a.phone}</p>
-                    {planName(a.plan_id) && <p className="text-xs text-primary mt-1">Plan: {planName(a.plan_id)}</p>}
-                    {a.preferred_date && <p className="text-xs text-muted-foreground mt-1">Preferencia paciente: {a.preferred_date}</p>}
-                    {a.message && <p className="text-sm text-muted-foreground mt-2 italic">"{a.message}"</p>}
-                  </div>
-                  <div className="flex flex-col items-end gap-2">
-                    <select value={a.status} onChange={(e) => patch(a.id, { status: e.target.value })}
-                      className="text-xs rounded-full border border-border px-3 py-1 bg-background">
-                      {Object.entries(STATUS_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-                    </select>
-                    <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      Duración:
-                      <select
-                        value={a.duration_minutes ?? 60}
-                        onChange={(e) => patch(a.id, { duration_minutes: Number(e.target.value) })}
-                        className="rounded-full border border-border px-2 py-1 bg-background text-foreground"
-                      >
-                        {[15, 30, 45, 60, 75, 90, 120].map(m => (
-                          <option key={m} value={m}>{m} min</option>
-                        ))}
-                      </select>
-                    </label>
-                    <button onClick={() => setExpanded(isOpen ? null : a.id)}
-                      className="text-xs text-primary hover:underline">
-                      {isOpen ? "Cerrar" : "Editar agenda"}
-                    </button>
-                    <button onClick={() => remove(a.id)} className="text-xs text-destructive hover:underline">Eliminar</button>
-                  </div>
-                </div>
-                {isOpen && (
-                  <div className="border-t border-border bg-muted/30 p-5 grid gap-3 md:grid-cols-3">
-                    <label className="block">
-                      <span className="block text-xs font-medium mb-1 text-muted-foreground">Fecha y hora</span>
-                      <input type="datetime-local" defaultValue={toLocalInput(a.scheduled_at)}
-                        onBlur={e => patch(a.id, { scheduled_at: e.target.value ? new Date(e.target.value).toISOString() : null })}
-                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
-                    </label>
-                    <label className="block">
-                      <span className="block text-xs font-medium mb-1 text-muted-foreground">Duración (min)</span>
-                      <input type="number" min={15} step={15} defaultValue={a.duration_minutes ?? 60}
-                        onBlur={e => patch(a.id, { duration_minutes: Number(e.target.value) || 60 })}
-                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
-                    </label>
-                    <label className="block">
-                      <span className="block text-xs font-medium mb-1 text-muted-foreground">Plan</span>
-                      <select defaultValue={a.plan_id ?? ""} onBlur={e => patch(a.id, { plan_id: e.target.value || null })}
-                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
-                        <option value="">—</option>
-                        {plans.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                      </select>
-                    </label>
-                    <label className="block md:col-span-3">
-                      <span className="block text-xs font-medium mb-1 text-muted-foreground">Notas internas</span>
-                      <textarea rows={2} defaultValue={a.admin_notes ?? ""}
-                        onBlur={e => patch(a.id, { admin_notes: e.target.value || null })}
-                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
-                    </label>
-                    <p className="md:col-span-3 text-xs text-muted-foreground">Los cambios se guardan al salir del campo.</p>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function NewAppointment({ plans, onClose, onSaved }: { plans: PlanOpt[]; onClose: () => void; onSaved: () => void }) {
-  const [form, setForm] = useState({ name: "", email: "", phone: "", plan_id: "", scheduled_at: "", duration_minutes: 60, admin_notes: "", status: "confirmed" });
-  const [saving, setSaving] = useState(false);
-
-  async function save(e: React.FormEvent) {
-    e.preventDefault(); setSaving(true);
-    const payload = {
-      ...form,
-      full_name: form.name,
-      plan_id: form.plan_id || null,
-      scheduled_at: form.scheduled_at ? new Date(form.scheduled_at).toISOString() : null,
-      duration_minutes: Number(form.duration_minutes) || 60,
-      admin_notes: form.admin_notes || null,
-    };
-    const { error } = await supabase.from("appointments").insert(payload as any);
-    setSaving(false);
-    if (error) { alert(error.message); return; }
-    onSaved();
-  }
-
-  return (
-    <form onSubmit={save} className="rounded-2xl border border-primary/40 bg-primary/5 p-5 grid gap-3 md:grid-cols-2">
-      <h3 className="md:col-span-2 font-display text-lg">Nueva cita</h3>
-      <input required placeholder="Nombre" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
-        className="rounded-lg border border-input bg-background px-3 py-2 text-sm" />
-      <input required placeholder="Teléfono" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })}
-        className="rounded-lg border border-input bg-background px-3 py-2 text-sm" />
-      <input required type="email" placeholder="Email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })}
-        className="rounded-lg border border-input bg-background px-3 py-2 text-sm md:col-span-2" />
-      <input type="datetime-local" value={form.scheduled_at} onChange={e => setForm({ ...form, scheduled_at: e.target.value })}
-        className="rounded-lg border border-input bg-background px-3 py-2 text-sm" />
-      <input type="number" min={15} step={15} placeholder="Duración" value={form.duration_minutes}
-        onChange={e => setForm({ ...form, duration_minutes: Number(e.target.value) })}
-        className="rounded-lg border border-input bg-background px-3 py-2 text-sm" />
-      <select value={form.plan_id} onChange={e => setForm({ ...form, plan_id: e.target.value })}
-        className="rounded-lg border border-input bg-background px-3 py-2 text-sm">
-        <option value="">Sin plan</option>
-        {plans.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-      </select>
-      <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}
-        className="rounded-lg border border-input bg-background px-3 py-2 text-sm">
-        {Object.entries(STATUS_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-      </select>
-      <textarea rows={2} placeholder="Notas internas" value={form.admin_notes} onChange={e => setForm({ ...form, admin_notes: e.target.value })}
-        className="rounded-lg border border-input bg-background px-3 py-2 text-sm md:col-span-2" />
-      <div className="md:col-span-2 flex justify-end gap-2">
-        <button type="button" onClick={onClose} className="text-xs px-4 py-2 text-muted-foreground hover:text-foreground">Cancelar</button>
-        <button disabled={saving} type="submit" className="rounded-full bg-primary text-primary-foreground px-5 py-2 text-xs font-medium disabled:opacity-50">
-          {saving ? "Guardando…" : "Crear cita"}
-        </button>
-      </div>
-    </form>
   );
 }
 
@@ -335,27 +129,47 @@ function PlansTab() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
   async function load() {
     setLoading(true);
     const { data, error } = await supabase.from("plans").select("*").order("sort_order");
-    if (error) { console.error(error); alert("Error cargando planes: " + error.message); }
+    if (error) {
+      console.error(error);
+      alert("Error cargando planes: " + error.message);
+    }
     setPlans((data as Plan[]) ?? []);
     setLoading(false);
   }
-  useEffect(() => { load(); }, []);
+
+  useEffect(() => { void load(); }, []);
+
+  async function refreshSiteContent() {
+    await queryClient.invalidateQueries({ queryKey: ["site_content"] });
+  }
 
   async function save(p: Plan) {
     setSaving(p.id);
     const { error } = await supabase.from("plans").update({
-      name_es: p.name_es, name_pt: p.name_pt,
-      age_es: p.age_es, age_pt: p.age_pt,
-      price: p.price, old_price: p.old_price,
-      features_es: p.features_es, features_pt: p.features_pt,
-      popular: p.popular, sort_order: p.sort_order, active: p.active,
+      name_es: p.name_es,
+      name_pt: p.name_pt,
+      age_es: p.age_es,
+      age_pt: p.age_pt,
+      price: p.price,
+      old_price: p.old_price,
+      features_es: p.features_es,
+      features_pt: p.features_pt,
+      popular: p.popular,
+      sort_order: p.sort_order,
+      active: p.active,
+      updated_at: new Date().toISOString(),
     }).eq("id", p.id);
     setSaving(null);
-    if (error) alert("Error guardando: " + error.message);
+    if (error) {
+      alert("Error guardando: " + error.message);
+      return;
+    }
+    await refreshSiteContent();
   }
 
   function update(id: string, patch: Partial<Plan>) {
@@ -364,9 +178,7 @@ function PlansTab() {
 
   async function addPlan() {
     const nextOrder = plans.length ? Math.max(...plans.map(p => p.sort_order ?? 0)) + 1 : 1;
-    const slug = `plan-${Date.now()}`;
     const payload = {
-      slug,
       name_es: "Nuevo plan",
       name_pt: "Novo plano",
       age_es: "",
@@ -380,76 +192,71 @@ function PlansTab() {
       active: true,
     };
     const { error } = await supabase.from("plans").insert(payload as any);
-    if (error) { alert("Error creando plan: " + error.message); return; }
-    load();
+    if (error) {
+      alert("Error creando plan: " + error.message);
+      return;
+    }
+    await load();
+    await refreshSiteContent();
   }
 
   async function remove(p: Plan) {
     if (!confirm(`¿Eliminar el plan "${p.name_es}"? Esta acción no se puede deshacer.`)) return;
     const { error } = await supabase.from("plans").delete().eq("id", p.id);
-    if (error) { alert("Error eliminando: " + error.message); return; }
-    load();
+    if (error) {
+      alert("Error eliminando: " + error.message);
+      return;
+    }
+    await load();
+    await refreshSiteContent();
   }
 
   if (loading) return <p className="text-sm text-muted-foreground">Cargando…</p>;
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-xs text-muted-foreground">{plans.length} plan(es). Marca como "Activo" para mostrar en la web.</p>
-        <button onClick={addPlan}
-          className="rounded-full bg-primary text-primary-foreground px-5 py-2 text-xs font-medium">
-          + Nuevo plan
-        </button>
+    <div className="space-y-5">
+      <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="font-display text-2xl">Planes y servicios</h2>
+          <p className="mt-1 text-xs text-muted-foreground">{plans.length} plan(es). Solo los marcados como activos aparecen en el homepage.</p>
+        </div>
+        <button onClick={addPlan} className="min-h-11 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">+ Nuevo plan</button>
       </div>
-      <div className="grid gap-4 md:grid-cols-2">
+
+      <div className="grid gap-4 lg:grid-cols-2">
         {plans.map(p => (
-          <div key={p.id} className={`rounded-2xl border p-5 space-y-3 ${p.active ? "border-border bg-card" : "border-dashed border-border bg-muted/30 opacity-70"}`}>
-            <div className="grid grid-cols-2 gap-2">
-              <input value={p.name_es} onChange={e => update(p.id, { name_es: e.target.value })}
-                className="rounded-lg border border-input px-3 py-2 text-sm" placeholder="Nombre (ES)" />
-              <input value={p.name_pt} onChange={e => update(p.id, { name_pt: e.target.value })}
-                className="rounded-lg border border-input px-3 py-2 text-sm" placeholder="Nome (PT)" />
-              <input value={p.age_es} onChange={e => update(p.id, { age_es: e.target.value })}
-                className="rounded-lg border border-input px-3 py-2 text-sm" placeholder="Rango edad (ES)" />
-              <input value={p.age_pt} onChange={e => update(p.id, { age_pt: e.target.value })}
-                className="rounded-lg border border-input px-3 py-2 text-sm" placeholder="Faixa etária (PT)" />
-              <div>
-                <label className="block text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Precio (R$)</label>
-                <input value={p.price} onChange={e => update(p.id, { price: e.target.value })}
-                  className="w-full rounded-lg border border-input px-3 py-2 text-sm" placeholder="R$ 180,00" />
-              </div>
-              <div>
-                <label className="block text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Precio anterior (R$)</label>
-                <input value={p.old_price ?? ""} onChange={e => update(p.id, { old_price: e.target.value })}
-                  className="w-full rounded-lg border border-input px-3 py-2 text-sm" placeholder="R$ 240,00" />
-              </div>
-              <input type="number" value={p.sort_order} onChange={e => update(p.id, { sort_order: Number(e.target.value) })}
-                className="rounded-lg border border-input px-3 py-2 text-sm" placeholder="Orden" />
+          <div key={p.id} className={`rounded-2xl border p-5 space-y-4 ${p.active ? "border-border bg-card" : "border-dashed border-border bg-muted/30 opacity-75"}`}>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <input value={p.name_es} onChange={e => update(p.id, { name_es: e.target.value })} className="min-h-11 rounded-lg border border-input bg-background px-3 py-2 text-sm" placeholder="Nombre (ES)" />
+              <input value={p.name_pt} onChange={e => update(p.id, { name_pt: e.target.value })} className="min-h-11 rounded-lg border border-input bg-background px-3 py-2 text-sm" placeholder="Nome (PT)" />
+              <input value={p.age_es} onChange={e => update(p.id, { age_es: e.target.value })} className="min-h-11 rounded-lg border border-input bg-background px-3 py-2 text-sm" placeholder="Descripción breve (ES)" />
+              <input value={p.age_pt} onChange={e => update(p.id, { age_pt: e.target.value })} className="min-h-11 rounded-lg border border-input bg-background px-3 py-2 text-sm" placeholder="Descrição breve (PT)" />
+              <label className="block text-xs font-medium text-muted-foreground">Precio
+                <input value={p.price} onChange={e => update(p.id, { price: e.target.value })} className="mt-1 min-h-11 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" placeholder="R$ 180,00" />
+              </label>
+              <label className="block text-xs font-medium text-muted-foreground">Precio anterior
+                <input value={p.old_price ?? ""} onChange={e => update(p.id, { old_price: e.target.value })} className="mt-1 min-h-11 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+              </label>
+              <label className="block text-xs font-medium text-muted-foreground">Orden
+                <input type="number" value={p.sort_order} onChange={e => update(p.id, { sort_order: Number(e.target.value) })} className="mt-1 min-h-11 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+              </label>
             </div>
-            <label className="block text-xs text-muted-foreground">Features (ES) — una por línea</label>
-            <textarea value={(p.features_es ?? []).join("\n")} onChange={e => update(p.id, { features_es: e.target.value.split("\n").filter(Boolean) })}
-              rows={4} className="w-full rounded-lg border border-input px-3 py-2 text-sm font-mono" />
-            <label className="block text-xs text-muted-foreground">Features (PT) — uma por linha</label>
-            <textarea value={(p.features_pt ?? []).join("\n")} onChange={e => update(p.id, { features_pt: e.target.value.split("\n").filter(Boolean) })}
-              rows={4} className="w-full rounded-lg border border-input px-3 py-2 text-sm font-mono" />
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center gap-4">
-                <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" checked={p.popular} onChange={e => update(p.id, { popular: e.target.checked })} />
-                  Más popular
-                </label>
-                <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" checked={p.active} onChange={e => update(p.id, { active: e.target.checked })} />
-                  Activo
-                </label>
+
+            <label className="block text-xs font-medium text-muted-foreground">Características (ES) — una por línea
+              <textarea value={(p.features_es ?? []).join("\n")} onChange={e => update(p.id, { features_es: e.target.value.split("\n").filter(Boolean) })} rows={4} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+            </label>
+            <label className="block text-xs font-medium text-muted-foreground">Características (PT) — uma por linha
+              <textarea value={(p.features_pt ?? []).join("\n")} onChange={e => update(p.id, { features_pt: e.target.value.split("\n").filter(Boolean) })} rows={4} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+            </label>
+
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+              <div className="flex flex-wrap items-center gap-4">
+                <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={p.popular} onChange={e => update(p.id, { popular: e.target.checked })} /> Más popular</label>
+                <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={p.active} onChange={e => update(p.id, { active: e.target.checked })} /> Activo</label>
               </div>
-              <div className="flex items-center gap-3">
-                <button onClick={() => remove(p)} className="text-xs text-destructive hover:underline">Eliminar</button>
-                <button onClick={() => save(p)} disabled={saving === p.id}
-                  className="rounded-full bg-primary text-primary-foreground px-5 py-2 text-xs font-medium disabled:opacity-50">
-                  {saving === p.id ? "Guardando…" : "Guardar"}
-                </button>
+              <div className="flex items-center gap-2">
+                <button onClick={() => remove(p)} className="min-h-10 rounded-lg border border-destructive/30 px-4 text-xs font-bold text-destructive hover:bg-destructive/5">Eliminar</button>
+                <button onClick={() => save(p)} disabled={saving === p.id} className="min-h-10 rounded-lg bg-primary px-5 text-xs font-bold text-primary-foreground disabled:opacity-50">{saving === p.id ? "Guardando…" : "Guardar"}</button>
               </div>
             </div>
           </div>
@@ -478,23 +285,28 @@ function PhotosTab() {
     setHeroUrl(media.heroImage ?? "");
     setGallery(Array.isArray(media.gallery) ? media.gallery : []);
   }
-  useEffect(() => { load(); }, []);
+
+  useEffect(() => { void load(); }, []);
 
   function urlFor(path: string) {
     return supabase.storage.from("site-photos").getPublicUrl(path).data.publicUrl;
   }
 
   async function persistMedia(next: { heroImage?: string; gallery?: string[] }) {
-    // Escribe en ambos idiomas para que el sitio lo vea en ES y PT.
     for (const lang of ["es", "pt"] as const) {
       const { data } = await supabase.from("site_content").select("data").eq("lang", lang).maybeSingle();
       const current = (data?.data as any) ?? {};
       const merged = { ...current, media: { ...(current.media ?? {}), ...next } };
-      const { error } = await supabase.from("site_content")
-        .upsert({ lang, data: merged, updated_at: new Date().toISOString() }, { onConflict: "lang" });
-      if (error) { alert("Error al guardar media (" + lang + "): " + error.message); throw error; }
+      const { error } = await supabase.from("site_content").upsert(
+        { lang, data: merged, updated_at: new Date().toISOString() },
+        { onConflict: "lang" },
+      );
+      if (error) {
+        alert("Error al guardar media (" + lang + "): " + error.message);
+        throw error;
+      }
     }
-    queryClient.invalidateQueries({ queryKey: ["site_content"] });
+    await queryClient.invalidateQueries({ queryKey: ["site_content"] });
   }
 
   async function onUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -504,19 +316,26 @@ function PhotosTab() {
     const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
     const path = `${Date.now()}-${safeName}`;
     const { error: upErr } = await supabase.storage.from("site-photos").upload(path, file);
-    if (upErr) { alert(upErr.message); setUploading(false); return; }
-    const slot = `photo-${Date.now()}`;
-    const altText = title || null;
+    if (upErr) {
+      alert(upErr.message);
+      setUploading(false);
+      return;
+    }
     const { error: insErr } = await supabase.from("site_photos").insert({
-      slot,
+      slot: `photo-${Date.now()}`,
       storage_path: path,
-      alt_es: altText,
-      alt_pt: altText,
+      alt_es: title || null,
+      alt_pt: title || null,
     });
-    if (insErr) { alert("Error al guardar: " + insErr.message); setUploading(false); return; }
-    setTitle(""); setUploading(false);
+    if (insErr) {
+      alert("Error al guardar: " + insErr.message);
+      setUploading(false);
+      return;
+    }
+    setTitle("");
+    setUploading(false);
     e.target.value = "";
-    load();
+    await load();
   }
 
   async function remove(p: Photo) {
@@ -524,13 +343,12 @@ function PhotosTab() {
     const url = urlFor(p.storage_path);
     await supabase.storage.from("site-photos").remove([p.storage_path]);
     await supabase.from("site_photos").delete().eq("id", p.id);
-    // Limpiar referencias si estaba en uso
     const nextHero = heroUrl === url ? "" : heroUrl;
     const nextGallery = gallery.filter(u => u !== url);
     if (nextHero !== heroUrl || nextGallery.length !== gallery.length) {
       await persistMedia({ heroImage: nextHero, gallery: nextGallery });
     }
-    load();
+    await load();
   }
 
   async function useAsHero(p: Photo) {
@@ -558,41 +376,31 @@ function PhotosTab() {
 
   return (
     <div className="space-y-6">
-      {/* Uploader */}
-      <div className="rounded-2xl border border-dashed border-border p-6 bg-card">
-        <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Título (opcional)"
-          className="w-full mb-3 rounded-lg border border-input px-3 py-2 text-sm" />
+      <div className="admin-photo-uploader rounded-2xl border border-dashed border-border p-6 bg-card">
+        <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Título (opcional)" className="w-full mb-3 rounded-lg border border-input bg-background px-3 py-2 text-sm" />
         <input type="file" accept="image/*" onChange={onUpload} disabled={uploading} className="text-sm" />
         {uploading && <p className="text-xs text-muted-foreground mt-2">Subiendo…</p>}
       </div>
 
-      {/* Estado actual */}
       <div className="grid gap-4 md:grid-cols-2">
         <div className="rounded-2xl border border-border bg-card p-4">
           <div className="flex items-center justify-between mb-2">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Foto de portada (hero)</p>
-            {heroUrl && <button onClick={clearHero} className="text-xs text-destructive hover:underline">Quitar</button>}
+            {heroUrl && <button onClick={clearHero} className="text-xs font-semibold text-destructive hover:underline">Quitar</button>}
           </div>
-          {heroUrl ? (
-            <img src={heroUrl} alt="Hero" className="w-full aspect-[16/9] object-cover rounded-xl" />
-          ) : (
-            <p className="text-sm text-muted-foreground py-6 text-center">Usando la imagen por defecto. Elige una abajo para reemplazarla.</p>
-          )}
+          {heroUrl ? <img src={heroUrl} alt="Hero" className="w-full aspect-[16/9] object-cover rounded-xl" /> : <p className="text-sm text-muted-foreground py-6 text-center">Usando la imagen por defecto.</p>}
         </div>
         <div className="rounded-2xl border border-border bg-card p-4">
           <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Galería en la web ({gallery.length})</p>
           {gallery.length ? (
             <div className="grid grid-cols-4 gap-1.5">
-              {gallery.map((u, i) => <img key={i} src={u} alt="" className="aspect-square object-cover rounded" />)}
+              {gallery.map((u, i) => <img key={`${u}-${i}`} src={u} alt="" className="aspect-square object-cover rounded" />)}
             </div>
-          ) : (
-            <p className="text-sm text-muted-foreground py-6 text-center">Aún no hay fotos en la galería. Marca fotos para agregarlas.</p>
-          )}
+          ) : <p className="text-sm text-muted-foreground py-6 text-center">Aún no hay fotos en la galería.</p>}
         </div>
       </div>
 
-      {/* Todas las fotos */}
-      <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
         {photos.map(p => {
           const url = urlFor(p.storage_path);
           const isHero = heroUrl === url;
@@ -606,17 +414,11 @@ function PhotosTab() {
               </div>
               <div className="p-3 space-y-2">
                 <p className="text-xs truncate">{p.alt_es || p.storage_path}</p>
-                <div className="flex flex-wrap gap-2 text-xs">
-                  <button onClick={() => useAsHero(p)} disabled={isHero || savingKey === `hero-${p.id}`}
-                    className="rounded-full bg-primary text-primary-foreground px-3 py-1 disabled:opacity-50">
-                    {isHero ? "✓ Hero" : "Usar como hero"}
-                  </button>
-                  <button onClick={() => toggleGallery(p)} disabled={savingKey === `gal-${p.id}`}
-                    className={`rounded-full px-3 py-1 border ${inGallery ? "border-foreground bg-foreground text-background" : "border-border"}`}>
-                    {inGallery ? "Quitar galería" : "+ Galería"}
-                  </button>
+                <div className="grid gap-2">
+                  <button onClick={() => useAsHero(p)} disabled={isHero || savingKey === `hero-${p.id}`} className="admin-photo-action admin-photo-action--hero rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground disabled:opacity-50">{isHero ? "✓ Hero" : "Usar como hero"}</button>
+                  <button onClick={() => toggleGallery(p)} disabled={savingKey === `gal-${p.id}`} className={`admin-photo-action ${inGallery ? "admin-photo-action--gallery-active bg-foreground text-background" : "admin-photo-action--gallery border border-border"} rounded-lg px-3 py-2 text-xs font-bold`}>{inGallery ? "Quitar galería" : "+ Galería"}</button>
+                  <button onClick={() => remove(p)} className="admin-photo-action admin-photo-action--danger min-h-10 rounded-lg border border-destructive/30 px-3 text-xs font-bold text-destructive">Eliminar</button>
                 </div>
-                <button onClick={() => remove(p)} className="text-xs text-destructive hover:underline">Eliminar</button>
               </div>
             </div>
           );
