@@ -16,6 +16,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider } from "@/hooks/use-auth";
 import { UiEnhancer } from "@/components/UiEnhancer";
 import { SiteContentGate } from "@/components/SiteContentGate";
+import { PlansBootstrap } from "@/components/admin/PlansBootstrap";
 
 function NotFoundComponent() {
   return (
@@ -97,6 +98,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <UiEnhancer />
+        <PlansBootstrap />
         <SiteContentGate>
           <Outlet />
         </SiteContentGate>
