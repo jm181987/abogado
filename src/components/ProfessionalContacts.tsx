@@ -50,7 +50,6 @@ export function ProfessionalContacts() {
       const copySet = professionalContactCopy[lang];
 
       document.querySelector("[data-professional-contacts='true']")?.remove();
-      document.querySelector("[data-professional-footer='true']")?.remove();
 
       const contact = document.querySelector<HTMLElement>("#contacto > div");
       if (contact) {
@@ -67,24 +66,6 @@ export function ProfessionalContacts() {
         PROFESSIONALS.forEach(({ name, credential, href }) => grid.appendChild(professionalCard(name, credential, href, lang)));
         block.append(intro, grid);
         contact.appendChild(block);
-      }
-
-      const footer = document.querySelector<HTMLElement>("footer > div");
-      if (footer) {
-        const links = document.createElement("div");
-        links.dataset.professionalFooter = "true";
-        links.className = "flex flex-wrap items-center gap-x-4 gap-y-2 text-xs";
-        PROFESSIONALS.forEach(({ name, href }) => {
-          const link = document.createElement("a");
-          link.href = href;
-          link.target = "_blank";
-          link.rel = "noreferrer";
-          link.className = "font-medium text-foreground/65 transition hover:text-primary";
-          link.textContent = name.replace(/^Dra?\.\s/, "");
-          link.setAttribute("aria-label", copySet.footerAria(name));
-          links.appendChild(link);
-        });
-        footer.insertBefore(links, footer.lastElementChild);
       }
     };
 
@@ -103,7 +84,6 @@ export function ProfessionalContacts() {
       observer.disconnect();
       document.removeEventListener("click", onLanguageClick, true);
       document.querySelector("[data-professional-contacts='true']")?.remove();
-      document.querySelector("[data-professional-footer='true']")?.remove();
     };
   }, []);
 
