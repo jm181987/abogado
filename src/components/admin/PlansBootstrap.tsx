@@ -4,7 +4,13 @@ import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { useSiteContent } from "@/lib/site-content";
 
+/** No monta hooks ni consultas de planes fuera de /admin. */
 export function PlansBootstrap() {
+  if (typeof window === "undefined" || window.location.pathname !== "/admin") return null;
+  return <AdminPlansBootstrap />;
+}
+
+function AdminPlansBootstrap() {
   const { isAdmin, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
   const { data: es } = useSiteContent("es");
@@ -12,7 +18,7 @@ export function PlansBootstrap() {
   const ran = useRef(false);
 
   useEffect(() => {
-    if (window.location.pathname !== "/admin" || authLoading || !isAdmin || !es || !pt || ran.current) return;
+    if (authLoading || !isAdmin || !es || !pt || ran.current) return;
     ran.current = true;
 
     void (async () => {
@@ -56,7 +62,7 @@ export function PlansBootstrap() {
   }, [authLoading, isAdmin, es, pt, queryClient]);
 
   useEffect(() => {
-    if (window.location.pathname !== "/admin" || authLoading || !isAdmin) return;
+    if (authLoading || !isAdmin) return;
 
     const refreshPlansTab = () => {
       const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>("header nav button"));
