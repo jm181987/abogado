@@ -29,19 +29,19 @@ const siteEnhancementsPlugin = {
       transformed = transformed
         .replace(
           'const heroSrc = t.media?.heroImage || heroImg;',
-          'const heroSrc = t.media?.heroImage || heroImg;\n  const mobileHeroSrc = (t.media as any)?.heroMobileImage || heroSrc;',
+          'const savedHeroSrc = t.media?.heroImage || (t.media as any)?.heroMobileImage;\n  const heroSrc = savedHeroSrc || heroImg;\n  const mobileHeroSrc = heroSrc;',
+        )
+        .replace(
+          'const hasCustomHero = Boolean(t.media?.heroImage);',
+          'const hasCustomHero = Boolean(t.media?.heroImage || (t.media as any)?.heroMobileImage);',
         )
         .replace(
           '<img src={heroSrc} alt="Estudio jurídico" className="h-full w-full object-cover object-center" width={1600} height={1200} />',
-          '<picture className="block h-full w-full"><source media="(max-width: 1023px)" srcSet={mobileHeroSrc} /><img src={heroSrc} alt="Estudio jurídico" className="h-full w-full object-cover object-right lg:object-center" width={1600} height={1200} loading="eager" fetchPriority="high" decoding="async" /></picture>',
-        )
-        .replaceAll(
-          'className="absolute inset-y-8 right-0 hidden w-[52%] bg-contain bg-center bg-no-repeat opacity-95 md:block"',
-          'className="absolute inset-y-8 right-0 hidden w-[52%] bg-contain bg-right bg-no-repeat opacity-95 lg:block"',
+          '<picture className="block h-full w-full"><source media="(max-width: 1023px)" srcSet={mobileHeroSrc} /><img src={heroSrc} alt="Estudio jurídico" className="h-full w-full object-cover object-right lg:object-center" width={1600} height={1200} loading="eager" fetchPriority="high" decoding="async" onError={(event) => { if (event.currentTarget.src !== heroImg) event.currentTarget.src = heroImg; }} /></picture>',
         )
         .replace(
-          '<div aria-hidden="true" className="absolute inset-y-8 right-0 hidden w-[52%] bg-contain bg-right bg-no-repeat opacity-95 lg:block" style={{ backgroundImage: `url(${heroSrc})` }} />',
-          '<div aria-hidden="true" className="absolute inset-0 bg-contain bg-right bg-no-repeat opacity-60 lg:hidden" style={{ backgroundImage: `url(${mobileHeroSrc})` }} /><div aria-hidden="true" className="absolute inset-y-8 right-0 hidden w-[52%] bg-contain bg-right bg-no-repeat opacity-95 lg:block" style={{ backgroundImage: `url(${heroSrc})` }} />',
+          '<div aria-hidden="true" className="absolute inset-y-8 right-0 hidden w-[52%] bg-contain bg-center bg-no-repeat opacity-95 md:block" style={{ backgroundImage: `url(${heroSrc})` }} />',
+          '<img src={heroSrc} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-contain object-right opacity-95" loading="eager" fetchPriority="high" decoding="async" onError={(event) => { if (event.currentTarget.src !== heroImg) event.currentTarget.src = heroImg; }} />',
         );
 
       const oldFooter = /\n\s*<footer className="border-t border-border bg-muted\/20 py-8">[\s\S]*?<\/footer>/;
@@ -64,7 +64,6 @@ const siteEnhancementsPlugin = {
     }
 
     if (isRootRoute) {
-      // El favicon ya existe como archivo estático: evita incrustar ~20 KB base64 en el JS inicial.
       transformed = transformed.replace(/const FAVICON = "data:image\/png;base64,[^"]+";/, 'const FAVICON = "/favicon.ico";');
 
       if (!transformed.includes('from "@/components/LegalFooter"')) {
