@@ -11,16 +11,25 @@
   margin-top: 0 !important;
 }
 
-/* About section: remove decorative 01/02/03 labels while preserving cards and icons. */
+/* About section: remove decorative labels while preserving cards and icons. */
 #nosotros .flex.items-start.justify-between.gap-4 > span:first-child {
   display: none !important;
 }
 
-/* Practice areas: remove decorative 01/02/03/04 labels while preserving service cards. */
+/* Practice areas: remove decorative labels while preserving service cards. */
 #planes .group > div:first-of-type > span:first-child {
   display: none !important;
 }
 
 #planes .group > div:first-of-type > h3 {
   margin-top: 0 !important;
+}
+
+/* Differentiators: remove decorative sequence numbers, keep the shield icon and content. */
+#diferenciadores .flex.items-center.justify-between > span:first-child {
+  display: none !important;
+}
+
+#diferenciadores .flex.items-center.justify-between {
+  justify-content: flex-end !important;
 }
