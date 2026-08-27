@@ -24,6 +24,16 @@ const siteEnhancementsPlugin = {
       .replaceAll('content: "image/png"', 'content: "image/jpeg"');
 
     if (isIndexRoute) {
+      transformed = transformed
+        .replaceAll(
+          'className="absolute inset-y-8 right-0 hidden w-[52%] bg-contain bg-center bg-no-repeat opacity-95 md:block"',
+          'className="absolute inset-0 bg-contain bg-center bg-no-repeat opacity-45 sm:opacity-60 md:inset-y-8 md:left-auto md:right-0 md:w-[72%] md:bg-right md:opacity-85 lg:w-[52%] lg:opacity-95"',
+        )
+        .replaceAll(
+          'className="h-full w-full object-cover object-center"',
+          'className="h-full w-full object-contain object-center lg:object-cover"',
+        );
+
       const oldFooter = /\n\s*<footer className="border-t border-border bg-muted\/20 py-8">[\s\S]*?<\/footer>/;
       transformed = transformed.replace(oldFooter, "");
     }
