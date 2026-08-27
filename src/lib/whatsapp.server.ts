@@ -1,35 +1,80 @@
 // Server-only. Cliente HTTP para Evolution API.
 // Nunca importar desde código de navegador ni desde .functions.ts a nivel de módulo.
 
+const REQUEST_TIMEOUT_MS = 12_000;
+
 const BASE = () => {
-  const url = process.env.EVOLUTION_API_URL;
-  if (!url) throw new Error("EVOLUTION_API_URL no configurada");
-  return url.replace(/\/+$/, "");
+  const raw = process.env.EVOLUTION_API_URL?.trim();
+  if (!raw) throw new Error("EVOLUTION_API_URL no configurada");
+
+  let parsed: URL;
+  try {
+    parsed = new URL(raw);
+  } catch {
+    throw new Error("EVOLUTION_API_URL no es una URL válida. Usa una URL completa, por ejemplo https://evolution.tudominio.com");
+  }
+
+  if (!['http:', 'https:'].includes(parsed.protocol)) {
+    throw new Error("EVOLUTION_API_URL debe comenzar con http:// o https://");
+  }
+  if (parsed.username || parsed.password) {
+    throw new Error("EVOLUTION_API_URL no debe incluir usuario ni contraseña");
+  }
+
+  const normalizedPath = parsed.pathname.replace(/\/+$/, "");
+  if (normalizedPath && normalizedPath !== "") {
+    throw new Error("EVOLUTION_API_URL debe contener solo el origen del servidor, sin /manager, /instance ni otras rutas");
+  }
+
+  parsed.pathname = "";
+  parsed.search = "";
+  parsed.hash = "";
+  return parsed.toString().replace(/\/+$/, "");
 };
 
 const KEY = () => {
-  const k = process.env.EVOLUTION_API_KEY;
+  const k = process.env.EVOLUTION_API_KEY?.trim();
   if (!k) throw new Error("EVOLUTION_API_KEY no configurada");
   return k;
 };
 
 async function evo(path: string, init?: RequestInit) {
-  const res = await fetch(`${BASE()}${path}`, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      apikey: KEY(),
-      ...(init?.headers ?? {}),
-    },
-  });
-  const text = await res.text();
-  let body: unknown = text;
-  try { body = text ? JSON.parse(text) : {}; } catch { /* keep text */ }
-  if (!res.ok) {
-    const msg = extractEvolutionErrorMessage(body, text, res.statusText);
-    throw new Error(`Evolution ${res.status}: ${msg}`);
+  const base = BASE();
+  const url = `${base}${path.startsWith("/") ? path : `/${path}`}`;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  try {
+    const res = await fetch(url, {
+      ...init,
+      signal: controller.signal,
+      headers: {
+        "Content-Type": "application/json",
+        apikey: KEY(),
+        ...(init?.headers ?? {}),
+      },
+    });
+
+    const text = await res.text();
+    let body: unknown = text;
+    try { body = text ? JSON.parse(text) : {}; } catch { /* keep text */ }
+
+    if (!res.ok) {
+      const msg = extractEvolutionErrorMessage(body, text, res.statusText);
+      throw new Error(`Evolution ${res.status}: ${msg}`);
+    }
+    return body as any;
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error(`Evolution no respondió en ${REQUEST_TIMEOUT_MS / 1000}s. Verifica EVOLUTION_API_URL, DNS, firewall y disponibilidad del servidor.`);
+    }
+    if (error instanceof TypeError) {
+      throw new Error(`No se pudo conectar con Evolution en ${base}. Verifica EVOLUTION_API_URL, DNS, HTTPS y que la URL no incluya rutas adicionales.`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
   }
-  return body as any;
 }
 
 function extractEvolutionErrorMessage(body: unknown, text: string, fallback: string): string {
@@ -61,13 +106,9 @@ export function toEvoNumber(phone: string): string {
 }
 
 export async function evoInstanceExists(name: string): Promise<boolean> {
-  try {
-    const list = await evo(`/instance/fetchInstances?instanceName=${encodeURIComponent(name)}`);
-    if (Array.isArray(list)) return list.length > 0;
-    return !!list;
-  } catch {
-    return false;
-  }
+  const list = await evo(`/instance/fetchInstances?instanceName=${encodeURIComponent(name)}`);
+  if (Array.isArray(list)) return list.length > 0;
+  return !!list;
 }
 
 export async function evoCreateInstance(name: string) {
@@ -104,7 +145,6 @@ export async function evoLogout(name: string) {
 export async function evoDelete(name: string) {
   return evo(`/instance/delete/${encodeURIComponent(name)}`, { method: "DELETE" });
 }
-
 
 export async function evoSendText(name: string, number: string, text: string) {
   return evo(`/message/sendText/${encodeURIComponent(name)}`, {
@@ -199,5 +239,4 @@ export async function getBrandInfo(admin: any): Promise<{ name: string; slug: st
   // Sin marca configurada: nombre neutro
   return { name: "Reservas", slug: "reservas", instance: "Reservas" };
 }
-
 
