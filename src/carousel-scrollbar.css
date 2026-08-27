@@ -1,0 +1,11 @@
+/* Keep the homepage gallery swipeable while hiding the horizontal scrollbar. */
+#galeria [data-gallery-track="true"] {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+#galeria [data-gallery-track="true"]::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
