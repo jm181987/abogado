@@ -232,3 +232,205 @@
     * { scroll-behavior: auto !important; }
   }
 }
+
+/* Admin-only polish. The admin header is uniquely identified by its top row followed by a nav. */
+@layer components {
+  body:has(header > div + nav) {
+    background:
+      radial-gradient(circle at 15% 0%, color-mix(in oklch, var(--color-primary) 7%, transparent), transparent 34rem),
+      color-mix(in oklch, var(--color-muted) 42%, var(--color-background));
+  }
+
+  body:has(header > div + nav) header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: color-mix(in oklch, var(--color-background) 94%, transparent);
+    backdrop-filter: blur(18px);
+    box-shadow: 0 10px 35px color-mix(in oklch, var(--color-foreground) 6%, transparent);
+  }
+
+  body:has(header > div + nav) header > div:first-child {
+    gap: 1rem;
+    min-height: 70px;
+  }
+
+  body:has(header > div + nav) header > div:first-child > a {
+    align-items: center;
+    min-width: 0;
+  }
+
+  body:has(header > div + nav) header > div:first-child > a > span:last-child {
+    border: 1px solid color-mix(in oklch, var(--color-primary) 22%, var(--color-border));
+    background: color-mix(in oklch, var(--color-primary) 8%, var(--color-background));
+    color: var(--color-primary);
+    border-radius: 999px;
+    padding: .35rem .6rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+  }
+
+  body:has(header > div + nav) header > div:first-child > div button {
+    min-height: 38px;
+    border: 1px solid var(--color-border);
+    border-radius: .7rem;
+    background: var(--color-background);
+    padding: .5rem .85rem;
+    font-weight: 650;
+    color: var(--color-foreground);
+    transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
+  }
+
+  body:has(header > div + nav) header > div:first-child > div button:hover {
+    border-color: color-mix(in oklch, var(--color-primary) 45%, var(--color-border));
+    background: color-mix(in oklch, var(--color-primary) 7%, var(--color-background));
+    transform: translateY(-1px);
+  }
+
+  body:has(header > div + nav) header > nav {
+    gap: .45rem;
+    padding-top: .6rem;
+    padding-bottom: .7rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+    border-top-color: color-mix(in oklch, var(--color-border) 72%, transparent);
+  }
+
+  body:has(header > div + nav) header > nav::-webkit-scrollbar { display: none; }
+
+  body:has(header > div + nav) header > nav > button {
+    flex: 0 0 auto;
+    min-height: 42px;
+    border: 1px solid var(--color-border) !important;
+    border-radius: .8rem;
+    padding: .65rem 1rem;
+    background: color-mix(in oklch, var(--color-card) 92%, transparent);
+    box-shadow: 0 2px 8px color-mix(in oklch, var(--color-foreground) 3%, transparent);
+    font-weight: 650;
+    line-height: 1;
+    transition: color 180ms ease, background 180ms ease, border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+  }
+
+  body:has(header > div + nav) header > nav > button:hover {
+    border-color: color-mix(in oklch, var(--color-primary) 40%, var(--color-border)) !important;
+    color: var(--color-foreground);
+    transform: translateY(-1px);
+  }
+
+  body:has(header > div + nav) header > nav > button.border-primary {
+    border-color: color-mix(in oklch, var(--color-primary) 62%, var(--color-border)) !important;
+    background: color-mix(in oklch, var(--color-primary) 11%, var(--color-background));
+    color: var(--color-foreground);
+    box-shadow: 0 7px 20px color-mix(in oklch, var(--color-primary) 12%, transparent);
+  }
+
+  body:has(header > div + nav) main {
+    padding-top: 2rem;
+    padding-bottom: 4rem;
+  }
+
+  body:has(header > div + nav) main > div {
+    animation: admin-enter 220ms ease-out;
+  }
+
+  body:has(header > div + nav) main section,
+  body:has(header > div + nav) main form,
+  body:has(header > div + nav) main .bg-card {
+    box-shadow: 0 12px 32px color-mix(in oklch, var(--color-foreground) 4%, transparent);
+  }
+
+  body:has(header > div + nav) main button {
+    min-height: 38px;
+    border-radius: .7rem;
+    padding-left: .85rem;
+    padding-right: .85rem;
+    font-weight: 650;
+    transition: transform 160ms ease, box-shadow 160ms ease, filter 160ms ease, border-color 160ms ease, background 160ms ease;
+  }
+
+  body:has(header > div + nav) main button:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px color-mix(in oklch, var(--color-foreground) 7%, transparent);
+  }
+
+  body:has(header > div + nav) main button:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  body:has(header > div + nav) main button:disabled {
+    cursor: not-allowed;
+    filter: saturate(.55);
+  }
+
+  body:has(header > div + nav) main button.text-destructive {
+    border: 1px solid color-mix(in oklch, var(--color-destructive) 30%, var(--color-border));
+    background: color-mix(in oklch, var(--color-destructive) 6%, var(--color-background));
+  }
+
+  body:has(header > div + nav) main input:not([type="checkbox"]):not([type="file"]),
+  body:has(header > div + nav) main select,
+  body:has(header > div + nav) main textarea {
+    min-height: 42px;
+    border-radius: .7rem;
+    background: color-mix(in oklch, var(--color-background) 96%, var(--color-card));
+    box-shadow: inset 0 1px 0 color-mix(in oklch, white 45%, transparent);
+    transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+  }
+
+  body:has(header > div + nav) main textarea { min-height: auto; }
+
+  body:has(header > div + nav) main input:not([type="checkbox"]):not([type="file"]):focus,
+  body:has(header > div + nav) main select:focus,
+  body:has(header > div + nav) main textarea:focus {
+    outline: none;
+    border-color: color-mix(in oklch, var(--color-primary) 62%, var(--color-border));
+    box-shadow: 0 0 0 3px color-mix(in oklch, var(--color-primary) 12%, transparent);
+  }
+
+  body:has(header > div + nav) main input[type="checkbox"] {
+    width: 1rem;
+    height: 1rem;
+    accent-color: var(--color-primary);
+  }
+
+  body:has(header > div + nav) main code,
+  body:has(header > div + nav) main pre {
+    border: 1px solid color-mix(in oklch, var(--color-border) 80%, transparent);
+  }
+
+  @keyframes admin-enter {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  @media (max-width: 767px) {
+    body:has(header > div + nav) header > div:first-child,
+    body:has(header > div + nav) header > nav,
+    body:has(header > div + nav) main {
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+
+    body:has(header > div + nav) header > div:first-child > a > span:last-child {
+      margin-left: .5rem;
+      font-size: .6rem;
+    }
+
+    body:has(header > div + nav) header > nav > button {
+      min-height: 44px;
+      padding-inline: .9rem;
+    }
+
+    body:has(header > div + nav) main button {
+      min-height: 42px;
+    }
+
+    body:has(header > div + nav) main .grid-cols-2 {
+      gap: .75rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    body:has(header > div + nav) main > div { animation: none; }
+  }
+}
