@@ -42,8 +42,6 @@ export function deepMerge(base: any, override: any): any {
   return out;
 }
 
-// Legacy content from the previous site must never be able to reintroduce
-// the old brand after a refresh. Sanitize persisted text before merging.
 function removeLegacyBrand(value: any): any {
   if (typeof value === "string") {
     return value
@@ -57,16 +55,35 @@ function removeLegacyBrand(value: any): any {
   return value;
 }
 
+function mapEditablePlans(rows: any[], lang: Lang) {
+  return rows.map((plan) => ({
+    name: lang === "pt" ? plan.name_pt : plan.name_es,
+    age: lang === "pt" ? plan.age_pt : plan.age_es,
+    price: plan.price ?? "",
+    old: plan.old_price ?? "",
+    popular: Boolean(plan.popular),
+    features: lang === "pt" ? (plan.features_pt ?? []) : (plan.features_es ?? []),
+  }));
+}
+
 export function useSiteContent(lang: Lang) {
   return useQuery({
     queryKey: ["site_content", lang],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("site_content")
-        .select("data")
-        .eq("lang", lang)
-        .maybeSingle();
+      const [contentResult, plansResult] = await Promise.all([
+        supabase
+          .from("site_content")
+          .select("data")
+          .eq("lang", lang)
+          .maybeSingle(),
+        supabase
+          .from("plans")
+          .select("name_es,name_pt,age_es,age_pt,price,old_price,features_es,features_pt,popular,active,sort_order")
+          .eq("active", true)
+          .order("sort_order"),
+      ]);
 
+      const { data, error } = contentResult;
       if (error) {
         const cached = readCachedContent(lang);
         if (cached) return cached;
@@ -81,11 +98,21 @@ export function useSiteContent(lang: Lang) {
 
       const persisted = removeLegacyBrand(data.data);
       const content = deepMerge(translations[lang], persisted) as Content;
+
+      if (!plansResult.error && plansResult.data?.length) {
+        content.plans = {
+          ...content.plans,
+          items: mapEditablePlans(plansResult.data, lang),
+        } as Content["plans"];
+      } else if (plansResult.error) {
+        console.warn("[site plans] No se pudieron cargar los planes editables", plansResult.error);
+      }
+
       writeCachedContent(lang, content);
       return content;
     },
     placeholderData: (previousData) => previousData ?? readCachedContent(lang),
-    staleTime: 30_000,
+    staleTime: 10_000,
     retry: 2,
   });
 }
