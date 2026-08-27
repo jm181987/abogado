@@ -2,9 +2,9 @@ import { useEffect } from "react";
 import { professionalContactCopy, type ProfessionalContactLang } from "@/components/ProfessionalContacts.i18n";
 
 const PROFESSIONALS = [
-  { name: "Dra. Macarena Bouchacourt", href: "https://wa.me/5551993254208" },
-  { name: "Dra. Daniele Simões Pires", href: "https://wa.me/5555984388396" },
-  { name: "Dr. Matheus Figueiredo", href: "https://wa.me/5555996378776" },
+  { name: "Dra. Macarena Bouchacourt", credential: "OAB/RS 106.130", href: "https://wa.me/5551993254208" },
+  { name: "Dra. Daniele Simões Pires", credential: "OAB/RS 108.350", href: "https://wa.me/5555984388396" },
+  { name: "Dr. Matheus Figueiredo", credential: "", href: "https://wa.me/5555996378776" },
 ] as const;
 
 function detectLanguage(): ProfessionalContactLang {
@@ -16,7 +16,7 @@ function detectLanguage(): ProfessionalContactLang {
   return selected?.textContent?.trim().toLowerCase() === "pt" ? "pt" : "es";
 }
 
-function professionalCard(name: string, href: string, lang: ProfessionalContactLang) {
+function professionalCard(name: string, credential: string, href: string, lang: ProfessionalContactLang) {
   const copySet = professionalContactCopy[lang];
   const card = document.createElement("a");
   card.href = href;
@@ -27,7 +27,7 @@ function professionalCard(name: string, href: string, lang: ProfessionalContactL
 
   const copy = document.createElement("span");
   copy.className = "min-w-0";
-  copy.innerHTML = `<strong class="block text-sm font-semibold text-foreground">${name}</strong><span class="mt-1 block text-xs text-muted-foreground">${copySet.direct}</span>`;
+  copy.innerHTML = `<strong class="block text-sm font-semibold text-foreground">${name}</strong>${credential ? `<span class="mt-0.5 block text-[11px] font-medium tracking-wide text-foreground/60">${credential}</span>` : ""}<span class="mt-1 block text-xs text-muted-foreground">${copySet.direct}</span>`;
 
   const action = document.createElement("span");
   action.className = "shrink-0 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground";
@@ -64,7 +64,7 @@ export function ProfessionalContacts() {
 
         const grid = document.createElement("div");
         grid.className = "grid gap-3 md:grid-cols-3";
-        PROFESSIONALS.forEach(({ name, href }) => grid.appendChild(professionalCard(name, href, lang)));
+        PROFESSIONALS.forEach(({ name, credential, href }) => grid.appendChild(professionalCard(name, credential, href, lang)));
         block.append(intro, grid);
         contact.appendChild(block);
       }
