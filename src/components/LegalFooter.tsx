@@ -41,7 +41,6 @@ export function LegalFooter() {
             <div className="mt-4 space-y-1 text-[11px] leading-5 text-foreground/75 sm:text-xs">
               <p><strong>Dra. Macarena Bouchacourt</strong> · OAB/RS 106.130</p>
               <p><strong>Dra. Daniele Simões Pires</strong> · OAB/RS 108.350</p>
-              <p><strong>Dr. Matheus Figueiredo</strong></p>
               <p className="pt-1">Rua Uruguai, 1248, Sala 2 · Sant'Ana do Livramento/RS</p>
             </div>
           </div>

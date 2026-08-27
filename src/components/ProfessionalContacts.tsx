@@ -4,7 +4,6 @@ import { professionalContactCopy, type ProfessionalContactLang } from "@/compone
 const PROFESSIONALS = [
   { name: "Dra. Macarena Bouchacourt", credential: "OAB/RS 106.130", href: "https://wa.me/5551993254208" },
   { name: "Dra. Daniele Simões Pires", credential: "OAB/RS 108.350", href: "https://wa.me/5555984388396" },
-  { name: "Dr. Matheus Figueiredo", credential: "", href: "https://wa.me/5555996378776" },
 ] as const;
 
 function detectLanguage(): ProfessionalContactLang {
@@ -62,7 +61,7 @@ export function ProfessionalContacts() {
         intro.innerHTML = `<p class="text-xs font-semibold uppercase tracking-[0.2em] text-primary">${copySet.kicker}</p><h3 class="mt-2 font-display text-2xl text-foreground sm:text-3xl">${copySet.title}</h3><p class="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">${copySet.description}</p>`;
 
         const grid = document.createElement("div");
-        grid.className = "grid gap-3 md:grid-cols-3";
+        grid.className = "grid gap-3 md:grid-cols-2";
         PROFESSIONALS.forEach(({ name, credential, href }) => grid.appendChild(professionalCard(name, credential, href, lang)));
         block.append(intro, grid);
         contact.appendChild(block);
