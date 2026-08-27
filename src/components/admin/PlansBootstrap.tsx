@@ -1,13 +1,14 @@
 import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useRouterState } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { useSiteContent } from "@/lib/site-content";
 
 /** No monta hooks ni consultas de planes fuera de /admin. */
 export function PlansBootstrap() {
-  if (typeof window === "undefined" || window.location.pathname !== "/admin") return null;
-  return <AdminPlansBootstrap />;
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  return pathname === "/admin" ? <AdminPlansBootstrap /> : null;
 }
 
 function AdminPlansBootstrap() {
