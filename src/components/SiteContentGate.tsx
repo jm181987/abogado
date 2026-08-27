@@ -1,13 +1,21 @@
 import type { ReactNode } from "react";
 import { useRouterState } from "@tanstack/react-router";
 import { useSiteContent } from "@/lib/site-content";
+import { ProfessionalContacts } from "@/components/ProfessionalContacts";
 
 export function SiteContentGate({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const siteContent = useSiteContent("es");
 
   if (pathname !== "/") return <>{children}</>;
-  if (siteContent.data) return <>{children}</>;
+  if (siteContent.data) {
+    return (
+      <>
+        <ProfessionalContacts />
+        {children}
+      </>
+    );
+  }
 
   if (siteContent.isError) {
     return (
