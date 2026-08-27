@@ -18,7 +18,38 @@ import { useSiteContent } from "@/lib/site-content";
 import { Reveal } from "@/components/Reveal";
 import { ThemeInjector } from "@/components/ThemeInjector";
 
-export const Route = createFileRoute("/")({ component: Index });
+const SITE_URL = "https://bspadvogados.vercel.app";
+const SOCIAL_TITLE = "Bouchacourt · Simões Pires | Advocacia Brasil–Uruguai";
+const SOCIAL_DESCRIPTION = "Assessoria e asesoría jurídica ética, estratégica e bilíngue para pessoas, famílias e empresas na fronteira Brasil–Uruguai.";
+const SOCIAL_IMAGE = `${SITE_URL}/og-social.png`;
+
+export const Route = createFileRoute("/")({
+  component: Index,
+  head: () => ({
+    meta: [
+      { title: SOCIAL_TITLE },
+      { name: "description", content: SOCIAL_DESCRIPTION },
+      { property: "og:title", content: SOCIAL_TITLE },
+      { property: "og:description", content: SOCIAL_DESCRIPTION },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: SITE_URL },
+      { property: "og:site_name", content: "Bouchacourt · Simões Pires" },
+      { property: "og:locale", content: "pt_BR" },
+      { property: "og:locale:alternate", content: "es_UY" },
+      { property: "og:image", content: SOCIAL_IMAGE },
+      { property: "og:image:secure_url", content: SOCIAL_IMAGE },
+      { property: "og:image:type", content: "image/png" },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      { property: "og:image:alt", content: "Bouchacourt Simões Pires · Advocacia e Assessoria Jurídica Brasil–Uruguai" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: SOCIAL_TITLE },
+      { name: "twitter:description", content: SOCIAL_DESCRIPTION },
+      { name: "twitter:image", content: SOCIAL_IMAGE },
+    ],
+    links: [{ rel: "canonical", href: SITE_URL }],
+  }),
+});
 
 function Index() {
   const [lang, setLang] = useState<Lang>("es");
@@ -281,7 +312,12 @@ function Index() {
       <footer className="border-t border-border bg-muted/20 py-8">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-5 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <div className="flex items-center gap-2"><Scale className="size-4 text-primary" /><span>{t.footer}</span></div>
-          <a href="#inicio" className="text-xs font-semibold uppercase tracking-[0.16em] text-foreground/60 hover:text-primary">{lang === "es" ? "Volver al inicio" : "Voltar ao início"}</a>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            <a href="https://www.marketingknj.site/" target="_blank" rel="noreferrer" className="text-xs font-semibold text-foreground/60 transition hover:text-primary">
+              {lang === "es" ? "Desarrollado por KNJ" : "Desenvolvido por KNJ"}
+            </a>
+            <a href="#inicio" className="text-xs font-semibold uppercase tracking-[0.16em] text-foreground/60 hover:text-primary">{lang === "es" ? "Volver al inicio" : "Voltar ao início"}</a>
+          </div>
         </div>
       </footer>
     </div>
