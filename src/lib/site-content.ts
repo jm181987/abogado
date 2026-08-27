@@ -17,6 +17,21 @@ export function deepMerge(base: any, override: any): any {
   return out;
 }
 
+// Legacy content from the previous site must never be able to reintroduce
+// the old brand after a refresh. Sanitize all persisted text before merging.
+function removeLegacyBrand(value: any): any {
+  if (typeof value === "string") {
+    return value
+      .replace(/Vizcaya\s+Salud/gi, "Estudio Jurídico")
+      .replace(/Vizcaya/gi, "Estudio Jurídico");
+  }
+  if (Array.isArray(value)) return value.map(removeLegacyBrand);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).map(([key, val]) => [key, removeLegacyBrand(val)]));
+  }
+  return value;
+}
+
 export function useSiteContent(lang: Lang) {
   return useQuery({
     queryKey: ["site_content", lang],
@@ -26,7 +41,8 @@ export function useSiteContent(lang: Lang) {
         .select("data")
         .eq("lang", lang)
         .maybeSingle();
-      return deepMerge(translations[lang], data?.data ?? {}) as Content;
+      const persisted = removeLegacyBrand(data?.data ?? {});
+      return deepMerge(translations[lang], persisted) as Content;
     },
     staleTime: 30_000,
   });
