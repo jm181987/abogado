@@ -1,0 +1,12 @@
+/* Homepage carousel: keep movement, remove all visible chrome. */
+#galeria .site-gallery-controls,
+#galeria .site-gallery-control,
+#galeria .site-gallery-counter,
+#galeria .site-gallery-play,
+#galeria .site-gallery-auto-label {
+  display: none !important;
+}
+
+#galeria [data-gallery-track="true"] {
+  margin-top: 0 !important;
+}
