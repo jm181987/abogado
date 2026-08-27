@@ -1,8 +1,0 @@
-/* Oculta los indicadores 01, 02, 03 y 04 de las tarjetas de Áreas de Práctica / Áreas de Atuação. */
-#planes .group > div:first-of-type > span:first-child {
-  display: none !important;
-}
-
-#planes .group > div:first-of-type > h3 {
-  margin-top: 0 !important;
-}
