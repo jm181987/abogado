@@ -24,15 +24,23 @@ const siteEnhancementsPlugin = {
       .replaceAll('content: "image/png"', 'content: "image/jpeg"');
 
     if (isIndexRoute) {
+      const oldFooter = /\n\s*<footer className="border-t border-border bg-muted\/20 py-8">[\s\S]*?<\/footer>/;
+      transformed = transformed.replace(oldFooter, "");
+    }
+
+    if (isRootRoute) {
       if (!transformed.includes('from "@/components/LegalFooter"')) {
         transformed = transformed.replace(
-          'import { ThemeInjector } from "@/components/ThemeInjector";',
-          'import { ThemeInjector } from "@/components/ThemeInjector";\nimport { LegalFooter } from "@/components/LegalFooter";',
+          'import { PlansBootstrap } from "@/components/admin/PlansBootstrap";',
+          'import { PlansBootstrap } from "@/components/admin/PlansBootstrap";\nimport { LegalFooter } from "@/components/LegalFooter";',
         );
       }
-
-      const oldFooter = /\n\s*<footer className="border-t border-border bg-muted\/20 py-8">[\s\S]*?<\/footer>/;
-      transformed = transformed.replace(oldFooter, "\n      <LegalFooter />");
+      if (!transformed.includes('<Outlet /><LegalFooter />')) {
+        transformed = transformed.replace(
+          '<SiteContentGate><Outlet /></SiteContentGate>',
+          '<SiteContentGate><Outlet /><LegalFooter /></SiteContentGate>',
+        );
+      }
     }
 
     return transformed;
