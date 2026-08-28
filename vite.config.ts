@@ -72,8 +72,6 @@ const siteEnhancementsPlugin = {
     }
 
     if (isRootRoute) {
-      transformed = transformed.replace(/const FAVICON = "data:image\/png;base64,[^"]+";/, 'const FAVICON = "/favicon.ico";');
-
       if (!transformed.includes('from "@/components/LegalFooter"')) {
         transformed = transformed.replace(
           'import { PlansBootstrap } from "@/components/admin/PlansBootstrap";',
