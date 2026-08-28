@@ -29,15 +29,19 @@ const siteEnhancementsPlugin = {
       transformed = transformed
         .replace(
           'const heroSrc = t.media?.heroImage || heroImg;',
-          'const savedHeroSrc = t.media?.heroImage || (t.media as any)?.heroMobileImage;\n  const heroSrc = savedHeroSrc || heroImg;\n  const mobileHeroSrc = heroSrc;',
+          'const galleryHeroFallback = t.media?.gallery?.[0];\n  const savedHeroSrc = t.media?.heroImage || (t.media as any)?.heroMobileImage || galleryHeroFallback;\n  const heroSrc = savedHeroSrc || heroImg;\n  const mobileHeroSrc = heroSrc;',
         )
         .replace(
           'const hasCustomHero = Boolean(t.media?.heroImage);',
-          'const hasCustomHero = Boolean(t.media?.heroImage || (t.media as any)?.heroMobileImage);',
+          'const hasCustomHero = Boolean(t.media?.heroImage || (t.media as any)?.heroMobileImage || galleryHeroFallback);',
+        )
+        .replace(
+          'const isTransparentHero = hasCustomHero && /\\.png(\\?|$)/i.test(heroSrc);',
+          'const isTransparentHero = false;',
         )
         .replace(
           '<div className="absolute inset-0 -z-20">',
-          '<div className="absolute inset-0 z-0">',
+          '<div className="absolute inset-0 z-0 overflow-hidden bg-background">',
         )
         .replace(
           '<div className="mx-auto w-full max-w-7xl px-5 sm:px-6">',
@@ -45,11 +49,7 @@ const siteEnhancementsPlugin = {
         )
         .replace(
           '<img src={heroSrc} alt="Estudio jurídico" className="h-full w-full object-cover object-center" width={1600} height={1200} />',
-          '<picture className="block h-full w-full"><source media="(max-width: 1023px)" srcSet={mobileHeroSrc} /><img src={heroSrc} alt="Estudio jurídico" className="h-full w-full object-cover object-right lg:object-center" width={1600} height={1200} loading="eager" fetchPriority="high" decoding="async" onError={(event) => { if (!event.currentTarget.dataset.fallback) { event.currentTarget.dataset.fallback = "true"; event.currentTarget.src = heroImg; } }} /></picture>',
-        )
-        .replace(
-          '<div aria-hidden="true" className="absolute inset-y-8 right-0 hidden w-[52%] bg-contain bg-center bg-no-repeat opacity-95 md:block" style={{ backgroundImage: `url(${heroSrc})` }} />',
-          '<img src={heroSrc} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-contain object-right opacity-95" loading="eager" fetchPriority="high" decoding="async" onError={(event) => { if (!event.currentTarget.dataset.fallback) { event.currentTarget.dataset.fallback = "true"; event.currentTarget.src = heroImg; } }} />',
+          '<img src={heroSrc} alt="Estudio jurídico" className="absolute inset-0 h-full w-full object-cover object-right lg:object-center" width={1600} height={1200} loading="eager" fetchPriority="high" decoding="async" onError={(event) => { const galleryFallback = t.media?.gallery?.[0]; if (!event.currentTarget.dataset.galleryFallback && galleryFallback && event.currentTarget.src !== galleryFallback) { event.currentTarget.dataset.galleryFallback = "true"; event.currentTarget.src = galleryFallback; return; } if (!event.currentTarget.dataset.localFallback) { event.currentTarget.dataset.localFallback = "true"; event.currentTarget.src = heroImg; } }} />',
         );
 
       const oldFooter = /\n\s*<footer className="border-t border-border bg-muted\/20 py-8">[\s\S]*?<\/footer>/;
