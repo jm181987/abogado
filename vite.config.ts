@@ -29,11 +29,11 @@ const siteEnhancementsPlugin = {
       transformed = transformed
         .replace(
           'const heroSrc = t.media?.heroImage || heroImg;',
-          'const galleryHeroFallback = t.media?.gallery?.[0];\n  const savedHeroSrc = t.media?.heroImage || (t.media as any)?.heroMobileImage || galleryHeroFallback;\n  const heroSrc = savedHeroSrc || heroImg;\n  const mobileHeroSrc = heroSrc;',
+          'const galleryHeroFallback = t.media?.gallery?.[0];\n  const heroSrc = t.media?.heroImage || galleryHeroFallback || heroImg;\n  const mobileHeroSrc = (t.media as any)?.heroMobileImage || heroSrc;',
         )
         .replace(
           'const hasCustomHero = Boolean(t.media?.heroImage);',
-          'const hasCustomHero = Boolean(t.media?.heroImage || (t.media as any)?.heroMobileImage || galleryHeroFallback);',
+          'const hasCustomHero = Boolean(t.media?.heroImage || galleryHeroFallback);',
         )
         .replace(
           'const isTransparentHero = hasCustomHero && /\\.png(\\?|$)/i.test(heroSrc);',
@@ -49,7 +49,7 @@ const siteEnhancementsPlugin = {
         )
         .replace(
           '<img src={heroSrc} alt="Estudio jurídico" className="h-full w-full object-cover object-center" width={1600} height={1200} />',
-          '<img src={heroSrc} alt="Estudio jurídico" className="absolute inset-0 h-full w-full object-cover object-right lg:object-center" width={1600} height={1200} loading="eager" fetchPriority="high" decoding="async" onError={(event) => { const galleryFallback = t.media?.gallery?.[0]; if (!event.currentTarget.dataset.galleryFallback && galleryFallback && event.currentTarget.src !== galleryFallback) { event.currentTarget.dataset.galleryFallback = "true"; event.currentTarget.src = galleryFallback; return; } if (!event.currentTarget.dataset.localFallback) { event.currentTarget.dataset.localFallback = "true"; event.currentTarget.src = heroImg; } }} />',
+          '<picture className="absolute inset-0 block h-full w-full"><source media="(max-width: 1023px)" srcSet={mobileHeroSrc} /><img src={heroSrc} alt="Estudio jurídico" className="h-full w-full object-cover object-right lg:object-center" width={1600} height={1200} loading="eager" fetchPriority="high" decoding="async" onError={(event) => { const galleryFallback = t.media?.gallery?.[0]; if (!event.currentTarget.dataset.galleryFallback && galleryFallback && event.currentTarget.src !== galleryFallback) { event.currentTarget.dataset.galleryFallback = "true"; event.currentTarget.src = galleryFallback; return; } if (!event.currentTarget.dataset.localFallback) { event.currentTarget.dataset.localFallback = "true"; event.currentTarget.src = heroImg; } }} /></picture>',
         );
 
       const oldFooter = /\n\s*<footer className="border-t border-border bg-muted\/20 py-8">[\s\S]*?<\/footer>/;
