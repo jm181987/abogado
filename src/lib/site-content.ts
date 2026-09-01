@@ -8,11 +8,21 @@ export type Content = typeof translations["es"];
 const CACHE_PREFIX = "site-content:v4:";
 const OUT_OF_SCOPE = /(uruguay|uruguai|rivera|binacional|fronteri[zoç]|fronteiri[ço]|frontera|fronteira|ambos pa[ií]ses|dois pa[ií]ses)/i;
 
+const ES_ABOUT = {
+  kicker: "El Estudio",
+  title: "El Estudio",
+  body: "Bouchacourt & Simões Pires Abogacía y Consultoría Jurídica es un estudio multidisciplinario con actuación consultiva, extrajudicial y contenciosa en diferentes áreas. El Derecho de Familia y Sucesiones ocupa un lugar destacado en nuestra práctica, reuniendo la formación especializada de las socias y una experiencia consolidada a lo largo de diez años de actuación continua en el área. Nuestra actuación se basa en el conocimiento técnico, el análisis cuidadoso de cada asunto y la construcción de relaciones profesionales basadas en la confianza, la claridad y la cercanía. Atendemos a personas físicas y empresas, buscando comprender las particularidades de cada situación para ofrecer un acompañamiento jurídico individualizado y responsable.",
+} as const;
+
 const PT_ABOUT = {
   kicker: "O Escritório",
   title: "O Escritório",
   body: "Bouchacourt & Simões Pires Advocacia e Consultoria Jurídica é um escritório multidisciplinar com atuação consultiva, extrajudicial e contenciosa em diferentes áreas. O Direito de Família e Sucessões ocupa lugar de destaque em nossa prática, reunindo formação especializada das sócias e experiência consolidada ao longo de dez anos de atuação contínua na área. Nossa atuação é pautada pelo conhecimento técnico, pela análise cuidadosa de cada demanda e pela construção de relações profissionais baseadas em confiança, clareza e proximidade. Atendemos pessoas físicas e empresas, buscando compreender as particularidades de cada situação para oferecer um acompanhamento jurídico individualizado e responsável.",
 } as const;
+
+function approvedAbout(lang: Lang) {
+  return lang === "pt" ? PT_ABOUT : ES_ABOUT;
+}
 
 function cacheKey(lang: Lang) { return `${CACHE_PREFIX}${lang}`; }
 
@@ -22,10 +32,7 @@ function currentFallback(lang: Lang): Content {
     brand: { ...translations[lang].brand, logoUrl: "/navbar-logo.jpg" },
   } as any;
 
-  if (lang === "pt") {
-    base.about = { ...base.about, ...PT_ABOUT };
-  }
-
+  base.about = { ...base.about, ...approvedAbout(lang) };
   return base as Content;
 }
 
@@ -116,7 +123,7 @@ export function useSiteContent(lang: Lang) {
       const baseContent = {
         ...safeMerged,
         brand: { ...safeMerged.brand, logoUrl: "/navbar-logo.jpg" },
-        ...(lang === "pt" ? { about: { ...safeMerged.about, ...PT_ABOUT } } : {}),
+        about: { ...safeMerged.about, ...approvedAbout(lang) },
       } as any;
 
       const content = (!plansResult.error && plansResult.data?.length)
