@@ -5,13 +5,15 @@ type Professional = { name?: string; role?: string; credential?: string; bio?: s
 type ProfessionalsData = { title?: string; subtitle?: string; items?: Professional[] };
 
 const DEFAULTS: Record<Lang, Required<ProfessionalsData>> = {
-  pt: { title: "Quem está à frente do escritório", subtitle: "Conheça as profissionais responsáveis pela condução técnica e próxima de cada atendimento.", items: [
+  pt: { title: "Quem está à frente do escritório", subtitle: "Conheça os profissionais responsáveis pela condução técnica e próxima de cada atendimento.", items: [
     { name: "Daniele Dachi Simões Pires", role: "Advogada", credential: "OAB/RS 108.350", bio: "Atuação jurídica pautada pelo rigor técnico, clareza e acompanhamento individualizado de cada demanda.", photo: "" },
     { name: "Macarena de La Rosa Bouchacourt", role: "Advogada", credential: "OAB/RS 106.130", bio: "Atuação jurídica orientada pela análise cuidadosa, proximidade com o cliente e condução responsável de cada caso.", photo: "" },
+    { name: "Matheus Figueiredo Machado", role: "Advogado", credential: "OAB/RS 127.152", bio: "Advogado, formado pelo Centro Universitário da Região da Campanha — URCAMP. Pós-graduado em Direito Penal e Processual Penal pela Legale Educacional e com especialização em Direito Processual Penal pela Universidade Paulista — UNIP.", photo: "" },
   ]},
-  es: { title: "Quiénes están al frente del estudio", subtitle: "Conoce a las profesionales responsables de una atención técnica, cercana y cuidadosa en cada asunto.", items: [
+  es: { title: "Quiénes están al frente del estudio", subtitle: "Conoce a los profesionales responsables de una atención técnica, cercana y cuidadosa en cada asunto.", items: [
     { name: "Daniele Dachi Simões Pires", role: "Abogada", credential: "OAB/RS 108.350", bio: "Actuación jurídica basada en el rigor técnico, la claridad y el acompañamiento individualizado de cada asunto.", photo: "" },
     { name: "Macarena de La Rosa Bouchacourt", role: "Abogada", credential: "OAB/RS 106.130", bio: "Actuación jurídica orientada por el análisis cuidadoso, la cercanía con el cliente y la conducción responsable de cada caso.", photo: "" },
+    { name: "Matheus Figueiredo Machado", role: "Abogado", credential: "OAB/RS 127.152", bio: "Abogado graduado por el Centro Universitario de la Región de Campanha — URCAMP. Posgraduado en Derecho Penal y Procesal Penal por Legale Educacional y con especialización en Derecho Procesal Penal por la Universidade Paulista — UNIP.", photo: "" },
   ]},
 };
 
@@ -44,7 +46,7 @@ export function ProfessionalsSection({ lang }: { lang: Lang }) {
 
           <div className="mx-auto mt-12 grid max-w-6xl gap-6 lg:grid-cols-2">
             {content.items.map((professional, index) => (
-              <article key={`${professional.name}-${index}`} className="overflow-hidden rounded-[1.35rem] border border-[#e7ddd1] bg-white/75 shadow-[0_14px_45px_-32px_rgba(54,26,24,.35)]">
+              <article key={`${professional.name}-${index}`} className={`overflow-hidden rounded-[1.35rem] border border-[#e7ddd1] bg-white/75 shadow-[0_14px_45px_-32px_rgba(54,26,24,.35)] ${content.items.length % 2 === 1 && index === content.items.length - 1 ? "lg:col-span-2 lg:w-[calc(50%-0.75rem)] lg:min-w-[560px] lg:justify-self-center" : ""}`}>
                 <div className="grid min-h-[360px] sm:grid-cols-[0.9fr_1.1fr]">
                   <div className="relative min-h-[330px] overflow-hidden bg-[#eee7df] sm:min-h-full">
                     {professional.photo ? <img src={professional.photo} alt={professional.name || ""} loading="lazy" className="absolute inset-0 h-full w-full object-cover object-top" /> : <div className="absolute inset-0 grid place-items-center px-6 text-center text-xs uppercase tracking-[0.18em] text-muted-foreground/70">{lang === "pt" ? "Selecione uma foto no Admin" : "Selecciona una foto en Admin"}</div>}
