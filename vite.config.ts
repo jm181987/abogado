@@ -41,15 +41,19 @@ const siteEnhancementsPlugin = {
         )
         .replace(
           'const contactCta = lang === "es" ? "Contactar" : "Entrar em contato";',
-          'const contactCta = t.nav?.cta || (lang === "es" ? "Contacto" : "Contato");',
+          'const contactCta = lang === "pt" ? "Contato" : "Contacto";',
+        )
+        .replace(
+          /const brand = t\.brand \?\? \{[\s\S]*?\};/,
+          'const brand = { ...(t.brand ?? {}), name1: "Bouchacourt", name2: "Simões Pires", logoUrl: "/navbar-logo.jpg" };',
         )
         .replace(
           /const navItems = \[[\s\S]*?\]\s+as const;/,
-          'const navItems = [\n    ["#inicio", t.nav.home],\n    ["#nosotros", t.nav.about],\n    ["#planes", t.nav.plans],\n    ["#diferenciadores", t.nav.diff],\n  ] as const;',
+          'const navItems = lang === "pt" ? [\n    ["#inicio", "Início"],\n    ["#nosotros", "O Escritório"],\n    ["#planes", "Áreas de Atuação"],\n    ["#diferenciadores", "Profissionais"],\n  ] as const : [\n    ["#inicio", "Inicio"],\n    ["#nosotros", "El Estudio"],\n    ["#planes", "Áreas de Actuación"],\n    ["#diferenciadores", "Profesionales"],\n  ] as const;',
         )
         .replace(
           '<nav className="mx-auto flex h-[76px] max-w-7xl items-center justify-between px-5 sm:px-6">',
-          '<nav className="mx-auto flex h-[92px] max-w-7xl items-center justify-between px-5 sm:px-6">',
+          '<nav className="mx-auto flex h-[92px] max-w-7xl items-center justify-between gap-3 px-4 sm:px-6">',
         )
         .replace(
           '<span className="grid size-10 place-items-center rounded-full border border-primary/25 bg-primary/8 text-primary transition group-hover:bg-primary group-hover:text-primary-foreground">\n              <Scale className="size-5" strokeWidth={1.7} />\n            </span>\n            ',
@@ -57,11 +61,19 @@ const siteEnhancementsPlugin = {
         )
         .replace(
           '<img src={brand.logoUrl} alt={`${brand.name1} ${brand.name2}`} className="h-9 w-auto" />',
-          '<img src={brand.logoUrl} alt="Bouchacourt & Simões Pires Advocacia" className="h-14 w-auto max-w-[220px] object-contain sm:h-16 sm:max-w-[280px] lg:h-20 lg:max-w-[360px]" />',
+          '<img src={brand.logoUrl} alt="Bouchacourt & Simões Pires Advocacia" className="h-14 w-auto max-w-[210px] object-contain sm:h-16 sm:max-w-[260px] lg:h-20 lg:max-w-[330px]" />',
         )
         .replace(
           '<a href="#inicio" onClick={closeMenu} className="group flex items-center gap-3">',
-          '<a href="#inicio" onClick={closeMenu} aria-label="Ir al inicio" className="group flex min-w-0 items-center">',
+          '<a href="#inicio" onClick={closeMenu} aria-label="Ir al inicio" className="group flex min-w-0 shrink-0 items-center">',
+        )
+        .replace(
+          '<div className="hidden items-center gap-7 lg:flex">',
+          '<div className="hidden flex-1 items-center justify-center gap-5 lg:flex xl:gap-7">',
+        )
+        .replace(
+          '<div className="hidden items-center gap-2 sm:flex">',
+          '<div className="hidden shrink-0 items-center gap-2 sm:flex">',
         )
         .replace(
           '<div className="absolute inset-0 -z-20">',
