@@ -37,20 +37,7 @@ const PT_ABOUT = {
   body: "Bouchacourt & Simões Pires Advocacia e Consultoria Jurídica é um escritório multidisciplinar com atuação consultiva, extrajudicial e contenciosa em diferentes áreas. O Direito de Família e Sucessões ocupa lugar de destaque em nossa prática, reunindo formação especializada das sócias e experiência consolidada ao longo de dez anos de atuação contínua na área. Nossa atuação é pautada pelo conhecimento técnico, pela análise cuidadosa de cada demanda e pela construção de relações profissionais baseadas em confiança, clareza e proximidade. Atendemos pessoas físicas e empresas, buscando compreender as particularidades de cada situação para oferecer um acompanhamento jurídico individualizado e responsável.",
 } as const;
 
-function approvedAbout(lang: Lang) {
-  return lang === "pt" ? PT_ABOUT : ES_ABOUT;
-}
-
-function applyApprovedSectionNames(content: any, lang: Lang) {
-  const copy = SECTION_COPY[lang];
-  return {
-    ...content,
-    nav: { ...(content.nav ?? {}), ...copy.nav },
-    about: { ...(content.about ?? {}), ...approvedAbout(lang), kicker: copy.aboutKicker, title: copy.aboutTitle },
-    plans: { ...(content.plans ?? {}), kicker: copy.plansKicker },
-    diff: { ...(content.diff ?? {}), kicker: copy.diffKicker },
-  };
-}
+function approvedAbout(lang: Lang) { return lang === "pt" ? PT_ABOUT : ES_ABOUT; }
 
 function cacheKey(lang: Lang) { return `${CACHE_PREFIX}${lang}`; }
 
@@ -64,9 +51,7 @@ function writeCachedContent(lang: Lang, content: Content) {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(cacheKey(lang), JSON.stringify(content));
-    for (const legacyKey of ["site-content:v1:", "site-content:v2:", "site-content:v3:"]) {
-      window.localStorage.removeItem(`${legacyKey}${lang}`);
-    }
+    for (const legacyKey of ["site-content:v1:", "site-content:v2:", "site-content:v3:"]) window.localStorage.removeItem(`${legacyKey}${lang}`);
   } catch {}
 }
 
@@ -90,34 +75,44 @@ function removeLegacyBrand(value: any): any {
   return value;
 }
 
+function stripLegacyDefaults(value: any, oldDefaults: any): any {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+  const out: any = {};
+  for (const [key, item] of Object.entries(value)) {
+    const old = oldDefaults?.[key];
+    if (typeof item === "string" && typeof old === "string" && item === old) continue;
+    out[key] = item && typeof item === "object" && !Array.isArray(item) ? stripLegacyDefaults(item, old) : item;
+  }
+  return out;
+}
+
 function sanitizeWithFallback(value: any, fallback: any): any {
-  if (typeof value === "string") {
-    return OUT_OF_SCOPE.test(value) && typeof fallback === "string" ? fallback : value;
-  }
-  if (Array.isArray(value)) {
-    return value.map((item, index) => sanitizeWithFallback(item, Array.isArray(fallback) ? fallback[index] : undefined));
-  }
-  if (value && typeof value === "object") {
-    return Object.fromEntries(
-      Object.entries(value).map(([key, item]) => [key, sanitizeWithFallback(item, fallback?.[key])]),
-    );
-  }
+  if (typeof value === "string") return OUT_OF_SCOPE.test(value) && typeof fallback === "string" ? fallback : value;
+  if (Array.isArray(value)) return value.map((item, index) => sanitizeWithFallback(item, Array.isArray(fallback) ? fallback[index] : undefined));
+  if (value && typeof value === "object") return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, sanitizeWithFallback(item, fallback?.[key])]));
   return value;
 }
 
-export function resolveSiteContent(lang: Lang, persisted?: any): Content {
-  const cleaned = removeLegacyBrand(persisted ?? {});
-  const merged = deepMerge(translations[lang], cleaned);
-  const safeMerged = sanitizeWithFallback(merged, translations[lang]);
-  return applyApprovedSectionNames({
-    ...safeMerged,
-    brand: { ...safeMerged.brand, logoUrl: "/navbar-logo.jpg" },
-  }, lang) as Content;
+function currentBase(lang: Lang) {
+  const copy = SECTION_COPY[lang];
+  return deepMerge(translations[lang], {
+    nav: copy.nav,
+    about: { ...approvedAbout(lang), kicker: copy.aboutKicker, title: copy.aboutTitle },
+    plans: { kicker: copy.plansKicker },
+    diff: { kicker: copy.diffKicker },
+    brand: { logoUrl: "/navbar-logo.jpg" },
+  });
 }
 
-function currentFallback(lang: Lang): Content {
-  return resolveSiteContent(lang);
+export function resolveSiteContent(lang: Lang, persisted?: any): Content {
+  const base = currentBase(lang);
+  const cleaned = removeLegacyBrand(persisted ?? {});
+  const editablePersisted = stripLegacyDefaults(cleaned, translations[lang]);
+  const merged = deepMerge(base, editablePersisted);
+  return sanitizeWithFallback(merged, base) as Content;
 }
+
+function currentFallback(lang: Lang): Content { return resolveSiteContent(lang); }
 
 function mapEditablePlans(rows: any[], lang: Lang) {
   const safeDefaults = translations[lang].plans.items;
@@ -137,7 +132,6 @@ function mapEditablePlans(rows: any[], lang: Lang) {
 
 export function useSiteContent(lang: Lang) {
   const fallback = currentFallback(lang);
-
   const query = useQuery({
     queryKey: ["site_content", lang, "refresh-safe-v4"],
     queryFn: async () => {
@@ -146,14 +140,11 @@ export function useSiteContent(lang: Lang) {
         supabase.from("plans").select("name_es,name_pt,age_es,age_pt,price,old_price,features_es,features_pt,popular,active,sort_order").eq("active", true).order("sort_order"),
       ]);
       const { data, error } = contentResult;
-
       if (error || !data?.data) return fallback;
-
       const baseContent = resolveSiteContent(lang, data.data) as any;
       const content = (!plansResult.error && plansResult.data?.length)
         ? { ...baseContent, plans: { ...baseContent.plans, items: mapEditablePlans(plansResult.data, lang) } }
         : baseContent;
-
       if (plansResult.error) console.warn("[site plans] No se pudieron cargar los planes editables", plansResult.error);
       const typedContent = content as Content;
       writeCachedContent(lang, typedContent);
