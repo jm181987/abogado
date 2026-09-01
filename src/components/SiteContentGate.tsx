@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useRouterState } from "@tanstack/react-router";
+import { ProfessionalContacts } from "@/components/ProfessionalContacts";
 import { HomeLanguageSync } from "@/components/HomeLanguageSync";
 
 const LEGACY_CONTENT_PREFIXES = [
@@ -82,6 +83,7 @@ export function SiteContentGate({ children }: { children: ReactNode }) {
   return (
     <>
       <HomeLanguageSync />
+      <ProfessionalContacts />
       <div aria-hidden={!ready} style={{ opacity: ready ? 1 : 0 }}>{children}</div>
       {!ready && (
         <div aria-label="Cargando sitio" className="fixed inset-0 z-[9999] grid place-items-center bg-background">
