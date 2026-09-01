@@ -15,6 +15,12 @@ type Consent = "all" | "necessary" | null;
 const CONSENT_KEY = "bsp-cookie-consent:v1";
 const INSTAGRAM_URL = "https://www.instagram.com/bouchacourtsimoespires/";
 const INSTAGRAM_LABEL = "@bouchacourtsimoespires";
+const WHATSAPP_FALLBACK_NUMBER = "5551993254208";
+const WHATSAPP_FALLBACK_DISPLAY = "+55 51 99325-4208";
+const PARKING_COPY = new Set([
+  "Estacionamiento disponible frente al edificio",
+  "Estacionamento disponível em frente ao prédio",
+]);
 
 function getLang(): Lang {
   if (typeof window === "undefined") return "es";
@@ -63,35 +69,90 @@ function loadMetaPixel(id: string) {
   w.fbq("track", "PageView");
 }
 
-function ensureInstagramInContact() {
+function appendSvg(link: HTMLAnchorElement, kind: "whatsapp" | "instagram") {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("width", "20");
+  svg.setAttribute("height", "20");
+  svg.setAttribute("fill", "none");
+  svg.setAttribute("stroke", "currentColor");
+  svg.setAttribute("stroke-width", "1.8");
+  svg.setAttribute("stroke-linecap", "round");
+  svg.setAttribute("stroke-linejoin", "round");
+  svg.setAttribute("aria-hidden", "true");
+  svg.classList.add("shrink-0");
+
+  if (kind === "instagram") {
+    const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    rect.setAttribute("x", "3");
+    rect.setAttribute("y", "3");
+    rect.setAttribute("width", "18");
+    rect.setAttribute("height", "18");
+    rect.setAttribute("rx", "5");
+    const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    circle.setAttribute("cx", "12");
+    circle.setAttribute("cy", "12");
+    circle.setAttribute("r", "4");
+    const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    dot.setAttribute("cx", "17.5");
+    dot.setAttribute("cy", "6.5");
+    dot.setAttribute("r", "0.7");
+    dot.setAttribute("fill", "currentColor");
+    dot.setAttribute("stroke", "none");
+    svg.append(rect, circle, dot);
+  } else {
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", "M21 15a4 4 0 0 1-4 4H8l-5 3 1.7-5.1A8 8 0 1 1 21 15Z");
+    const phone = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    phone.setAttribute("d", "M9.4 8.6c.4 2.2 1.8 3.6 4 4l1.1-1.1 1.8.8-.2 1.7c-.2.8-1 1.3-1.8 1.2-4.2-.5-7-3.3-7.5-7.5-.1-.8.4-1.6 1.2-1.8l1.7-.2.8 1.8-1.1 1.1Z");
+    svg.append(path, phone);
+  }
+
+  link.appendChild(svg);
+}
+
+function makeMethodLink(kind: "whatsapp" | "instagram", href: string, label: string) {
+  const link = document.createElement("a");
+  link.href = href;
+  link.target = "_blank";
+  link.rel = "noreferrer";
+  link.className = "flex items-center gap-2 font-semibold text-primary transition hover:underline underline-offset-4";
+  link.setAttribute("aria-label", `${kind === "whatsapp" ? "WhatsApp" : "Instagram"} ${label}`);
+  appendSvg(link, kind);
+  const text = document.createElement("span");
+  text.textContent = label;
+  link.appendChild(text);
+  return link;
+}
+
+function enhanceContact() {
   if (typeof document === "undefined" || window.location.pathname !== "/") return;
   const contact = document.getElementById("contacto");
   if (!contact) return;
 
+  contact.querySelectorAll<HTMLElement>("span").forEach((node) => {
+    if (PARKING_COPY.has(node.textContent?.trim() ?? "")) node.remove();
+  });
+
   const whatsappHeading = Array.from(contact.querySelectorAll<HTMLHeadingElement>("h3"))
     .find((heading) => heading.textContent?.trim().toLowerCase() === "whatsapp");
-  const card = whatsappHeading?.closest<HTMLDivElement>("div.bg-card");
   const body = whatsappHeading?.nextElementSibling as HTMLElement | null;
-  if (!card || !body || body.querySelector('[data-bsp-instagram-contact="true"]')) return;
+  if (!body || body.querySelector('[data-bsp-contact-methods="true"]')) return;
 
-  const instagram = document.createElement("div");
-  instagram.dataset.bspInstagramContact = "true";
-  instagram.className = "mt-4 border-t border-border pt-4";
+  const existingWhatsapp = body.querySelector<HTMLAnchorElement>('a[href*="whatsapp"], a[href*="wa.me"]');
+  const existingDigits = (existingWhatsapp?.textContent ?? "").replace(/\D/g, "");
+  const existingLabel = existingWhatsapp?.textContent?.trim() ?? "";
+  const whatsappHref = existingWhatsapp?.href || `https://wa.me/${WHATSAPP_FALLBACK_NUMBER}`;
+  const whatsappLabel = existingDigits.length >= 8 ? existingLabel : WHATSAPP_FALLBACK_DISPLAY;
 
-  const label = document.createElement("span");
-  label.className = "block text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground";
-  label.textContent = "Instagram";
-
-  const link = document.createElement("a");
-  link.href = INSTAGRAM_URL;
-  link.target = "_blank";
-  link.rel = "noreferrer";
-  link.className = "mt-1 inline-block font-semibold text-primary hover:underline";
-  link.textContent = INSTAGRAM_LABEL;
-  link.setAttribute("aria-label", `Instagram ${INSTAGRAM_LABEL}`);
-
-  instagram.append(label, link);
-  body.appendChild(instagram);
+  const methods = document.createElement("div");
+  methods.dataset.bspContactMethods = "true";
+  methods.className = "grid gap-3";
+  methods.append(
+    makeMethodLink("whatsapp", whatsappHref, whatsappLabel),
+    makeMethodLink("instagram", INSTAGRAM_URL, INSTAGRAM_LABEL),
+  );
+  body.replaceChildren(methods);
 }
 
 export function CookieTracking() {
@@ -124,11 +185,12 @@ export function CookieTracking() {
   }, []);
 
   useEffect(() => {
-    ensureInstagramInContact();
-    const observer = new MutationObserver(() => ensureInstagramInContact());
+    if (isAdmin) return;
+    enhanceContact();
+    const observer = new MutationObserver(() => enhanceContact());
     observer.observe(document.body, { childList: true, subtree: true });
     return () => observer.disconnect();
-  }, [lang]);
+  }, [lang, isAdmin]);
 
   useEffect(() => {
     void (async () => {
