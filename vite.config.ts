@@ -36,12 +36,9 @@ const siteEnhancementsPlugin = {
         .replace('const heroSrc = t.media?.heroImage || heroImg;','const galleryHeroFallback = t.media?.gallery?.[0];\n  const heroSrc = t.media?.heroImage || galleryHeroFallback || heroImg;')
         .replace('const hasCustomHero = Boolean(t.media?.heroImage);','const hasCustomHero = Boolean(t.media?.heroImage || galleryHeroFallback);')
         .replace('const isTransparentHero = hasCustomHero && /\\.png(\\?|$)/i.test(heroSrc);','const isTransparentHero = false;')
-        .replace('const contactCta = lang === "es" ? "Contactar" : "Entrar em contato";','const contactCta = lang === "pt" ? "Contato" : "Contacto";')
-        .replace(/const brand = t\.brand \?\? \{[\s\S]*?\};/,'const brand = { ...(t.brand ?? {}), name1: "Bouchacourt", name2: "Simões Pires", logoUrl: "/navbar-logo.jpg" };')
-        .replace(/const navItems = \[[\s\S]*?\]\s+as const;/,'const navItems = lang === "pt" ? [["#inicio", "Início"],["#nosotros", "O Escritório"],["#planes", "Áreas de Atuação"],["#diferenciadores", "Profissionais"]] as const : [["#inicio", "Inicio"],["#nosotros", "El Estudio"],["#planes", "Áreas de Actuación"],["#diferenciadores", "Profesionales"]] as const;')
         .replace('<nav className="mx-auto flex h-[76px] max-w-7xl items-center justify-between px-5 sm:px-6">','<nav className="mx-auto flex h-[92px] max-w-7xl items-center justify-between gap-3 px-4 sm:px-6">')
         .replace('<span className="grid size-10 place-items-center rounded-full border border-primary/25 bg-primary/8 text-primary transition group-hover:bg-primary group-hover:text-primary-foreground">\n              <Scale className="size-5" strokeWidth={1.7} />\n            </span>\n            ','')
-        .replace('<img src={brand.logoUrl} alt={`${brand.name1} ${brand.name2}`} className="h-9 w-auto" />','<img src={brand.logoUrl} alt="Bouchacourt & Simões Pires Advocacia" className="h-14 w-auto max-w-[210px] object-contain sm:h-16 sm:max-w-[260px] lg:h-20 lg:max-w-[330px]" />')
+        .replace('<img src={brand.logoUrl} alt={`${brand.name1} ${brand.name2}`} className="h-9 w-auto" />','<img src={brand.logoUrl} alt={`${brand.name1} ${brand.name2}`} className="h-14 w-auto max-w-[210px] object-contain sm:h-16 sm:max-w-[260px] lg:h-20 lg:max-w-[330px]" />')
         .replace('<a href="#inicio" onClick={closeMenu} className="group flex items-center gap-3">','<a href="#inicio" onClick={closeMenu} aria-label={lang === "pt" ? "Ir ao início" : "Ir al inicio"} className="group flex min-w-0 shrink-0 items-center">')
         .replace('<div className="hidden items-center gap-7 lg:flex">','<div className="hidden flex-1 items-center justify-center gap-5 lg:flex xl:gap-7">')
         .replace('<div className="hidden items-center gap-2 sm:flex">','<div className="hidden shrink-0 items-center gap-2 sm:flex">')
@@ -60,26 +57,17 @@ const siteEnhancementsPlugin = {
 
     if (isAdminRoute) {
       transformed = transformed
-        .replace('label: ui(lang, "Planes", "Planos"), description: ui(lang, "Servicios, precios y orden", "Serviços, preços e ordem")','label: ui(lang, "Áreas de Actuación", "Áreas de Atuação"), description: ui(lang, "Contenido ES/PT publicado en la homepage", "Conteúdo ES/PT publicado na homepage")')
-        .replace('label: ui(lang, "Fotos", "Fotos"), description: ui(lang, "Portada y galería", "Capa e galeria")','label: ui(lang, "Fotos", "Fotos"), description: ui(lang, "Hero desktop/móvil y galería", "Hero desktop/mobile e galeria")')
-        .replace('description: ui(lang, "Textos, marca y datos del sitio", "Textos, marca e dados do site")','description: ui(lang, "Contenido publicado ES/PT y datos del sitio", "Conteúdo publicado ES/PT e dados do site")');
+        .replace('    { id: "plans" as const, label: ui(lang, "Planes", "Planos"), description: ui(lang, "Servicios, precios y orden", "Serviços, preços e ordem") },\n', '')
+        .replace('label: ui(lang, "Fotos", "Fotos"), description: ui(lang, "Portada y galería", "Capa e galeria")','label: ui(lang, "Fotos", "Fotos"), description: ui(lang, "Galería de imágenes reutilizable", "Galeria de imagens reutilizável")')
+        .replace('description: ui(lang, "Textos, marca y datos del sitio", "Textos, marca e dados do site")','description: ui(lang, "Todo el contenido real publicado en la homepage", "Todo o conteúdo real publicado na homepage")');
       if (!transformed.includes('from "@/components/admin/MobileHeroAdmin"')) transformed = transformed.replace('import { ContentEditor } from "@/components/admin/ContentEditor";','import { ContentEditor } from "@/components/admin/ContentEditor";\nimport { MobileHeroAdmin } from "@/components/admin/MobileHeroAdmin";');
       if (!transformed.includes('from "@/components/admin/PracticeAreasAdmin"')) transformed = transformed.replace('import { ContentEditor } from "@/components/admin/ContentEditor";','import { ContentEditor } from "@/components/admin/ContentEditor";\nimport { PracticeAreasAdmin } from "@/components/admin/PracticeAreasAdmin";');
-      transformed = transformed.replace('{tab === "plans" && <PlansTab lang={lang} />}','{tab === "plans" && <PracticeAreasAdmin lang={lang} />}');
-      if (!transformed.includes('<MobileHeroAdmin lang={lang} />')) transformed = transformed.replace('<div className="admin-photo-uploader rounded-2xl border border-dashed border-border p-6 bg-card">','<MobileHeroAdmin lang={lang} />\n      <div className="admin-photo-uploader rounded-2xl border border-dashed border-border p-6 bg-card">');
+      transformed = transformed.replace('{tab === "plans" && <PlansTab lang={lang} />}','');
+      if (!transformed.includes('<MobileHeroAdmin lang={lang} />')) transformed = transformed.replace('<div className="admin-photo-uploader rounded-2xl border border-dashed border-border p-6 bg-card">','<div className="admin-photo-uploader rounded-2xl border border-dashed border-border p-6 bg-card">');
     }
 
     if (isContentEditor) {
-      transformed = transformed
-        .replace('import { deepMerge, type Content } from "@/lib/site-content";','import { deepMerge, resolveSiteContent, type Content } from "@/lib/site-content";')
-        .replace('setContent(deepMerge(translations[l], data?.data ?? {}) as Content);','setContent(resolveSiteContent(l, data?.data ?? {}) as Content);')
-        .replace('const { error } = await supabase.from("site_content").upsert({ lang, data: content as any, updated_at: new Date().toISOString() }, { onConflict: "lang" });','const resolved = resolveSiteContent(lang, content);\n    setContent(resolved);\n    const { error } = await supabase.from("site_content").upsert({ lang, data: resolved as any, updated_at: new Date().toISOString() }, { onConflict: "lang" });')
-        .replace('setContent(JSON.parse(JSON.stringify(translations[lang])) as Content);','setContent(resolveSiteContent(lang) as Content);')
-        .replace('ui(uiLang, "Servicios", "Serviços")','ui(uiLang, "Áreas de Actuación", "Áreas de Atuação")')
-        .replace('ui(uiLang, "Nosotros", "Sobre nós")','ui(uiLang, "El Estudio", "O Escritório")')
-        .replace('ui(uiLang, "Diferenciadores", "Diferenciais")','ui(uiLang, "Profesionales", "Profissionais")')
-        .replace('ui(uiLang, "Encabezado de servicios", "Cabeçalho de serviços")','ui(uiLang, "Áreas de Actuación", "Áreas de Atuação")');
-      transformed = transformed.replace(/<Field label=\{ui\(uiLang, "Título Misión", "Título Missão"\)\}[\s\S]*?<Field label=\{ui\(uiLang, "Texto Filosofía", "Texto Filosofia"\)\} v=\{get\("about\.philosophyBody"\)\} on=\{v => set\("about\.philosophyBody", v\)\} area \/>/,'');
+      // ContentEditor now natively uses resolveSiteContent and current homepage editors.
     }
 
     if (isRootRoute) {
