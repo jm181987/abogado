@@ -65,12 +65,16 @@ const siteEnhancementsPlugin = {
 
     if (isAdminRoute) {
       transformed = transformed
+        .replace('type AdminTab = "content" | "plans" | "photos";', 'type AdminTab = "content" | "plans" | "photos" | "analytics";')
         .replace('    { id: "plans" as const, label: ui(lang, "Planes", "Planos"), description: ui(lang, "Servicios, precios y orden", "Serviços, preços e ordem") },\n', '')
+        .replace('    { id: "photos" as const, label: ui(lang, "Fotos", "Fotos"), description: ui(lang, "Portada y galería", "Capa e galeria") },', '    { id: "photos" as const, label: ui(lang, "Fotos", "Fotos"), description: ui(lang, "Galería de imágenes reutilizable", "Galeria de imagens reutilizável") },\n    { id: "analytics" as const, label: "Analytics & Pixel", description: ui(lang, "Medición, cookies y conversiones", "Medição, cookies e conversões") },')
         .replace('label: ui(lang, "Fotos", "Fotos"), description: ui(lang, "Portada y galería", "Capa e galeria")','label: ui(lang, "Fotos", "Fotos"), description: ui(lang, "Galería de imágenes reutilizable", "Galeria de imagens reutilizável")')
         .replace('description: ui(lang, "Textos, marca y datos del sitio", "Textos, marca e dados do site")','description: ui(lang, "Todo el contenido real publicado en la homepage", "Todo o conteúdo real publicado na homepage")');
       if (!transformed.includes('from "@/components/admin/MobileHeroAdmin"')) transformed = transformed.replace('import { ContentEditor } from "@/components/admin/ContentEditor";','import { ContentEditor } from "@/components/admin/ContentEditor";\nimport { MobileHeroAdmin } from "@/components/admin/MobileHeroAdmin";');
       if (!transformed.includes('from "@/components/admin/PracticeAreasAdmin"')) transformed = transformed.replace('import { ContentEditor } from "@/components/admin/ContentEditor";','import { ContentEditor } from "@/components/admin/ContentEditor";\nimport { PracticeAreasAdmin } from "@/components/admin/PracticeAreasAdmin";');
+      if (!transformed.includes('from "@/components/admin/TrackingAdmin"')) transformed = transformed.replace('import { ContentEditor } from "@/components/admin/ContentEditor";','import { ContentEditor } from "@/components/admin/ContentEditor";\nimport { TrackingAdmin } from "@/components/admin/TrackingAdmin";');
       transformed = transformed.replace('{tab === "plans" && <PlansTab lang={lang} />}','');
+      transformed = transformed.replace('{tab === "photos" && <PhotosTab lang={lang} />}','{tab === "photos" && <PhotosTab lang={lang} />}\n        {tab === "analytics" && <TrackingAdmin lang={lang} />}');
       if (!transformed.includes('<MobileHeroAdmin lang={lang} />')) transformed = transformed.replace('<div className="admin-photo-uploader rounded-2xl border border-dashed border-border p-6 bg-card">','<div className="admin-photo-uploader rounded-2xl border border-dashed border-border p-6 bg-card">');
     }
 
@@ -79,6 +83,8 @@ const siteEnhancementsPlugin = {
     }
 
     if (isRootRoute) {
+      if (!transformed.includes('from "@/components/CookieTracking"')) transformed = transformed.replace('import { PlansBootstrap } from "@/components/admin/PlansBootstrap";','import { PlansBootstrap } from "@/components/admin/PlansBootstrap";\nimport { CookieTracking } from "@/components/CookieTracking";');
+      if (!transformed.includes('<PlansBootstrap /><CookieTracking />')) transformed = transformed.replace('<UiEnhancer /><PlansBootstrap />','<UiEnhancer /><PlansBootstrap /><CookieTracking />');
       if (!transformed.includes('from "@/components/LegalFooter"')) transformed = transformed.replace('import { PlansBootstrap } from "@/components/admin/PlansBootstrap";','import { PlansBootstrap } from "@/components/admin/PlansBootstrap";\nimport { LegalFooter } from "@/components/LegalFooter";');
       if (!transformed.includes('<Outlet /><LegalFooter />')) transformed = transformed.replace('<SiteContentGate><Outlet /></SiteContentGate>','<SiteContentGate><Outlet /><LegalFooter /></SiteContentGate>');
     }
