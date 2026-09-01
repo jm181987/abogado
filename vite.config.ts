@@ -48,6 +48,22 @@ const siteEnhancementsPlugin = {
           'const navItems = [\n    ["#inicio", t.nav.home],\n    ["#nosotros", t.nav.about],\n    ["#planes", t.nav.plans],\n    ["#diferenciadores", t.nav.diff],\n    ["#contacto", t.nav.contact],\n  ] as const;',
         )
         .replace(
+          '<nav className="mx-auto flex h-[76px] max-w-7xl items-center justify-between px-5 sm:px-6">',
+          '<nav className="mx-auto flex h-[92px] max-w-7xl items-center justify-between px-5 sm:px-6">',
+        )
+        .replace(
+          '<span className="grid size-10 place-items-center rounded-full border border-primary/25 bg-primary/8 text-primary transition group-hover:bg-primary group-hover:text-primary-foreground">\n              <Scale className="size-5" strokeWidth={1.7} />\n            </span>\n            ',
+          '',
+        )
+        .replace(
+          '<img src={brand.logoUrl} alt={`${brand.name1} ${brand.name2}`} className="h-9 w-auto" />',
+          '<img src={brand.logoUrl} alt="Bouchacourt & Simões Pires Advocacia" className="h-14 w-auto max-w-[220px] object-contain sm:h-16 sm:max-w-[280px] lg:h-20 lg:max-w-[360px]" />',
+        )
+        .replace(
+          '<a href="#inicio" onClick={closeMenu} className="group flex items-center gap-3">',
+          '<a href="#inicio" onClick={closeMenu} aria-label="Ir al inicio" className="group flex min-w-0 items-center">',
+        )
+        .replace(
           '<div className="absolute inset-0 -z-20">',
           '<div className="absolute inset-0 z-0 overflow-hidden bg-background">',
         )
