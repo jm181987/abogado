@@ -10,6 +10,20 @@ const LEGACY_CONTENT_PREFIXES = [
   "site-content:v4:",
 ];
 
+function expectedLanguage(): "es" | "pt" {
+  try {
+    const saved = localStorage.getItem("abogado-language");
+    if (saved === "es" || saved === "pt") return saved;
+  } catch {}
+
+  try {
+    const candidates = [...(navigator.languages ?? []), navigator.language].filter(Boolean);
+    return candidates.some((value) => value.toLowerCase().startsWith("pt")) ? "pt" : "es";
+  } catch {
+    return "es";
+  }
+}
+
 async function purgeLegacyBrowserState() {
   try {
     for (const prefix of LEGACY_CONTENT_PREFIXES) {
@@ -34,9 +48,9 @@ async function purgeLegacyBrowserState() {
 }
 
 /**
- * Mantiene cubierta la primera pintura del homepage hasta que React haya
- * hidratado la versión actual. Esto evita que HTML/JS almacenado por el
- * navegador o una antigua service worker pueda verse durante un refresh.
+ * El HTML inicial usa traducciones locales mientras Supabase responde. Para
+ * evitar que esa versión provisional llegue a pintarse, mantenemos el sitio
+ * oculto hasta recibir el contenido publicado del idioma realmente preferido.
  */
 export function SiteContentGate({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
@@ -49,21 +63,30 @@ export function SiteContentGate({ children }: { children: ReactNode }) {
     }
 
     let cancelled = false;
-    let frame1 = 0;
-    let frame2 = 0;
+    const expected = expectedLanguage();
 
-    void purgeLegacyBrowserState().finally(() => {
-      frame1 = requestAnimationFrame(() => {
-        frame2 = requestAnimationFrame(() => {
-          if (!cancelled) setReady(true);
-        });
-      });
+    const reveal = () => {
+      if (!cancelled) setReady(true);
+    };
+
+    const onContentReady = (event: Event) => {
+      const lang = (event as CustomEvent<{ lang?: string }>).detail?.lang;
+      if (lang === expected) reveal();
+    };
+
+    window.addEventListener("bsp:content-ready", onContentReady);
+
+    void purgeLegacyBrowserState().then(() => {
+      if ((window as any).__BSP_CONTENT_READY__ === expected) reveal();
     });
+
+    // Salvaguarda: nunca dejamos al visitante bloqueado si la red externa falla.
+    const safetyTimer = window.setTimeout(reveal, 8000);
 
     return () => {
       cancelled = true;
-      if (frame1) cancelAnimationFrame(frame1);
-      if (frame2) cancelAnimationFrame(frame2);
+      window.clearTimeout(safetyTimer);
+      window.removeEventListener("bsp:content-ready", onContentReady);
     };
   }, [pathname]);
 
@@ -73,7 +96,7 @@ export function SiteContentGate({ children }: { children: ReactNode }) {
     <>
       <HomeLanguageSync />
       <ProfessionalContacts />
-      <div aria-hidden={!ready} style={{ opacity: ready ? 1 : 0, transition: "opacity 120ms ease" }}>
+      <div aria-hidden={!ready} style={{ opacity: ready ? 1 : 0 }}>
         {children}
       </div>
       {!ready && (
