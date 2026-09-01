@@ -13,13 +13,13 @@ const siteEnhancementsPlugin = {
 
     let transformed = code
       .replaceAll("Asesoría Jurídica Brasil–Uruguay | Abogacía Bilingüe", "Bouchacourt · Simões Pires | Advocacia & Assessoria Jurídica")
-      .replaceAll("Asesoría jurídica ética, estratégica y bilingüe en Sant'Ana do Livramento y Rivera. Servicios legales para personas y empresas en la frontera Brasil–Uruguay.", "Assessoria e asesoría jurídica ética, estratégica e bilíngue para pessoas, famílias e empresas em Sant'Ana do Livramento.")
-      .replaceAll("abogado Livramento, abogado Rivera, asesoría jurídica Brasil Uruguay, derecho de familia, contratos, derecho empresarial, derecho fronterizo", "advogado Livramento, advocacia Sant'Ana do Livramento, assessoria jurídica, direito de família, contratos, direito empresarial, advocacia bilíngue")
+      .replaceAll("Asesoría jurídica ética, estratégica y bilingüe en Sant'Ana do Livramento y Rivera. Servicios legales para personas y empresas en la frontera Brasil–Uruguay.", "Assessoria jurídica ética e estratégica para pessoas, famílias e empresas no Brasil.")
+      .replaceAll("abogado Livramento, abogado Rivera, asesoría jurídica Brasil Uruguay, derecho de familia, contratos, derecho empresarial, derecho fronterizo", "advogado Livramento, advocacia Sant'Ana do Livramento, assessoria jurídica Brasil, direito de família, contratos, direito empresarial")
       .replaceAll("Asesoría Jurídica Brasil–Uruguay", "Bouchacourt · Simões Pires")
-      .replaceAll("Defensa y asesoría jurídica con atención en español y portugués para personas y empresas de Livramento, Rivera y la frontera Brasil–Uruguay.", "Assessoria e asesoría jurídica ética, estratégica e bilíngue para pessoas, famílias e empresas em Sant'Ana do Livramento.")
-      .replaceAll("Asesoría legal estratégica y bilingüe para personas y empresas en la frontera Brasil–Uruguay.", "Assessoria e asesoría jurídica estratégica e bilíngue para pessoas, famílias e empresas.")
+      .replaceAll("Defensa y asesoría jurídica con atención en español y portugués para personas y empresas de Livramento, Rivera y la frontera Brasil–Uruguay.", "Assessoria jurídica ética e estratégica para pessoas, famílias e empresas no Brasil.")
+      .replaceAll("Asesoría legal estratégica y bilingüe para personas y empresas en la frontera Brasil–Uruguay.", "Assessoria jurídica estratégica para pessoas, famílias e empresas no Brasil.")
       .replaceAll("Bouchacourt · Simões Pires | Advocacia Brasil–Uruguai", "Bouchacourt · Simões Pires | Advocacia & Assessoria Jurídica")
-      .replaceAll("Assessoria e asesoría jurídica ética, estratégica e bilíngue para pessoas, famílias e empresas na fronteira Brasil–Uruguai.", "Assessoria e asesoría jurídica ética, estratégica e bilíngue para pessoas, famílias e empresas em Sant'Ana do Livramento.")
+      .replaceAll("Assessoria e asesoría jurídica ética, estratégica e bilíngue para pessoas, famílias e empresas na fronteira Brasil–Uruguai.", "Assessoria jurídica ética e estratégica para pessoas, famílias e empresas no Brasil.")
       .replaceAll("Bouchacourt Simões Pires · Advocacia e Assessoria Jurídica Brasil–Uruguai", "Bouchacourt Simões Pires · Advocacia e Assessoria Jurídica")
       .replaceAll("es_UY", "es_ES")
       .replaceAll("/og-social.png", "/og-social.jpg")
@@ -38,6 +38,14 @@ const siteEnhancementsPlugin = {
         .replace(
           'const isTransparentHero = hasCustomHero && /\\.png(\\?|$)/i.test(heroSrc);',
           'const isTransparentHero = false;',
+        )
+        .replace(
+          'const contactCta = lang === "es" ? "Contactar" : "Entrar em contato";',
+          'const contactCta = lang === "es" ? "Contacto" : "Contato";',
+        )
+        .replace(
+          'const navItems = [\n    ["#inicio", t.nav.home],\n    ["#planes", t.nav.plans],\n    ["#nosotros", t.nav.about],\n    ["#diferenciadores", t.nav.diff],\n    ["#contacto", t.nav.contact],\n  ] as const;',
+          'const navItems = [\n    ["#inicio", t.nav.home],\n    ["#nosotros", t.nav.about],\n    ["#planes", t.nav.plans],\n    ["#diferenciadores", t.nav.diff],\n    ["#contacto", t.nav.contact],\n  ] as const;',
         )
         .replace(
           '<div className="absolute inset-0 -z-20">',
