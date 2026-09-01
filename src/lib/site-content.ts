@@ -59,6 +59,7 @@ function enforceBrasilScope(content: any, lang: Lang) {
   const safe = translations[lang];
   return {
     ...content,
+    brand: { ...content.brand, logoUrl: "/navbar-logo.jpg" },
     nav: safe.nav,
     hero: { ...content.hero, badge: safe.hero.badge, desc: safe.hero.desc, ctaPlans: safe.hero.ctaPlans },
     about: safe.about,
