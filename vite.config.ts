@@ -105,7 +105,16 @@ const siteEnhancementsPlugin = {
         .replace(
           'absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent',
           'absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent lg:hidden',
+        )
+        .replace(
+          '<div className="mx-auto grid max-w-7xl gap-12 px-5 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20">',
+          '<div className="mx-auto max-w-7xl px-5 sm:px-6">',
         );
+
+      transformed = transformed.replace(
+        /\n\s*<div className="grid gap-4 sm:grid-cols-2">[\s\S]*?<\/div>\n\s*<\/div>\n\s*<\/section>\n\n\s*<section id="planes"/,
+        '\n          </div>\n        </section>\n\n        <section id="planes"',
+      );
 
       const oldFooter = /\n\s*<footer className="border-t border-border bg-muted\/20 py-8">[\s\S]*?<\/footer>/;
       transformed = transformed.replace(oldFooter, "");
