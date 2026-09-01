@@ -45,7 +45,15 @@ export function MobileHeroAdmin({ lang }: { lang: Lang }) {
       }, { onConflict: "lang" });
       if (error) throw error;
     }
+
+    // Mantener el cache de React Query exactamente alineado con lo recién guardado.
+    // Así, al volver al sitio, el hero usa de inmediato la misma posición que el admin.
+    queryClient.setQueriesData({ queryKey: ["site_content"] }, (old: any) => {
+      if (!old || typeof old !== "object") return old;
+      return { ...old, media: { ...(old.media ?? {}), ...patch } };
+    });
     await queryClient.invalidateQueries({ queryKey: ["site_content"] });
+    await queryClient.refetchQueries({ queryKey: ["site_content"], type: "active" });
   }
 
   async function uploadHero(kind: HeroKind, event: React.ChangeEvent<HTMLInputElement>) {
@@ -146,9 +154,9 @@ export function MobileHeroAdmin({ lang }: { lang: Lang }) {
 
         <div className="mt-4 overflow-hidden rounded-xl border border-border bg-muted/30">
           {selectedUrl ? (
-            <img src={selectedUrl} alt={title} className={`w-full object-cover ${isDesktop ? "aspect-[16/7]" : "aspect-[4/5] max-h-[360px]"}`} style={{ objectPosition: `${x}% ${y}%` }} />
+            <img src={selectedUrl} alt={title} className={`w-full object-cover ${isDesktop ? "aspect-[16/9]" : "aspect-[9/16] max-h-[420px]"}`} style={{ objectPosition: `${x}% ${y}%` }} />
           ) : (
-            <div className={`grid place-items-center px-4 text-center text-xs text-muted-foreground ${isDesktop ? "aspect-[16/7]" : "aspect-[4/5] max-h-[360px]"}`}>
+            <div className={`grid place-items-center px-4 text-center text-xs text-muted-foreground ${isDesktop ? "aspect-[16/9]" : "aspect-[9/16] max-h-[420px]"}`}>
               {isDesktop ? ui(lang, "No hay una foto específica elegida para escritorio.", "Nenhuma foto específica escolhida para desktop.") : ui(lang, "No hay una foto específica elegida para móvil/tablet.", "Nenhuma foto específica escolhida para celular/tablet.")}
             </div>
           )}
@@ -167,7 +175,7 @@ export function MobileHeroAdmin({ lang }: { lang: Lang }) {
       <div>
         <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">{ui(lang, "Hero responsive", "Hero responsivo")}</p>
         <h2 className="mt-1 font-display text-xl">{ui(lang, "Fotos separadas para desktop y móvil", "Fotos separadas para desktop e mobile")}</h2>
-        <p className="mt-2 max-w-3xl text-xs leading-5 text-muted-foreground">{ui(lang, "Desktop y móvil son dos selecciones independientes. La foto elegida para móvil NO reemplaza la de escritorio, y la foto de escritorio NO reemplaza la móvil.", "Desktop e mobile são duas seleções independentes. A foto escolhida para mobile NÃO substitui a do desktop, e a foto do desktop NÃO substitui a mobile.")}</p>
+        <p className="mt-2 max-w-3xl text-xs leading-5 text-muted-foreground">{ui(lang, "Desktop y móvil son dos selecciones independientes. La foto elegida para móvil NO reemplaza la de escritorio, y la foto de escritorio NO reemplaza la móvil. La posición que guardas aquí es la misma que usa el hero público.", "Desktop e mobile são duas seleções independentes. A foto escolhida para mobile NÃO substitui a do desktop, e a foto do desktop NÃO substitui a mobile. A posição salva aqui é a mesma usada no hero público.")}</p>
       </div>
 
       <div className="mt-5 grid gap-5 lg:grid-cols-2">
@@ -183,18 +191,18 @@ export function MobileHeroAdmin({ lang }: { lang: Lang }) {
 
       <div className="mt-6 grid gap-5 lg:grid-cols-2">
         <div className="rounded-2xl border border-border bg-background p-4 sm:p-5">
-          <div className="mb-4 flex items-center justify-between gap-3"><div><p className="text-sm font-bold">{ui(lang, "Posición de escritorio", "Posição do desktop")}</p><p className="mt-1 text-[11px] text-muted-foreground">{ui(lang, "Afecta solo la foto desktop.", "Afeta somente a foto desktop.")}</p></div><button type="button" onClick={() => { setDesktopX(50); setDesktopY(50); }} className="rounded-lg border border-border px-3 py-2 text-[11px] font-bold">{ui(lang, "Centrar", "Centralizar")}</button></div>
+          <div className="mb-4 flex items-center justify-between gap-3"><div><p className="text-sm font-bold">{ui(lang, "Posición de escritorio", "Posição do desktop")}</p><p className="mt-1 text-[11px] text-muted-foreground">{ui(lang, "Afecta solo la foto desktop y se aplica al hero real.", "Afeta somente a foto desktop e é aplicada ao hero real.")}</p></div><button type="button" onClick={() => { setDesktopX(50); setDesktopY(50); }} className="rounded-lg border border-border px-3 py-2 text-[11px] font-bold">{ui(lang, "Centrar", "Centralizar")}</button></div>
           <div className="grid gap-4"><Slider label={ui(lang, "Horizontal · izquierda ↔ derecha", "Horizontal · esquerda ↔ direita")} value={desktopX} onChange={setDesktopX} /><Slider label={ui(lang, "Vertical · arriba ↕ abajo", "Vertical · cima ↕ baixo")} value={desktopY} onChange={setDesktopY} /></div>
         </div>
         <div className="rounded-2xl border border-primary/25 bg-background p-4 sm:p-5">
-          <div className="mb-4 flex items-center justify-between gap-3"><div><p className="text-sm font-bold">{ui(lang, "Posición de móvil / tablet", "Posição do mobile / tablet")}</p><p className="mt-1 text-[11px] text-muted-foreground">{ui(lang, "Afecta solo la foto móvil.", "Afeta somente a foto mobile.")}</p></div><button type="button" onClick={() => { setMobileX(50); setMobileY(50); }} className="rounded-lg border border-border px-3 py-2 text-[11px] font-bold">{ui(lang, "Centrar", "Centralizar")}</button></div>
+          <div className="mb-4 flex items-center justify-between gap-3"><div><p className="text-sm font-bold">{ui(lang, "Posición de móvil / tablet", "Posição do mobile / tablet")}</p><p className="mt-1 text-[11px] text-muted-foreground">{ui(lang, "Afecta solo la foto móvil y se aplica al hero real.", "Afeta somente a foto mobile e é aplicada ao hero real.")}</p></div><button type="button" onClick={() => { setMobileX(50); setMobileY(50); }} className="rounded-lg border border-border px-3 py-2 text-[11px] font-bold">{ui(lang, "Centrar", "Centralizar")}</button></div>
           <div className="grid gap-4"><Slider label={ui(lang, "Horizontal · izquierda ↔ derecha", "Horizontal · esquerda ↔ direita")} value={mobileX} onChange={setMobileX} /><Slider label={ui(lang, "Vertical · arriba ↕ abajo", "Vertical · cima ↕ baixo")} value={mobileY} onChange={setMobileY} /></div>
         </div>
       </div>
 
       <div className="mt-5 flex flex-wrap items-center gap-3">
         <button type="button" onClick={savePosition} disabled={savingPosition} className="min-h-11 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground disabled:opacity-50">{savingPosition ? ui(lang, "Guardando posición…", "Salvando posição…") : ui(lang, "Guardar posiciones", "Salvar posições")}</button>
-        {savedPosition && <span className="text-xs font-semibold text-primary">{ui(lang, "✓ Posiciones guardadas", "✓ Posições salvas")}</span>}
+        {savedPosition && <span className="text-xs font-semibold text-primary">{ui(lang, "✓ Posiciones guardadas y aplicadas al hero", "✓ Posições salvas e aplicadas ao hero")}</span>}
       </div>
     </section>
   );
