@@ -9,7 +9,8 @@ const siteEnhancementsPlugin = {
     const isIndexRoute = cleanId.endsWith("/src/routes/index.tsx");
     const isRootRoute = cleanId.endsWith("/src/routes/__root.tsx");
     const isAdminRoute = cleanId.endsWith("/src/routes/admin.tsx");
-    if (!isIndexRoute && !isRootRoute && !isAdminRoute) return null;
+    const isContentEditor = cleanId.endsWith("/src/components/admin/ContentEditor.tsx");
+    if (!isIndexRoute && !isRootRoute && !isAdminRoute && !isContentEditor) return null;
 
     let transformed = code
       .replaceAll("Asesoría Jurídica Brasil–Uruguay | Abogacía Bilingüe", "Bouchacourt · Simões Pires | Advocacia & Assessoria Jurídica")
@@ -121,6 +122,12 @@ const siteEnhancementsPlugin = {
     }
 
     if (isAdminRoute) {
+      transformed = transformed
+        .replace('label: ui(lang, "Planes", "Planos"), description: ui(lang, "Servicios, precios y orden", "Serviços, preços e ordem")', 'label: ui(lang, "Áreas de Actuación", "Áreas de Atuação"), description: ui(lang, "Servicios jurídicos, precios y orden", "Serviços jurídicos, preços e ordem")')
+        .replace('label: ui(lang, "Fotos", "Fotos"), description: ui(lang, "Portada y galería", "Capa e galeria")', 'label: ui(lang, "Fotos", "Fotos"), description: ui(lang, "Hero desktop/móvil y galería", "Hero desktop/mobile e galeria")')
+        .replace('description: ui(lang, "Textos, marca y datos del sitio", "Textos, marca e dados do site")', 'description: ui(lang, "Textos ES/PT, marca y datos del sitio", "Textos ES/PT, marca e dados do site")')
+        .replace('font-display text-2xl">{ui(lang, "Planes y servicios", "Planos e serviços")}', 'font-display text-2xl">{ui(lang, "Áreas de Actuación", "Áreas de Atuação")}');
+
       if (!transformed.includes('from "@/components/admin/MobileHeroAdmin"')) {
         transformed = transformed.replace(
           'import { ContentEditor } from "@/components/admin/ContentEditor";',
@@ -133,6 +140,19 @@ const siteEnhancementsPlugin = {
           '<MobileHeroAdmin lang={lang} />\n      <div className="admin-photo-uploader rounded-2xl border border-dashed border-border p-6 bg-card">',
         );
       }
+    }
+
+    if (isContentEditor) {
+      transformed = transformed
+        .replace('ui(uiLang, "Servicios", "Serviços")', 'ui(uiLang, "Áreas de Actuación", "Áreas de Atuação")')
+        .replace('ui(uiLang, "Nosotros", "Sobre nós")', 'ui(uiLang, "El Estudio", "O Escritório")')
+        .replace('ui(uiLang, "Diferenciadores", "Diferenciais")', 'ui(uiLang, "Profesionales", "Profissionais")')
+        .replace('ui(uiLang, "Encabezado de servicios", "Cabeçalho de serviços")', 'ui(uiLang, "Áreas de Actuación", "Áreas de Atuação")');
+
+      transformed = transformed.replace(
+        /<Field label=\{ui\(uiLang, "Título Misión", "Título Missão"\)\}[\s\S]*?<Field label=\{ui\(uiLang, "Texto Filosofía", "Texto Filosofia"\)\} v=\{get\("about\.philosophyBody"\)\} on=\{v => set\("about\.philosophyBody", v\)\} area \/>/,
+        '',
+      );
     }
 
     if (isRootRoute) {
