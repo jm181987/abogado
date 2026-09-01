@@ -20,18 +20,20 @@ type ProfessionalsData = {
 const DEFAULTS: Record<Lang, ProfessionalsData> = {
   pt: {
     title: "Quem está à frente do escritório",
-    subtitle: "Conheça as profissionais responsáveis pela condução técnica e próxima de cada atendimento.",
+    subtitle: "Conheça os profissionais responsáveis pela condução técnica e próxima de cada atendimento.",
     items: [
       { name: "Daniele Dachi Simões Pires", role: "Advogada", credential: "OAB/RS 108.350", bio: "Atuação jurídica pautada pelo rigor técnico, clareza e acompanhamento individualizado de cada demanda.", photo: "" },
       { name: "Macarena de La Rosa Bouchacourt", role: "Advogada", credential: "OAB/RS 106.130", bio: "Atuação jurídica orientada pela análise cuidadosa, proximidade com o cliente e condução responsável de cada caso.", photo: "" },
+      { name: "Matheus Figueiredo Machado", role: "Advogado", credential: "OAB/RS 127.152", bio: "Advogado, formado pelo Centro Universitário da Região da Campanha — URCAMP. Pós-graduado em Direito Penal e Processual Penal pela Legale Educacional e com especialização em Direito Processual Penal pela Universidade Paulista — UNIP.", photo: "" },
     ],
   },
   es: {
     title: "Quiénes están al frente del estudio",
-    subtitle: "Conoce a las profesionales responsables de una atención técnica, cercana y cuidadosa en cada asunto.",
+    subtitle: "Conoce a los profesionales responsables de una atención técnica, cercana y cuidadosa en cada asunto.",
     items: [
       { name: "Daniele Dachi Simões Pires", role: "Abogada", credential: "OAB/RS 108.350", bio: "Actuación jurídica basada en el rigor técnico, la claridad y el acompañamiento individualizado de cada asunto.", photo: "" },
       { name: "Macarena de La Rosa Bouchacourt", role: "Abogada", credential: "OAB/RS 106.130", bio: "Actuación jurídica orientada por el análisis cuidadoso, la cercanía con el cliente y la conducción responsable de cada caso.", photo: "" },
+      { name: "Matheus Figueiredo Machado", role: "Abogado", credential: "OAB/RS 127.152", bio: "Abogado graduado por el Centro Universitario de la Región de Campanha — URCAMP. Posgraduado en Derecho Penal y Procesal Penal por Legale Educacional y con especialización en Derecho Procesal Penal por la Universidade Paulista — UNIP.", photo: "" },
     ],
   },
 };
@@ -133,7 +135,7 @@ export function ProfessionalsAdmin({ lang }: { lang: Lang }) {
 
       <div className="grid gap-5 lg:grid-cols-2">
         {data.items.map((item, index) => (
-          <div key={index} className="rounded-2xl border border-border bg-background/60 p-4 sm:p-5">
+          <div key={index} className={`rounded-2xl border border-border bg-background/60 p-4 sm:p-5 ${data.items.length % 2 === 1 && index === data.items.length - 1 ? "lg:col-span-2 lg:max-w-3xl lg:justify-self-center" : ""}`}>
             <div className="grid gap-4 sm:grid-cols-[140px_1fr]">
               <div className="overflow-hidden rounded-xl border border-border bg-muted aspect-[4/5]">
                 {item.photo ? <img src={item.photo} alt={item.name} className="h-full w-full object-cover object-top" /> : <div className="grid h-full place-items-center px-3 text-center text-[10px] uppercase tracking-wider text-muted-foreground">{ui(lang, "Sin foto", "Sem foto")}</div>}
