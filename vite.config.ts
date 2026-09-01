@@ -41,7 +41,7 @@ const siteEnhancementsPlugin = {
         )
         .replace(
           'const contactCta = lang === "es" ? "Contactar" : "Entrar em contato";',
-          'const contactCta = lang === "es" ? "Contacto" : "Contato";',
+          'const contactCta = t.nav?.cta || (lang === "es" ? "Contacto" : "Contato");',
         )
         .replace(
           'const navItems = [\n    ["#inicio", t.nav.home],\n    ["#planes", t.nav.plans],\n    ["#nosotros", t.nav.about],\n    ["#diferenciadores", t.nav.diff],\n    ["#contacto", t.nav.contact],\n  ] as const;',
