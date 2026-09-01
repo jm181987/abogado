@@ -44,6 +44,10 @@ const siteEnhancementsPlugin = {
           'const contactCta = lang === "pt" ? "Contato" : "Contacto";',
         )
         .replace(
+          'const brand = t.brand ?? { name1: "Estudio", name2: "Jurídico", logoUrl: "" };',
+          'const brand = { ...(t.brand ?? {}), name1: "Bouchacourt", name2: "Simões Pires", logoUrl: "/navbar-logo.jpg" };',
+        )
+        .replace(
           /const navItems = \[[\s\S]*?\]\s+as const;/,
           'const navItems = lang === "pt" ? [\n    ["#inicio", "Início"],\n    ["#nosotros", "O Escritório"],\n    ["#planes", "Áreas de Atuação"],\n    ["#diferenciadores", "Profissionais"],\n  ] as const : [\n    ["#inicio", "Inicio"],\n    ["#nosotros", "El Estudio"],\n    ["#planes", "Áreas de Actuación"],\n    ["#diferenciadores", "Profesionales"],\n  ] as const;',
         )
@@ -56,8 +60,8 @@ const siteEnhancementsPlugin = {
           '',
         )
         .replace(
-          /\{brand\.logoUrl \? \([\s\S]*?\) : \([\s\S]*?\)\}/,
-          '<img src="/navbar-logo.jpg" alt="Bouchacourt & Simões Pires Advocacia" className="h-14 w-auto max-w-[210px] object-contain sm:h-16 sm:max-w-[260px] lg:h-20 lg:max-w-[330px]" />',
+          '<img src={brand.logoUrl} alt={`${brand.name1} ${brand.name2}`} className="h-9 w-auto" />',
+          '<img src={brand.logoUrl} alt="Bouchacourt & Simões Pires Advocacia" className="h-14 w-auto max-w-[210px] object-contain sm:h-16 sm:max-w-[260px] lg:h-20 lg:max-w-[330px]" />',
         )
         .replace(
           '<a href="#inicio" onClick={closeMenu} className="group flex items-center gap-3">',
