@@ -13,6 +13,8 @@ type TrackingConfig = {
 type Consent = "all" | "necessary" | null;
 
 const CONSENT_KEY = "bsp-cookie-consent:v1";
+const INSTAGRAM_URL = "https://www.instagram.com/bouchacourtsimoespires/";
+const INSTAGRAM_LABEL = "@bouchacourtsimoespires";
 
 function getLang(): Lang {
   if (typeof window === "undefined") return "es";
@@ -61,6 +63,37 @@ function loadMetaPixel(id: string) {
   w.fbq("track", "PageView");
 }
 
+function ensureInstagramInContact() {
+  if (typeof document === "undefined" || window.location.pathname !== "/") return;
+  const contact = document.getElementById("contacto");
+  if (!contact) return;
+
+  const whatsappHeading = Array.from(contact.querySelectorAll<HTMLHeadingElement>("h3"))
+    .find((heading) => heading.textContent?.trim().toLowerCase() === "whatsapp");
+  const card = whatsappHeading?.closest<HTMLDivElement>("div.bg-card");
+  const body = whatsappHeading?.nextElementSibling as HTMLElement | null;
+  if (!card || !body || body.querySelector('[data-bsp-instagram-contact="true"]')) return;
+
+  const instagram = document.createElement("div");
+  instagram.dataset.bspInstagramContact = "true";
+  instagram.className = "mt-4 border-t border-border pt-4";
+
+  const label = document.createElement("span");
+  label.className = "block text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground";
+  label.textContent = "Instagram";
+
+  const link = document.createElement("a");
+  link.href = INSTAGRAM_URL;
+  link.target = "_blank";
+  link.rel = "noreferrer";
+  link.className = "mt-1 inline-block font-semibold text-primary hover:underline";
+  link.textContent = INSTAGRAM_LABEL;
+  link.setAttribute("aria-label", `Instagram ${INSTAGRAM_LABEL}`);
+
+  instagram.append(label, link);
+  body.appendChild(instagram);
+}
+
 export function CookieTracking() {
   const [lang, setLang] = useState<Lang>(getLang);
   const [consent, setConsent] = useState<Consent>(readConsent);
@@ -68,7 +101,11 @@ export function CookieTracking() {
   const [showPolicy, setShowPolicy] = useState(false);
   const [tracking, setTracking] = useState<TrackingConfig>({});
   const [adminTrackingOpen, setAdminTrackingOpen] = useState(false);
-  const isAdmin = typeof window !== "undefined" && window.location.pathname.startsWith("/admin");
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    setIsAdmin(window.location.pathname.startsWith("/admin"));
+  }, []);
 
   useEffect(() => {
     const sync = () => setLang(getLang());
@@ -85,6 +122,13 @@ export function CookieTracking() {
       document.removeEventListener("click", sync, true);
     };
   }, []);
+
+  useEffect(() => {
+    ensureInstagramInContact();
+    const observer = new MutationObserver(() => ensureInstagramInContact());
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [lang]);
 
   useEffect(() => {
     void (async () => {
@@ -132,11 +176,16 @@ export function CookieTracking() {
     <>
       {isAdmin && (
         <>
-          <button type="button" onClick={() => setAdminTrackingOpen(true)} className="fixed bottom-5 right-5 z-[90] min-h-11 rounded-full bg-primary px-5 text-xs font-bold text-primary-foreground shadow-xl">
+          <button
+            type="button"
+            onClick={() => setAdminTrackingOpen(true)}
+            className="fixed right-4 top-24 z-[200] min-h-12 rounded-full border border-primary-foreground/15 bg-primary px-5 text-sm font-bold text-primary-foreground shadow-2xl sm:right-6 sm:top-28"
+            aria-label="Abrir Analytics y Pixel"
+          >
             Analytics & Pixel
           </button>
           {adminTrackingOpen && (
-            <div className="fixed inset-0 z-[110] overflow-y-auto bg-background/95 p-4 backdrop-blur sm:p-8">
+            <div className="fixed inset-0 z-[220] overflow-y-auto bg-background/95 p-4 backdrop-blur sm:p-8">
               <div className="mx-auto max-w-5xl">
                 <div className="mb-4 flex items-center justify-between gap-4">
                   <div><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">Admin</p><h2 className="font-display text-2xl">Analytics & Pixel</h2></div>
@@ -149,7 +198,7 @@ export function CookieTracking() {
         </>
       )}
 
-      {open && (
+      {!isAdmin && open && (
         <div className="fixed inset-x-0 bottom-0 z-[100] p-4 sm:p-5" role="dialog" aria-live="polite" aria-label={copy.title}>
           <div className="mx-auto max-w-4xl rounded-2xl border border-border bg-background/98 p-5 shadow-2xl backdrop-blur sm:p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
