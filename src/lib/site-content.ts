@@ -16,6 +16,12 @@ function currentFallback(lang: Lang): Content {
   } as Content;
 }
 
+function markContentReady(lang: Lang) {
+  if (typeof window === "undefined") return;
+  (window as any).__BSP_CONTENT_READY__ = lang;
+  window.dispatchEvent(new CustomEvent("bsp:content-ready", { detail: { lang } }));
+}
+
 function writeCachedContent(lang: Lang, content: Content) {
   if (typeof window === "undefined") return;
   try {
@@ -89,9 +95,10 @@ export function useSiteContent(lang: Lang) {
       ]);
       const { data, error } = contentResult;
 
-      // En un refresh nunca mostramos una versión antigua guardada en el navegador.
-      // Si Supabase tarda o falla, mantenemos la identidad local actual y estable.
-      if (error || !data?.data) return fallback;
+      if (error || !data?.data) {
+        markContentReady(lang);
+        return fallback;
+      }
 
       const persisted = removeLegacyBrand(data.data);
       const merged = deepMerge(translations[lang], persisted);
@@ -108,6 +115,7 @@ export function useSiteContent(lang: Lang) {
       if (plansResult.error) console.warn("[site plans] No se pudieron cargar los planes editables", plansResult.error);
       const typedContent = content as Content;
       writeCachedContent(lang, typedContent);
+      markContentReady(lang);
       return typedContent;
     },
     placeholderData: fallback,
