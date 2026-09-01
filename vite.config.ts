@@ -44,7 +44,7 @@ const siteEnhancementsPlugin = {
           'const contactCta = lang === "pt" ? "Contato" : "Contacto";',
         )
         .replace(
-          'const brand = t.brand ?? { name1: "Estudio", name2: "Jurídico", logoUrl: "" };',
+          /const brand = t\.brand \?\? \{[\s\S]*?\};/,
           'const brand = { ...(t.brand ?? {}), name1: "Bouchacourt", name2: "Simões Pires", logoUrl: "/navbar-logo.jpg" };',
         )
         .replace(
