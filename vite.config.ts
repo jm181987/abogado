@@ -26,10 +26,17 @@ const siteEnhancementsPlugin = {
       .replaceAll('content: "image/png"', 'content: "image/jpeg"');
 
     if (isIndexRoute) {
+      if (!transformed.includes('from "@/components/HeroMedia"')) {
+        transformed = transformed.replace(
+          'import { ThemeInjector } from "@/components/ThemeInjector";',
+          'import { ThemeInjector } from "@/components/ThemeInjector";\nimport { HeroMedia } from "@/components/HeroMedia";',
+        );
+      }
+
       transformed = transformed
         .replace(
           'const heroSrc = t.media?.heroImage || heroImg;',
-          'const galleryHeroFallback = t.media?.gallery?.[0];\n  const heroSrc = t.media?.heroImage || galleryHeroFallback || heroImg;\n  const mobileHeroSrc = (t.media as any)?.heroMobileImage || heroSrc;\n  const heroPositionX = Number((t.media as any)?.heroPositionX ?? 50);\n  const heroPositionY = Number((t.media as any)?.heroPositionY ?? 50);\n  const heroMobilePositionX = Number((t.media as any)?.heroMobilePositionX ?? 50);\n  const heroMobilePositionY = Number((t.media as any)?.heroMobilePositionY ?? 50);',
+          'const galleryHeroFallback = t.media?.gallery?.[0];\n  const heroSrc = t.media?.heroImage || galleryHeroFallback || heroImg;',
         )
         .replace(
           'const hasCustomHero = Boolean(t.media?.heroImage);',
@@ -85,7 +92,7 @@ const siteEnhancementsPlugin = {
         )
         .replace(
           '<img src={heroSrc} alt="Estudio jurídico" className="h-full w-full object-cover object-center" width={1600} height={1200} />',
-          '<><img src={mobileHeroSrc} alt="Estudio jurídico" className="h-full w-full object-cover lg:hidden" style={{ objectPosition: `${heroMobilePositionX}% ${heroMobilePositionY}%` }} width={1600} height={1200} loading="eager" fetchPriority="high" decoding="async" onError={(event) => { if (!event.currentTarget.dataset.localFallback) { event.currentTarget.dataset.localFallback = "true"; event.currentTarget.src = heroSrc; } }} /><img src={heroSrc} alt="Estudio jurídico" className="hidden h-full w-full object-cover lg:block" style={{ objectPosition: `${heroPositionX}% ${heroPositionY}%` }} width={1600} height={1200} loading="eager" fetchPriority="high" decoding="async" onError={(event) => { const galleryFallback = t.media?.gallery?.[0]; if (!event.currentTarget.dataset.galleryFallback && galleryFallback && event.currentTarget.src !== galleryFallback) { event.currentTarget.dataset.galleryFallback = "true"; event.currentTarget.src = galleryFallback; return; } if (!event.currentTarget.dataset.localFallback) { event.currentTarget.dataset.localFallback = "true"; event.currentTarget.src = heroImg; } }} /></>',
+          '<HeroMedia lang={lang} media={t.media as any} fallbackSrc={heroSrc} />',
         );
 
       const oldFooter = /\n\s*<footer className="border-t border-border bg-muted\/20 py-8">[\s\S]*?<\/footer>/;
