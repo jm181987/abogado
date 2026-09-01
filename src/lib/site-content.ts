@@ -54,15 +54,6 @@ function applyApprovedSectionNames(content: any, lang: Lang) {
 
 function cacheKey(lang: Lang) { return `${CACHE_PREFIX}${lang}`; }
 
-function currentFallback(lang: Lang): Content {
-  const base = {
-    ...translations[lang],
-    brand: { ...translations[lang].brand, logoUrl: "/navbar-logo.jpg" },
-  } as any;
-
-  return applyApprovedSectionNames(base, lang) as Content;
-}
-
 function markContentReady(lang: Lang) {
   if (typeof window === "undefined") return;
   (window as any).__BSP_CONTENT_READY__ = lang;
@@ -114,6 +105,20 @@ function sanitizeWithFallback(value: any, fallback: any): any {
   return value;
 }
 
+export function resolveSiteContent(lang: Lang, persisted?: any): Content {
+  const cleaned = removeLegacyBrand(persisted ?? {});
+  const merged = deepMerge(translations[lang], cleaned);
+  const safeMerged = sanitizeWithFallback(merged, translations[lang]);
+  return applyApprovedSectionNames({
+    ...safeMerged,
+    brand: { ...safeMerged.brand, logoUrl: "/navbar-logo.jpg" },
+  }, lang) as Content;
+}
+
+function currentFallback(lang: Lang): Content {
+  return resolveSiteContent(lang);
+}
+
 function mapEditablePlans(rows: any[], lang: Lang) {
   const safeDefaults = translations[lang].plans.items;
   return rows.map((plan, index) => {
@@ -144,14 +149,7 @@ export function useSiteContent(lang: Lang) {
 
       if (error || !data?.data) return fallback;
 
-      const persisted = removeLegacyBrand(data.data);
-      const merged = deepMerge(translations[lang], persisted);
-      const safeMerged = sanitizeWithFallback(merged, translations[lang]);
-      const baseContent = applyApprovedSectionNames({
-        ...safeMerged,
-        brand: { ...safeMerged.brand, logoUrl: "/navbar-logo.jpg" },
-      }, lang) as any;
-
+      const baseContent = resolveSiteContent(lang, data.data) as any;
       const content = (!plansResult.error && plansResult.data?.length)
         ? { ...baseContent, plans: { ...baseContent.plans, items: mapEditablePlans(plansResult.data, lang) } }
         : baseContent;
