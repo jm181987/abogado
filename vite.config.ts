@@ -33,8 +33,18 @@ const siteEnhancementsPlugin = {
           'import { ThemeInjector } from "@/components/ThemeInjector";\nimport { HeroMedia } from "@/components/HeroMedia";',
         );
       }
+      if (!transformed.includes('from "@/hooks/use-language"')) {
+        transformed = transformed.replace(
+          'import { ThemeInjector } from "@/components/ThemeInjector";',
+          'import { ThemeInjector } from "@/components/ThemeInjector";\nimport { usePreferredLanguage } from "@/hooks/use-language";',
+        );
+      }
 
       transformed = transformed
+        .replace(
+          'const [lang, setLang] = useState<Lang>("es");',
+          'const { lang, setLang } = usePreferredLanguage();',
+        )
         .replace(
           'const heroSrc = t.media?.heroImage || heroImg;',
           'const galleryHeroFallback = t.media?.gallery?.[0];\n  const heroSrc = t.media?.heroImage || galleryHeroFallback || heroImg;',
@@ -73,7 +83,7 @@ const siteEnhancementsPlugin = {
         )
         .replace(
           '<a href="#inicio" onClick={closeMenu} className="group flex items-center gap-3">',
-          '<a href="#inicio" onClick={closeMenu} aria-label="Ir al inicio" className="group flex min-w-0 shrink-0 items-center">',
+          '<a href="#inicio" onClick={closeMenu} aria-label={lang === "pt" ? "Ir ao início" : "Ir al inicio"} className="group flex min-w-0 shrink-0 items-center">',
         )
         .replace(
           '<div className="hidden items-center gap-7 lg:flex">',
