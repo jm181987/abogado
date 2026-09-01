@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { TrackingAdmin } from "@/components/admin/TrackingAdmin";
 import type { Lang } from "@/lib/i18n";
 
 type TrackingConfig = {
@@ -66,6 +67,8 @@ export function CookieTracking() {
   const [open, setOpen] = useState(() => readConsent() === null);
   const [showPolicy, setShowPolicy] = useState(false);
   const [tracking, setTracking] = useState<TrackingConfig>({});
+  const [adminTrackingOpen, setAdminTrackingOpen] = useState(false);
+  const isAdmin = typeof window !== "undefined" && window.location.pathname.startsWith("/admin");
 
   useEffect(() => {
     const sync = () => setLang(getLang());
@@ -125,25 +128,46 @@ export function CookieTracking() {
     if (previous === "all" && value === "necessary") window.location.reload();
   }
 
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-x-0 bottom-0 z-[100] p-4 sm:p-5" role="dialog" aria-live="polite" aria-label={copy.title}>
-      <div className="mx-auto max-w-4xl rounded-2xl border border-border bg-background/98 p-5 shadow-2xl backdrop-blur sm:p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="max-w-2xl">
-            <h2 className="font-display text-2xl text-foreground">{showPolicy ? copy.policyTitle : copy.title}</h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">{showPolicy ? copy.policyBody : copy.text}</p>
-            {!showPolicy && <button type="button" onClick={() => setShowPolicy(true)} className="mt-3 text-xs font-semibold text-primary underline underline-offset-4">{copy.policy}</button>}
-          </div>
-          <div className="flex shrink-0 flex-wrap gap-2 sm:max-w-[300px] sm:justify-end">
-            {showPolicy ? <button type="button" onClick={() => setShowPolicy(false)} className="min-h-10 rounded-full border border-border px-4 text-xs font-semibold">{copy.close}</button> : <>
-              <button type="button" onClick={() => choose("necessary")} className="min-h-10 rounded-full border border-border px-4 text-xs font-semibold">{copy.reject}</button>
-              <button type="button" onClick={() => choose("all")} className="min-h-10 rounded-full bg-primary px-4 text-xs font-semibold text-primary-foreground">{copy.accept}</button>
-            </>}
+    <>
+      {isAdmin && (
+        <>
+          <button type="button" onClick={() => setAdminTrackingOpen(true)} className="fixed bottom-5 right-5 z-[90] min-h-11 rounded-full bg-primary px-5 text-xs font-bold text-primary-foreground shadow-xl">
+            Analytics & Pixel
+          </button>
+          {adminTrackingOpen && (
+            <div className="fixed inset-0 z-[110] overflow-y-auto bg-background/95 p-4 backdrop-blur sm:p-8">
+              <div className="mx-auto max-w-5xl">
+                <div className="mb-4 flex items-center justify-between gap-4">
+                  <div><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">Admin</p><h2 className="font-display text-2xl">Analytics & Pixel</h2></div>
+                  <button type="button" onClick={() => setAdminTrackingOpen(false)} className="min-h-10 rounded-full border border-border bg-background px-4 text-xs font-semibold">{lang === "pt" ? "Fechar" : "Cerrar"}</button>
+                </div>
+                <TrackingAdmin lang={lang} />
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {open && (
+        <div className="fixed inset-x-0 bottom-0 z-[100] p-4 sm:p-5" role="dialog" aria-live="polite" aria-label={copy.title}>
+          <div className="mx-auto max-w-4xl rounded-2xl border border-border bg-background/98 p-5 shadow-2xl backdrop-blur sm:p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="max-w-2xl">
+                <h2 className="font-display text-2xl text-foreground">{showPolicy ? copy.policyTitle : copy.title}</h2>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">{showPolicy ? copy.policyBody : copy.text}</p>
+                {!showPolicy && <button type="button" onClick={() => setShowPolicy(true)} className="mt-3 text-xs font-semibold text-primary underline underline-offset-4">{copy.policy}</button>}
+              </div>
+              <div className="flex shrink-0 flex-wrap gap-2 sm:max-w-[300px] sm:justify-end">
+                {showPolicy ? <button type="button" onClick={() => setShowPolicy(false)} className="min-h-10 rounded-full border border-border px-4 text-xs font-semibold">{copy.close}</button> : <>
+                  <button type="button" onClick={() => choose("necessary")} className="min-h-10 rounded-full border border-border px-4 text-xs font-semibold">{copy.reject}</button>
+                  <button type="button" onClick={() => choose("all")} className="min-h-10 rounded-full bg-primary px-4 text-xs font-semibold text-primary-foreground">{copy.accept}</button>
+                </>}
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
+      )}
+    </>
   );
 }
