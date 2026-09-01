@@ -45,7 +45,7 @@ const siteEnhancementsPlugin = {
         )
         .replace(
           'const navItems = [\n    ["#inicio", t.nav.home],\n    ["#planes", t.nav.plans],\n    ["#nosotros", t.nav.about],\n    ["#diferenciadores", t.nav.diff],\n    ["#contacto", t.nav.contact],\n  ] as const;',
-          'const navItems = [\n    ["#inicio", t.nav.home],\n    ["#nosotros", t.nav.about],\n    ["#planes", t.nav.plans],\n    ["#diferenciadores", t.nav.diff],\n    ["#contacto", t.nav.contact],\n  ] as const;',
+          'const navItems = [\n    ["#inicio", t.nav.home],\n    ["#nosotros", t.nav.about],\n    ["#planes", t.nav.plans],\n    ["#diferenciadores", t.nav.diff],\n  ] as const;',
         )
         .replace(
           '<nav className="mx-auto flex h-[76px] max-w-7xl items-center justify-between px-5 sm:px-6">',
