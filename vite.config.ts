@@ -48,7 +48,15 @@ const siteEnhancementsPlugin = {
         .replace('bg-gradient-to-r from-background via-background/82 to-background/35','bg-gradient-to-r from-background via-background/82 to-background/35 lg:hidden')
         .replace('bg-gradient-to-r from-background via-background/92 to-background/55','bg-gradient-to-r from-background via-background/92 to-background/55 lg:hidden')
         .replace('absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent','absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent lg:hidden')
-        .replace('<div className="mx-auto grid max-w-7xl gap-12 px-5 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20">','<div className="mx-auto max-w-7xl px-5 sm:px-6">');
+        .replace('<div className="mx-auto grid max-w-7xl gap-12 px-5 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20">','<div className="mx-auto max-w-7xl px-5 sm:px-6">')
+        .replace(
+          '{gallery.map((url, index) => <img key={url} src={url} alt={`${lang === "es" ? "Estudio jurídico" : "Escritório de advocacia"} ${index + 1}`} loading="lazy" className="aspect-[4/5] w-full rounded-[1.5rem] border border-border object-cover shadow-sm" />)}',
+          '{gallery.map((url, index) => <div key={url} className="flex min-h-48 items-center justify-center overflow-hidden rounded-[1.5rem] border border-border bg-muted/20 shadow-sm"><img src={url} alt={`${lang === "es" ? "Estudio jurídico" : "Escritório de advocacia"} ${index + 1}`} loading="lazy" decoding="async" className="mx-auto block h-auto max-h-[720px] w-auto max-w-full object-contain [image-rendering:auto]" /></div>)}'
+        )
+        .replace(
+          '{ icon: MessageCircle, title: t.contact.whats, body: phoneDigits ? <a href={WHATS} target="_blank" rel="noreferrer" className="font-semibold text-primary hover:underline">{t.whatsapp?.display || t.hero.ctaWhats}</a> : <span>{t.hero.ctaWhats}</span> },',
+          '{ icon: MessageCircle, title: t.contact.whats, body: <div className="space-y-3">{phoneDigits ? <a href={WHATS} target="_blank" rel="noreferrer" className="block font-semibold text-primary hover:underline">{t.whatsapp?.display || t.hero.ctaWhats}</a> : <span className="block">{t.hero.ctaWhats}</span>}<div className="border-t border-border pt-3"><span className="block text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Instagram</span><a href="https://www.instagram.com/bouchacourtsimoespires/" target="_blank" rel="noreferrer" className="mt-1 block font-semibold text-primary hover:underline">@bouchacourtsimoespires</a></div></div> },'
+        );
 
       transformed = transformed.replace(/\n\s*<div className="grid gap-4 sm:grid-cols-2">[\s\S]*?<\/div>\n\s*<\/div>\n\s*<\/section>\n\n\s*<section id="planes"/, '\n          </div>\n        </section>\n\n        <section id="planes"');
       transformed = transformed.replace(/<section id="planes"[\s\S]*?<\/section>\n\n\s*<section id="diferenciadores"/, '<PracticeAreasSection lang={lang} data={(t as any).practiceAreas} />\n\n        <section id="diferenciadores"');
