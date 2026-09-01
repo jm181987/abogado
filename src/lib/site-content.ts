@@ -4,29 +4,19 @@ import { translations, type Lang } from "@/lib/i18n";
 
 export type Content = typeof translations["es"];
 
-const CACHE_PREFIX = "site-content:v1:";
+const CACHE_PREFIX = "site-content:v2:";
+const OUT_OF_SCOPE = /(uruguay|uruguai|rivera|binacional|fronteri[zoç]|fronteiri[ço]|frontera|fronteira|ambos pa[ií]ses|dois pa[ií]ses)/i;
 
-function cacheKey(lang: Lang) {
-  return `${CACHE_PREFIX}${lang}`;
-}
+function cacheKey(lang: Lang) { return `${CACHE_PREFIX}${lang}`; }
 
 function readCachedContent(lang: Lang): Content | undefined {
   if (typeof window === "undefined") return undefined;
-  try {
-    const raw = window.localStorage.getItem(cacheKey(lang));
-    return raw ? (JSON.parse(raw) as Content) : undefined;
-  } catch {
-    return undefined;
-  }
+  try { const raw = window.localStorage.getItem(cacheKey(lang)); return raw ? (JSON.parse(raw) as Content) : undefined; } catch { return undefined; }
 }
 
 function writeCachedContent(lang: Lang, content: Content) {
   if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(cacheKey(lang), JSON.stringify(content));
-  } catch {
-    // Storage can be unavailable in private/restricted browser contexts.
-  }
+  try { window.localStorage.setItem(cacheKey(lang), JSON.stringify(content)); } catch {}
 }
 
 export function deepMerge(base: any, override: any): any {
@@ -43,75 +33,60 @@ export function deepMerge(base: any, override: any): any {
 }
 
 function removeLegacyBrand(value: any): any {
-  if (typeof value === "string") {
-    return value
-      .replace(/Vizcaya\s+Salud/gi, "")
-      .replace(/Vizcaya/gi, "");
-  }
+  if (typeof value === "string") return value.replace(/Vizcaya\s+Salud/gi, "").replace(/Vizcaya/gi, "");
   if (Array.isArray(value)) return value.map(removeLegacyBrand);
-  if (value && typeof value === "object") {
-    return Object.fromEntries(Object.entries(value).map(([key, val]) => [key, removeLegacyBrand(val)]));
-  }
+  if (value && typeof value === "object") return Object.fromEntries(Object.entries(value).map(([key, val]) => [key, removeLegacyBrand(val)]));
   return value;
 }
 
 function mapEditablePlans(rows: any[], lang: Lang) {
-  return rows.map((plan) => ({
-    name: lang === "pt" ? plan.name_pt : plan.name_es,
-    age: lang === "pt" ? plan.age_pt : plan.age_es,
-    price: plan.price ?? "",
-    old: plan.old_price ?? "",
-    popular: Boolean(plan.popular),
-    features: lang === "pt" ? (plan.features_pt ?? []) : (plan.features_es ?? []),
-  }));
+  const safeDefaults = translations[lang].plans.items;
+  return rows.map((plan, index) => {
+    const mapped = {
+      name: lang === "pt" ? plan.name_pt : plan.name_es,
+      age: lang === "pt" ? plan.age_pt : plan.age_es,
+      price: plan.price ?? "",
+      old: plan.old_price ?? "",
+      popular: Boolean(plan.popular),
+      features: lang === "pt" ? (plan.features_pt ?? []) : (plan.features_es ?? []),
+    };
+    const searchable = [mapped.name, mapped.age, ...mapped.features].join(" ");
+    return OUT_OF_SCOPE.test(searchable) ? (safeDefaults[index] ?? safeDefaults[safeDefaults.length - 1]) : mapped;
+  });
+}
+
+function enforceBrasilScope(content: any, lang: Lang) {
+  const safe = translations[lang];
+  return {
+    ...content,
+    nav: safe.nav,
+    hero: { ...content.hero, badge: safe.hero.badge, desc: safe.hero.desc, ctaPlans: safe.hero.ctaPlans },
+    about: safe.about,
+    diff: safe.diff,
+    contact: { ...content.contact, howto1: safe.contact.howto1, howto2: safe.contact.howto2, howto3: safe.contact.howto3 },
+    plans: { ...content.plans, kicker: safe.plans.kicker, title: safe.plans.title, subtitle: safe.plans.subtitle, footnote: safe.plans.footnote },
+  };
 }
 
 export function useSiteContent(lang: Lang) {
   return useQuery({
-    queryKey: ["site_content", lang],
+    queryKey: ["site_content", lang, "brasil-v2"],
     queryFn: async () => {
       const [contentResult, plansResult] = await Promise.all([
-        supabase
-          .from("site_content")
-          .select("data")
-          .eq("lang", lang)
-          .maybeSingle(),
-        supabase
-          .from("plans")
-          .select("name_es,name_pt,age_es,age_pt,price,old_price,features_es,features_pt,popular,active,sort_order")
-          .eq("active", true)
-          .order("sort_order"),
+        supabase.from("site_content").select("data").eq("lang", lang).maybeSingle(),
+        supabase.from("plans").select("name_es,name_pt,age_es,age_pt,price,old_price,features_es,features_pt,popular,active,sort_order").eq("active", true).order("sort_order"),
       ]);
-
       const { data, error } = contentResult;
-      if (error) {
-        const cached = readCachedContent(lang);
-        if (cached) return cached;
-        throw new Error(`No se pudo cargar el contenido del sitio: ${error.message}`);
-      }
-
-      if (!data?.data) {
-        const cached = readCachedContent(lang);
-        if (cached) return cached;
-        throw new Error("El contenido publicado del sitio no está disponible.");
-      }
+      if (error) { const cached = readCachedContent(lang); if (cached) return cached; throw new Error(`No se pudo cargar el contenido del sitio: ${error.message}`); }
+      if (!data?.data) { const cached = readCachedContent(lang); if (cached) return cached; throw new Error("El contenido publicado del sitio no está disponible."); }
 
       const persisted = removeLegacyBrand(data.data);
-      const baseContent = deepMerge(translations[lang], persisted) as any;
+      const baseContent = enforceBrasilScope(deepMerge(translations[lang], persisted), lang);
       const content = (!plansResult.error && plansResult.data?.length)
-        ? {
-            ...baseContent,
-            plans: {
-              ...baseContent.plans,
-              items: mapEditablePlans(plansResult.data, lang),
-            },
-          }
-        : baseContent;
+        ? { ...baseContent, plans: { ...baseContent.plans, items: mapEditablePlans(plansResult.data, lang) } }
+        : { ...baseContent, plans: { ...baseContent.plans, items: translations[lang].plans.items } };
 
-      if (plansResult.error) {
-        console.warn("[site plans] No se pudieron cargar los planes editables", plansResult.error);
-      }
-
+      if (plansResult.error) console.warn("[site plans] No se pudieron cargar los planes editables", plansResult.error);
       const typedContent = content as Content;
       writeCachedContent(lang, typedContent);
       return typedContent;
