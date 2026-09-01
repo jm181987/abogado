@@ -12,16 +12,19 @@ import {
   ShieldCheck,
   X,
 } from "lucide-react";
-import { translations, type Lang } from "@/lib/i18n";
+import { translations } from "@/lib/i18n";
 import heroImg from "@/assets/hero-law.jpg";
 import { useSiteContent } from "@/lib/site-content";
 import { Reveal } from "@/components/Reveal";
 import { ThemeInjector } from "@/components/ThemeInjector";
+import { HeroMedia } from "@/components/HeroMedia";
+import { OfficeSection } from "@/components/OfficeSection";
+import { usePreferredLanguage } from "@/hooks/use-language";
 
 const SITE_URL = "https://bspadvogados.vercel.app";
-const SOCIAL_TITLE = "Bouchacourt · Simões Pires | Advocacia Brasil–Uruguai";
-const SOCIAL_DESCRIPTION = "Assessoria e asesoría jurídica ética, estratégica e bilíngue para pessoas, famílias e empresas na fronteira Brasil–Uruguai.";
-const SOCIAL_IMAGE = `${SITE_URL}/og-social.png`;
+const SOCIAL_TITLE = "Bouchacourt · Simões Pires | Advocacia & Assessoria Jurídica";
+const SOCIAL_DESCRIPTION = "Assessoria jurídica ética e estratégica para pessoas, famílias e empresas no Brasil.";
+const SOCIAL_IMAGE = `${SITE_URL}/og-social.jpg`;
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -35,13 +38,13 @@ export const Route = createFileRoute("/")({
       { property: "og:url", content: SITE_URL },
       { property: "og:site_name", content: "Bouchacourt · Simões Pires" },
       { property: "og:locale", content: "pt_BR" },
-      { property: "og:locale:alternate", content: "es_UY" },
+      { property: "og:locale:alternate", content: "es_ES" },
       { property: "og:image", content: SOCIAL_IMAGE },
       { property: "og:image:secure_url", content: SOCIAL_IMAGE },
-      { property: "og:image:type", content: "image/png" },
+      { property: "og:image:type", content: "image/jpeg" },
       { property: "og:image:width", content: "1200" },
       { property: "og:image:height", content: "630" },
-      { property: "og:image:alt", content: "Bouchacourt Simões Pires · Advocacia e Assessoria Jurídica Brasil–Uruguai" },
+      { property: "og:image:alt", content: "Bouchacourt Simões Pires · Advocacia e Assessoria Jurídica" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: SOCIAL_TITLE },
       { name: "twitter:description", content: SOCIAL_DESCRIPTION },
@@ -52,24 +55,27 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const [lang, setLang] = useState<Lang>("es");
+  const { lang, setLang } = usePreferredLanguage();
   const [menuOpen, setMenuOpen] = useState(false);
   const { data: t = translations[lang] } = useSiteContent(lang);
 
   const phoneDigits = (t.whatsapp?.number || "").replace(/\D/g, "");
   const WHATS = phoneDigits ? `https://api.whatsapp.com/send/?phone=${phoneDigits}` : "#contacto";
-  const contactCta = lang === "es" ? "Contactar" : "Entrar em contato";
-  const brand = t.brand ?? { name1: "Estudio", name2: "Jurídico", logoUrl: "" };
-  const heroSrc = t.media?.heroImage || heroImg;
-  const hasCustomHero = Boolean(t.media?.heroImage);
-  const isTransparentHero = hasCustomHero && /\.png(\?|$)/i.test(heroSrc);
+  const contactCta = lang === "pt" ? "Contato" : "Contacto";
+  const brand = { ...(t.brand ?? {}), name1: "Bouchacourt", name2: "Simões Pires", logoUrl: "/navbar-logo.jpg" };
+  const galleryHeroFallback = t.media?.gallery?.[0];
+  const heroSrc = t.media?.heroImage || galleryHeroFallback || heroImg;
   const gallery = t.media?.gallery ?? [];
-  const navItems = [
-    ["#inicio", t.nav.home],
-    ["#planes", t.nav.plans],
-    ["#nosotros", t.nav.about],
-    ["#diferenciadores", t.nav.diff],
-    ["#contacto", t.nav.contact],
+  const navItems = lang === "pt" ? [
+    ["#inicio", "Início"],
+    ["#nosotros", "O Escritório"],
+    ["#planes", "Áreas de Atuação"],
+    ["#diferenciadores", "Profissionais"],
+  ] as const : [
+    ["#inicio", "Inicio"],
+    ["#nosotros", "El Estudio"],
+    ["#planes", "Áreas de Actuación"],
+    ["#diferenciadores", "Profesionales"],
   ] as const;
 
   const trustItems = [
@@ -85,28 +91,18 @@ function Index() {
       <ThemeInjector theme={(t as any).theme} />
 
       <header className="fixed inset-x-0 top-0 z-50 border-b border-border/60 bg-background/88 backdrop-blur-xl">
-        <nav className="mx-auto flex h-[76px] max-w-7xl items-center justify-between px-5 sm:px-6">
-          <a href="#inicio" onClick={closeMenu} className="group flex items-center gap-3">
-            <span className="grid size-10 place-items-center rounded-full border border-primary/25 bg-primary/8 text-primary transition group-hover:bg-primary group-hover:text-primary-foreground">
-              <Scale className="size-5" strokeWidth={1.7} />
-            </span>
-            {brand.logoUrl ? (
-              <img src={brand.logoUrl} alt={`${brand.name1} ${brand.name2}`} className="h-9 w-auto" />
-            ) : (
-              <span className="leading-none">
-                <span className="block font-display text-xl font-semibold tracking-tight sm:text-2xl">{brand.name1}</span>
-                <span className="mt-1 block text-[10px] font-semibold uppercase tracking-[0.28em] text-primary sm:text-[11px]">{brand.name2}</span>
-              </span>
-            )}
+        <nav className="mx-auto flex h-[92px] max-w-7xl items-center justify-between gap-3 px-4 sm:px-6">
+          <a href="#inicio" onClick={closeMenu} aria-label={lang === "pt" ? "Ir ao início" : "Ir al inicio"} className="group flex min-w-0 shrink-0 items-center">
+            <img src={brand.logoUrl} alt="Bouchacourt & Simões Pires Advocacia" className="h-14 w-auto max-w-[210px] object-contain sm:h-16 sm:max-w-[260px] lg:h-20 lg:max-w-[330px]" />
           </a>
 
-          <div className="hidden items-center gap-7 lg:flex">
+          <div className="hidden flex-1 items-center justify-center gap-5 lg:flex xl:gap-7">
             {navItems.map(([href, label]) => (
               <a key={href} href={href} className="nav-link text-[13px] font-medium text-foreground/70 transition hover:text-foreground">{label}</a>
             ))}
           </div>
 
-          <div className="hidden items-center gap-2 sm:flex">
+          <div className="hidden shrink-0 items-center gap-2 sm:flex">
             <div className="flex items-center rounded-full border border-border bg-card/70 p-1 text-xs">
               {(["es", "pt"] as const).map((item) => (
                 <button key={item} onClick={() => setLang(item)} className={`rounded-full px-3 py-1.5 font-semibold uppercase transition ${lang === item ? "bg-foreground text-background shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>{item}</button>
@@ -117,7 +113,7 @@ function Index() {
             </a>
           </div>
 
-          <button type="button" onClick={() => setMenuOpen(value => !value)} className="grid size-11 place-items-center rounded-full border border-border bg-card text-foreground sm:hidden" aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"} aria-expanded={menuOpen}>
+          <button type="button" onClick={() => setMenuOpen(value => !value)} className="grid size-11 place-items-center rounded-full border border-border bg-card text-foreground sm:hidden" aria-label={menuOpen ? (lang === "pt" ? "Fechar menu" : "Cerrar menú") : (lang === "pt" ? "Abrir menu" : "Abrir menú")} aria-expanded={menuOpen}>
             {menuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
           </button>
         </nav>
@@ -145,23 +141,14 @@ function Index() {
 
       <main>
         <section id="inicio" className="relative isolate min-h-[760px] overflow-hidden pb-16 pt-32 sm:pt-36 lg:flex lg:min-h-[820px] lg:items-center lg:pb-24 lg:pt-28">
-          <div className="absolute inset-0 -z-20">
-            {isTransparentHero ? (
-              <>
-                <div className="absolute inset-0 bg-background" />
-                <div aria-hidden="true" className="absolute inset-y-8 right-0 hidden w-[52%] bg-contain bg-center bg-no-repeat opacity-95 md:block" style={{ backgroundImage: `url(${heroSrc})` }} />
-              </>
-            ) : (
-              <>
-                <img src={heroSrc} alt="Estudio jurídico" className="h-full w-full object-cover object-center" width={1600} height={1200} />
-                <div className={`absolute inset-0 ${hasCustomHero ? "bg-gradient-to-r from-background via-background/82 to-background/35" : "bg-gradient-to-r from-background via-background/92 to-background/55"}`} />
-                <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent" />
-              </>
-            )}
+          <div className="absolute inset-0 z-0 overflow-hidden bg-background">
+            <HeroMedia lang={lang} media={t.media as any} fallbackSrc={heroSrc} />
+            <div className="absolute inset-0 bg-gradient-to-r from-background via-background/82 to-background/35 lg:hidden" />
+            <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent lg:hidden" />
           </div>
           <div className="absolute -left-36 top-28 -z-10 size-[420px] rounded-full bg-primary/10 blur-3xl" />
 
-          <div className="mx-auto w-full max-w-7xl px-5 sm:px-6">
+          <div className="relative z-10 mx-auto w-full max-w-7xl px-5 sm:px-6">
             <div className="max-w-3xl">
               <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-background/70 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-foreground/70 backdrop-blur sm:text-xs">
                 <span className="size-1.5 rounded-full bg-primary" />{t.hero.badge}
@@ -200,29 +187,7 @@ function Index() {
           </div>
         </section>
 
-        <section id="nosotros" className="py-20 sm:py-24 lg:py-32">
-          <div className="mx-auto grid max-w-7xl gap-12 px-5 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20">
-            <div>
-              <p className="mb-4 text-xs font-semibold uppercase tracking-[0.22em] text-primary">{t.about.kicker}</p>
-              <h2 className="max-w-xl font-display text-4xl leading-tight tracking-[-0.03em] sm:text-5xl">{t.about.title}</h2>
-              <p className="mt-6 max-w-xl text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">{t.about.body}</p>
-              <a href="#contacto" className="mt-8 inline-flex items-center gap-2 text-sm font-semibold text-primary transition hover:gap-3">{contactCta}<ArrowRight className="size-4" /></a>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              {[
-                { title: t.about.mission, body: t.about.missionBody, number: "01" },
-                { title: t.about.vision, body: t.about.visionBody, number: "02" },
-                { title: t.about.philosophy, body: t.about.philosophyBody, number: "03" },
-              ].map((item, index) => (
-                <Reveal key={item.title} delay={index * 80} className={`rounded-[1.75rem] border border-border bg-card p-7 transition hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg ${index === 2 ? "sm:col-span-2" : ""}`}>
-                  <div className="flex items-start justify-between gap-4"><span className="text-[11px] font-semibold tracking-[0.18em] text-primary">{item.number}</span><Scale className="size-5 text-primary/55" strokeWidth={1.5} /></div>
-                  <h3 className="mt-8 font-display text-2xl">{item.title}</h3><p className="mt-3 text-sm leading-6 text-muted-foreground">{item.body}</p>
-                </Reveal>
-              ))}
-            </div>
-          </div>
-        </section>
+        <OfficeSection lang={lang} about={t.about} />
 
         <section id="planes" className="border-y border-border/70 bg-muted/35 py-20 sm:py-24 lg:py-32">
           <div className="mx-auto max-w-7xl px-5 sm:px-6">
@@ -308,7 +273,6 @@ function Index() {
           </div>
         </section>
       </main>
-
-</div>
+    </div>
   );
 }
