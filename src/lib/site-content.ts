@@ -4,19 +4,26 @@ import { translations, type Lang } from "@/lib/i18n";
 
 export type Content = typeof translations["es"];
 
-const CACHE_PREFIX = "site-content:v3:";
+const CACHE_PREFIX = "site-content:v4:";
 const OUT_OF_SCOPE = /(uruguay|uruguai|rivera|binacional|fronteri[zoç]|fronteiri[ço]|frontera|fronteira|ambos pa[ií]ses|dois pa[ií]ses)/i;
 
 function cacheKey(lang: Lang) { return `${CACHE_PREFIX}${lang}`; }
 
-function readCachedContent(lang: Lang): Content | undefined {
-  if (typeof window === "undefined") return undefined;
-  try { const raw = window.localStorage.getItem(cacheKey(lang)); return raw ? (JSON.parse(raw) as Content) : undefined; } catch { return undefined; }
+function currentFallback(lang: Lang): Content {
+  return {
+    ...translations[lang],
+    brand: { ...translations[lang].brand, logoUrl: "/navbar-logo.jpg" },
+  } as Content;
 }
 
 function writeCachedContent(lang: Lang, content: Content) {
   if (typeof window === "undefined") return;
-  try { window.localStorage.setItem(cacheKey(lang), JSON.stringify(content)); } catch {}
+  try {
+    window.localStorage.setItem(cacheKey(lang), JSON.stringify(content));
+    for (const legacyKey of ["site-content:v1:", "site-content:v2:", "site-content:v3:"]) {
+      window.localStorage.removeItem(`${legacyKey}${lang}`);
+    }
+  } catch {}
 }
 
 export function deepMerge(base: any, override: any): any {
@@ -71,16 +78,20 @@ function mapEditablePlans(rows: any[], lang: Lang) {
 }
 
 export function useSiteContent(lang: Lang) {
+  const fallback = currentFallback(lang);
+
   return useQuery({
-    queryKey: ["site_content", lang, "admin-live-v3"],
+    queryKey: ["site_content", lang, "refresh-safe-v4"],
     queryFn: async () => {
       const [contentResult, plansResult] = await Promise.all([
         supabase.from("site_content").select("data").eq("lang", lang).maybeSingle(),
         supabase.from("plans").select("name_es,name_pt,age_es,age_pt,price,old_price,features_es,features_pt,popular,active,sort_order").eq("active", true).order("sort_order"),
       ]);
       const { data, error } = contentResult;
-      if (error) { const cached = readCachedContent(lang); if (cached) return cached; throw new Error(`No se pudo cargar el contenido del sitio: ${error.message}`); }
-      if (!data?.data) { const cached = readCachedContent(lang); if (cached) return cached; throw new Error("El contenido publicado del sitio no está disponible."); }
+
+      // En un refresh nunca mostramos una versión antigua guardada en el navegador.
+      // Si Supabase tarda o falla, mantenemos la identidad local actual y estable.
+      if (error || !data?.data) return fallback;
 
       const persisted = removeLegacyBrand(data.data);
       const merged = deepMerge(translations[lang], persisted);
@@ -99,7 +110,7 @@ export function useSiteContent(lang: Lang) {
       writeCachedContent(lang, typedContent);
       return typedContent;
     },
-    placeholderData: (previousData) => previousData ?? readCachedContent(lang),
+    placeholderData: fallback,
     staleTime: 0,
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
