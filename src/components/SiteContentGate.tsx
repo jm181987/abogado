@@ -1,6 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useRouterState } from "@tanstack/react-router";
-import { ProfessionalContacts } from "@/components/ProfessionalContacts";
 import { HomeLanguageSync } from "@/components/HomeLanguageSync";
 
 const LEGACY_CONTENT_PREFIXES = [
@@ -47,11 +46,6 @@ async function purgeLegacyBrowserState() {
   } catch {}
 }
 
-/**
- * El HTML inicial usa traducciones locales mientras Supabase responde. Para
- * evitar que esa versión provisional llegue a pintarse, mantenemos el sitio
- * oculto hasta recibir el contenido publicado del idioma realmente preferido.
- */
 export function SiteContentGate({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const [ready, setReady] = useState(false);
@@ -64,23 +58,16 @@ export function SiteContentGate({ children }: { children: ReactNode }) {
 
     let cancelled = false;
     const expected = expectedLanguage();
-
-    const reveal = () => {
-      if (!cancelled) setReady(true);
-    };
-
+    const reveal = () => { if (!cancelled) setReady(true); };
     const onContentReady = (event: Event) => {
       const lang = (event as CustomEvent<{ lang?: string }>).detail?.lang;
       if (lang === expected) reveal();
     };
 
     window.addEventListener("bsp:content-ready", onContentReady);
-
     void purgeLegacyBrowserState().then(() => {
       if ((window as any).__BSP_CONTENT_READY__ === expected) reveal();
     });
-
-    // Salvaguarda: nunca dejamos al visitante bloqueado si la red externa falla.
     const safetyTimer = window.setTimeout(reveal, 8000);
 
     return () => {
@@ -95,20 +82,10 @@ export function SiteContentGate({ children }: { children: ReactNode }) {
   return (
     <>
       <HomeLanguageSync />
-      <ProfessionalContacts />
-      <div aria-hidden={!ready} style={{ opacity: ready ? 1 : 0 }}>
-        {children}
-      </div>
+      <div aria-hidden={!ready} style={{ opacity: ready ? 1 : 0 }}>{children}</div>
       {!ready && (
-        <div
-          aria-label="Cargando sitio"
-          className="fixed inset-0 z-[9999] grid place-items-center bg-background"
-        >
-          <img
-            src="/navbar-logo.jpg"
-            alt="Bouchacourt & Simões Pires Advocacia"
-            className="h-auto w-[min(78vw,360px)] object-contain"
-          />
+        <div aria-label="Cargando sitio" className="fixed inset-0 z-[9999] grid place-items-center bg-background">
+          <img src="/navbar-logo.jpg" alt="Bouchacourt & Simões Pires Advocacia" className="h-auto w-[min(78vw,360px)] object-contain" />
         </div>
       )}
     </>
