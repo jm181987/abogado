@@ -4,7 +4,7 @@ import type { Lang } from "@/lib/i18n";
 
 function currentLanguage(): Lang {
   if (typeof window === "undefined") return "es";
-  const saved = window.localStorage.getItem("site-language");
+  const saved = window.localStorage.getItem("abogado-language");
   if (saved === "pt" || saved === "es") return saved;
   return document.documentElement.lang.toLowerCase().startsWith("pt") ? "pt" : "es";
 }
