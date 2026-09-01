@@ -135,7 +135,7 @@ const siteEnhancementsPlugin = {
       transformed = transformed
         .replace('label: ui(lang, "Planes", "Planos"), description: ui(lang, "Servicios, precios y orden", "Serviços, preços e ordem")', 'label: ui(lang, "Áreas de Actuación", "Áreas de Atuação"), description: ui(lang, "Servicios jurídicos, precios y orden", "Serviços jurídicos, preços e ordem")')
         .replace('label: ui(lang, "Fotos", "Fotos"), description: ui(lang, "Portada y galería", "Capa e galeria")', 'label: ui(lang, "Fotos", "Fotos"), description: ui(lang, "Hero desktop/móvil y galería", "Hero desktop/mobile e galeria")')
-        .replace('description: ui(lang, "Textos, marca y datos del sitio", "Textos, marca e dados do site")', 'description: ui(lang, "Textos ES/PT, marca y datos del sitio", "Textos ES/PT, marca e dados do site")')
+        .replace('description: ui(lang, "Textos, marca y datos del sitio", "Textos, marca e dados do site")', 'description: ui(lang, "Contenido publicado ES/PT y datos del sitio", "Conteúdo publicado ES/PT e dados do site")')
         .replace('font-display text-2xl">{ui(lang, "Planes y servicios", "Planos e serviços")}', 'font-display text-2xl">{ui(lang, "Áreas de Actuación", "Áreas de Atuação")}');
 
       if (!transformed.includes('from "@/components/admin/MobileHeroAdmin"')) {
@@ -154,6 +154,22 @@ const siteEnhancementsPlugin = {
 
     if (isContentEditor) {
       transformed = transformed
+        .replace(
+          'import { deepMerge, type Content } from "@/lib/site-content";',
+          'import { deepMerge, resolveSiteContent, type Content } from "@/lib/site-content";',
+        )
+        .replace(
+          'setContent(deepMerge(translations[l], data?.data ?? {}) as Content);',
+          'setContent(resolveSiteContent(l, data?.data ?? {}) as Content);',
+        )
+        .replace(
+          'const { error } = await supabase.from("site_content").upsert({ lang, data: content as any, updated_at: new Date().toISOString() }, { onConflict: "lang" });',
+          'const resolved = resolveSiteContent(lang, content);\n    setContent(resolved);\n    const { error } = await supabase.from("site_content").upsert({ lang, data: resolved as any, updated_at: new Date().toISOString() }, { onConflict: "lang" });',
+        )
+        .replace(
+          'setContent(JSON.parse(JSON.stringify(translations[lang])) as Content);',
+          'setContent(resolveSiteContent(lang) as Content);',
+        )
         .replace('ui(uiLang, "Servicios", "Serviços")', 'ui(uiLang, "Áreas de Actuación", "Áreas de Atuação")')
         .replace('ui(uiLang, "Nosotros", "Sobre nós")', 'ui(uiLang, "El Estudio", "O Escritório")')
         .replace('ui(uiLang, "Diferenciadores", "Diferenciais")', 'ui(uiLang, "Profesionales", "Profissionais")')
