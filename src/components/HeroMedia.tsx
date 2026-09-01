@@ -60,6 +60,7 @@ export function HeroMedia({ lang, media, fallbackSrc }: { lang: Lang; media?: He
       <img src={mobileSrc} alt="Estudio jurídico" className="h-full w-full object-cover lg:hidden" style={{ objectPosition: mobilePosition }} width={1600} height={1200} loading="eager" fetchPriority="high" decoding="async" onError={(event) => { if (!event.currentTarget.dataset.fallback) { event.currentTarget.dataset.fallback = "true"; event.currentTarget.src = desktopSrc; } }} />
       <div className="absolute inset-y-0 right-0 hidden w-1/2 overflow-hidden lg:block">
         <img src={desktopSrc} alt="Estudio jurídico" className="h-full w-full object-cover" style={{ objectPosition: desktopPosition }} width={1600} height={1200} loading="eager" fetchPriority="high" decoding="async" onError={(event) => { if (!event.currentTarget.dataset.fallback) { event.currentTarget.dataset.fallback = "true"; event.currentTarget.src = fallbackSrc; } }} />
+        <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 w-[18%] bg-gradient-to-r from-background via-background/55 to-transparent" />
       </div>
     </div>
   );

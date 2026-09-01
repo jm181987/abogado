@@ -93,6 +93,18 @@ const siteEnhancementsPlugin = {
         .replace(
           '<img src={heroSrc} alt="Estudio jurídico" className="h-full w-full object-cover object-center" width={1600} height={1200} />',
           '<HeroMedia lang={lang} media={t.media as any} fallbackSrc={heroSrc} />',
+        )
+        .replace(
+          'bg-gradient-to-r from-background via-background/82 to-background/35',
+          'bg-gradient-to-r from-background via-background/82 to-background/35 lg:hidden',
+        )
+        .replace(
+          'bg-gradient-to-r from-background via-background/92 to-background/55',
+          'bg-gradient-to-r from-background via-background/92 to-background/55 lg:hidden',
+        )
+        .replace(
+          'absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent',
+          'absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent lg:hidden',
         );
 
       const oldFooter = /\n\s*<footer className="border-t border-border bg-muted\/20 py-8">[\s\S]*?<\/footer>/;
