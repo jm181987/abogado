@@ -37,7 +37,45 @@ const PT_ABOUT = {
   body: "Bouchacourt & Simões Pires Advocacia e Consultoria Jurídica é um escritório multidisciplinar com atuação consultiva, extrajudicial e contenciosa em diferentes áreas. O Direito de Família e Sucessões ocupa lugar de destaque em nossa prática, reunindo formação especializada das sócias e experiência consolidada ao longo de dez anos de atuação contínua na área. Nossa atuação é pautada pelo conhecimento técnico, pela análise cuidadosa de cada demanda e pela construção de relações profissionais baseadas em confiança, clareza e proximidade. Atendemos pessoas físicas e empresas, buscando compreender as particularidades de cada situação para oferecer um acompanhamento jurídico individualizado e responsável.",
 } as const;
 
+const CONTACT_COPY = {
+  es: {
+    kicker: "Contacto",
+    title: "Estamos para orientarte",
+    location: "Ubicación",
+    address1: "Rua Uruguai, 1248 · Sala 2",
+    address2: "Sant'Ana do Livramento, RS",
+    parking: "Estacionamiento disponible frente al edificio",
+    howto: "Cómo llegar",
+    howto1: "Sant'Ana do Livramento, RS",
+    howto2: "Rio Grande do Sul · Brasil",
+    howto3: "Atención presencial en Sala 2",
+    hours: "Horarios",
+    hours1: "Lunes a viernes: 9:00 – 18:00",
+    hours2: "Sábados: 9:00 – 12:00 (con cita)",
+    hours3: "Urgencias fuera de horario por WhatsApp",
+    whats: "WhatsApp",
+  },
+  pt: {
+    kicker: "Contato",
+    title: "Estamos à disposição para orientar você",
+    location: "Endereço",
+    address1: "Rua Uruguai, 1248 · Sala 2",
+    address2: "Sant'Ana do Livramento, RS",
+    parking: "Estacionamento disponível em frente ao prédio",
+    howto: "Como chegar",
+    howto1: "Sant'Ana do Livramento, RS",
+    howto2: "Rio Grande do Sul · Brasil",
+    howto3: "Atendimento presencial na Sala 2",
+    hours: "Horários",
+    hours1: "Segunda a sexta: 9:00 – 18:00",
+    hours2: "Sábados: 9:00 – 12:00 (com hora marcada)",
+    hours3: "Urgências fora do horário via WhatsApp",
+    whats: "WhatsApp",
+  },
+} as const;
+
 function approvedAbout(lang: Lang) { return lang === "pt" ? PT_ABOUT : ES_ABOUT; }
+function approvedContact(lang: Lang) { return lang === "pt" ? CONTACT_COPY.pt : CONTACT_COPY.es; }
 
 function cacheKey(lang: Lang) { return `${CACHE_PREFIX}${lang}`; }
 
@@ -100,6 +138,7 @@ function currentBase(lang: Lang) {
     about: { ...approvedAbout(lang), kicker: copy.aboutKicker, title: copy.aboutTitle },
     plans: { kicker: copy.plansKicker },
     diff: { kicker: copy.diffKicker },
+    contact: approvedContact(lang),
     brand: { logoUrl: "/navbar-logo.jpg" },
   });
 }
@@ -109,7 +148,8 @@ export function resolveSiteContent(lang: Lang, persisted?: any): Content {
   const cleaned = removeLegacyBrand(persisted ?? {});
   const editablePersisted = stripLegacyDefaults(cleaned, translations[lang]);
   const merged = deepMerge(base, editablePersisted);
-  return sanitizeWithFallback(merged, base) as Content;
+  const localized = { ...merged, nav: SECTION_COPY[lang].nav, contact: approvedContact(lang) };
+  return sanitizeWithFallback(localized, base) as Content;
 }
 
 function currentFallback(lang: Lang): Content { return resolveSiteContent(lang); }
