@@ -4,7 +4,7 @@ import { translations, type Lang } from "@/lib/i18n";
 
 export type Content = typeof translations["es"];
 
-const CACHE_PREFIX = "site-content:v2:";
+const CACHE_PREFIX = "site-content:v3:";
 const OUT_OF_SCOPE = /(uruguay|uruguai|rivera|binacional|fronteri[zoç]|fronteiri[ço]|frontera|fronteira|ambos pa[ií]ses|dois pa[ií]ses)/i;
 
 function cacheKey(lang: Lang) { return `${CACHE_PREFIX}${lang}`; }
@@ -39,6 +39,21 @@ function removeLegacyBrand(value: any): any {
   return value;
 }
 
+function sanitizeWithFallback(value: any, fallback: any): any {
+  if (typeof value === "string") {
+    return OUT_OF_SCOPE.test(value) && typeof fallback === "string" ? fallback : value;
+  }
+  if (Array.isArray(value)) {
+    return value.map((item, index) => sanitizeWithFallback(item, Array.isArray(fallback) ? fallback[index] : undefined));
+  }
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [key, sanitizeWithFallback(item, fallback?.[key])]),
+    );
+  }
+  return value;
+}
+
 function mapEditablePlans(rows: any[], lang: Lang) {
   const safeDefaults = translations[lang].plans.items;
   return rows.map((plan, index) => {
@@ -55,23 +70,9 @@ function mapEditablePlans(rows: any[], lang: Lang) {
   });
 }
 
-function enforceBrasilScope(content: any, lang: Lang) {
-  const safe = translations[lang];
-  return {
-    ...content,
-    brand: { ...content.brand, logoUrl: "/navbar-logo.jpg" },
-    nav: safe.nav,
-    hero: { ...content.hero, badge: safe.hero.badge, desc: safe.hero.desc, ctaPlans: safe.hero.ctaPlans },
-    about: safe.about,
-    diff: safe.diff,
-    contact: { ...content.contact, howto1: safe.contact.howto1, howto2: safe.contact.howto2, howto3: safe.contact.howto3 },
-    plans: { ...content.plans, kicker: safe.plans.kicker, title: safe.plans.title, subtitle: safe.plans.subtitle, footnote: safe.plans.footnote },
-  };
-}
-
 export function useSiteContent(lang: Lang) {
   return useQuery({
-    queryKey: ["site_content", lang, "brasil-v2"],
+    queryKey: ["site_content", lang, "admin-live-v3"],
     queryFn: async () => {
       const [contentResult, plansResult] = await Promise.all([
         supabase.from("site_content").select("data").eq("lang", lang).maybeSingle(),
@@ -82,10 +83,16 @@ export function useSiteContent(lang: Lang) {
       if (!data?.data) { const cached = readCachedContent(lang); if (cached) return cached; throw new Error("El contenido publicado del sitio no está disponible."); }
 
       const persisted = removeLegacyBrand(data.data);
-      const baseContent = enforceBrasilScope(deepMerge(translations[lang], persisted), lang);
+      const merged = deepMerge(translations[lang], persisted);
+      const safeMerged = sanitizeWithFallback(merged, translations[lang]);
+      const baseContent = {
+        ...safeMerged,
+        brand: { ...safeMerged.brand, logoUrl: "/navbar-logo.jpg" },
+      } as any;
+
       const content = (!plansResult.error && plansResult.data?.length)
         ? { ...baseContent, plans: { ...baseContent.plans, items: mapEditablePlans(plansResult.data, lang) } }
-        : { ...baseContent, plans: { ...baseContent.plans, items: translations[lang].plans.items } };
+        : baseContent;
 
       if (plansResult.error) console.warn("[site plans] No se pudieron cargar los planes editables", plansResult.error);
       const typedContent = content as Content;
@@ -93,7 +100,9 @@ export function useSiteContent(lang: Lang) {
       return typedContent;
     },
     placeholderData: (previousData) => previousData ?? readCachedContent(lang),
-    staleTime: 10_000,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
     retry: 2,
   });
 }
