@@ -7,6 +7,14 @@ import { MobileHeroAdmin } from "@/components/admin/MobileHeroAdmin";
 import { PracticeAreasAdmin } from "@/components/admin/PracticeAreasAdmin";
 
 const ui = (lang: Lang, es: string, pt: string) => lang === "pt" ? pt : es;
+const MANAGED_KEYS = ["brand", "nav", "hero", "about", "contact", "theme", "footer", "whatsapp"] as const;
+
+function managedContent(content: any) {
+  return MANAGED_KEYS.reduce((out, key) => {
+    if (content?.[key] !== undefined) out[key] = content[key];
+    return out;
+  }, {} as Record<string, unknown>);
+}
 
 export function ContentEditor({ uiLang = "es" }: { uiLang?: Lang }) {
   const [lang, setLang] = useState<Lang>(uiLang);
@@ -33,18 +41,42 @@ export function ContentEditor({ uiLang = "es" }: { uiLang?: Lang }) {
   useEffect(() => { void load(lang); }, [lang]);
 
   async function save() {
-    if (!content) return;
+    if (!content || saving) return;
     setSaving(true); setSaved(false);
-    const { data: currentRow } = await supabase.from("site_content").select("data").eq("lang", lang).maybeSingle();
-    const currentRaw: any = currentRow?.data ?? {};
-    const next = { ...currentRaw, ...(content as any) };
-    const { error } = await supabase.from("site_content").upsert({ lang, data: next, updated_at: new Date().toISOString() }, { onConflict: "lang" });
-    setSaving(false);
-    if (error) { alert(error.message); return; }
-    await queryClient.invalidateQueries({ queryKey: ["site_content"] });
-    await queryClient.refetchQueries({ queryKey: ["site_content"] });
-    await load(lang);
-    setSaved(true); setTimeout(() => setSaved(false), 2200);
+    try {
+      const { data: currentRow, error: readError } = await supabase.from("site_content").select("data").eq("lang", lang).maybeSingle();
+      if (readError) throw readError;
+
+      const currentRaw: any = currentRow?.data ?? {};
+      const managed = managedContent(content);
+      // Solo reemplazamos las secciones que este formulario edita.
+      // Hero media, áreas y profesionales se preservan desde la fila más reciente para
+      // que un Guardar general no pueda revertir cambios hechos segundos antes.
+      const next = { ...currentRaw, ...managed };
+      const { error: writeError } = await supabase.from("site_content").upsert(
+        { lang, data: next, updated_at: new Date().toISOString() },
+        { onConflict: "lang" },
+      );
+      if (writeError) throw writeError;
+
+      // Verificación real de persistencia: no mostramos “Publicado” hasta leer de nuevo
+      // la fila y confirmar que Supabase mantuvo exactamente las secciones editadas.
+      const { data: verifiedRow, error: verifyError } = await supabase.from("site_content").select("data").eq("lang", lang).maybeSingle();
+      if (verifyError) throw verifyError;
+      const verifiedRaw: any = verifiedRow?.data ?? {};
+      const mismatch = Object.entries(managed).some(([key, value]) => JSON.stringify(verifiedRaw?.[key]) !== JSON.stringify(value));
+      if (mismatch) throw new Error(ui(uiLang, "Supabase no confirmó todos los cambios guardados. Intenta nuevamente.", "O Supabase não confirmou todas as alterações salvas. Tente novamente."));
+
+      setContent(resolveSiteContent(lang, verifiedRaw) as Content);
+      await queryClient.invalidateQueries({ queryKey: ["site_content"] });
+      await queryClient.refetchQueries({ queryKey: ["site_content"], type: "active" });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2200);
+    } catch (error: any) {
+      alert(error?.message ?? ui(uiLang, "No se pudo guardar el contenido.", "Não foi possível salvar o conteúdo."));
+    } finally {
+      setSaving(false);
+    }
   }
 
   function resetDefaults() {
@@ -91,7 +123,7 @@ export function ContentEditor({ uiLang = "es" }: { uiLang?: Lang }) {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {saved && <span className="text-xs font-semibold text-primary">✓ {ui(uiLang, "Publicado", "Publicado")}</span>}
+          {saved && <span className="text-xs font-semibold text-primary">✓ {ui(uiLang, "Publicado y verificado", "Publicado e verificado")}</span>}
           <button onClick={resetDefaults} className="min-h-10 rounded-lg border border-border px-3 text-xs font-semibold text-muted-foreground">{ui(uiLang, "Restaurar base", "Restaurar base")}</button>
           <button onClick={save} disabled={saving} className="min-h-10 rounded-lg bg-primary px-5 text-xs font-bold text-primary-foreground disabled:opacity-50">{saving ? ui(uiLang, "Publicando…", "Publicando…") : ui(uiLang, "Guardar y publicar", "Salvar e publicar")}</button>
         </div>
@@ -175,7 +207,7 @@ export function ContentEditor({ uiLang = "es" }: { uiLang?: Lang }) {
 }
 
 function Notice({ lang }: { lang: Lang }) {
-  return <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 text-sm leading-6 text-foreground/80">{ui(lang, "Este panel carga los mismos datos efectivos que usa la homepage. Áreas de actuación, profesionales y hero están integrados aquí; ya no se muestran los antiguos campos de planes o diferenciadores.", "Este painel carrega os mesmos dados efetivos usados pela homepage. Áreas de atuação, profissionais e hero estão integrados aqui; os antigos campos de planos ou diferenciais não são mais exibidos.")}</div>;
+  return <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 text-sm leading-6 text-foreground/80">{ui(lang, "Cada bloque guarda sobre la versión más reciente de Supabase. El botón general ya no puede sobrescribir fotos, posiciones, áreas ni profesionales con una copia vieja, y solo confirma el guardado después de verificarlo en la base de datos.", "Cada bloco salva sobre a versão mais recente do Supabase. O botão geral não pode mais sobrescrever fotos, posições, áreas ou profissionais com uma cópia antiga e só confirma o salvamento depois de verificá-lo no banco de dados.")}</div>;
 }
 
 function ColorField({ label, v, on }: { label: string; v: string; on: (v: string) => void }) {
