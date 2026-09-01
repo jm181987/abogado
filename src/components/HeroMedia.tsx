@@ -58,7 +58,9 @@ export function HeroMedia({ lang, media, fallbackSrc }: { lang: Lang; media?: He
   return (
     <div className="absolute inset-0" style={{ opacity: resolved ? 1 : 0 }}>
       <img src={mobileSrc} alt="Estudio jurídico" className="h-full w-full object-cover lg:hidden" style={{ objectPosition: mobilePosition }} width={1600} height={1200} loading="eager" fetchPriority="high" decoding="async" onError={(event) => { if (!event.currentTarget.dataset.fallback) { event.currentTarget.dataset.fallback = "true"; event.currentTarget.src = desktopSrc; } }} />
-      <img src={desktopSrc} alt="Estudio jurídico" className="hidden h-full w-full object-cover lg:block" style={{ objectPosition: desktopPosition }} width={1600} height={1200} loading="eager" fetchPriority="high" decoding="async" onError={(event) => { if (!event.currentTarget.dataset.fallback) { event.currentTarget.dataset.fallback = "true"; event.currentTarget.src = fallbackSrc; } }} />
+      <div className="absolute inset-y-0 right-0 hidden w-1/2 overflow-hidden lg:block">
+        <img src={desktopSrc} alt="Estudio jurídico" className="h-full w-full object-cover" style={{ objectPosition: desktopPosition }} width={1600} height={1200} loading="eager" fetchPriority="high" decoding="async" onError={(event) => { if (!event.currentTarget.dataset.fallback) { event.currentTarget.dataset.fallback = "true"; event.currentTarget.src = fallbackSrc; } }} />
+      </div>
     </div>
   );
 }
