@@ -62,7 +62,7 @@ export function deepMerge(base: any, override: any): any {
   const out: any = { ...base };
   for (const k of Object.keys(override)) {
     const o = override[k];
-    if (o === null || o === undefined || o === "") continue;
+    if (o === null || o === undefined) continue;
     out[k] = deepMerge(base?.[k], o);
   }
   return out;
