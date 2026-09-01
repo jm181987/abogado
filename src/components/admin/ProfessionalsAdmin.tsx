@@ -62,16 +62,22 @@ export function ProfessionalsAdmin({ lang }: { lang: Lang }) {
 
   async function load() {
     setLoading(true);
-    const { data: rows, error } = await supabase.from("site_content").select("lang,data").in("lang", ["es", "pt"]);
+    const [{ data: rows, error }, { data: photoRows, error: photosError }] = await Promise.all([
+      supabase.from("site_content").select("lang,data").in("lang", ["es", "pt"]),
+      supabase.from("site_photos").select("storage_path").order("updated_at", { ascending: false }),
+    ]);
     if (error) {
       alert(ui(lang, "No se pudieron cargar los profesionales: ", "Não foi possível carregar os profissionais: ") + error.message);
       setLoading(false);
       return;
     }
+    if (photosError) console.warn("[professionals photos]", photosError);
     const current = rows?.find((row: any) => row.lang === lang)?.data ?? {};
     setData(resolveData(lang, current));
-    const allPhotos = (rows ?? []).flatMap((row: any) => Array.isArray(row.data?.media?.gallery) ? row.data.media.gallery : []);
-    setGallery(Array.from(new Set(allPhotos.filter(Boolean))));
+
+    const uploadedPhotos = (photoRows ?? []).map((row: any) => supabase.storage.from("site-photos").getPublicUrl(row.storage_path).data.publicUrl).filter(Boolean);
+    const legacyGallery = (rows ?? []).flatMap((row: any) => Array.isArray(row.data?.media?.gallery) ? row.data.media.gallery : []);
+    setGallery(Array.from(new Set([...uploadedPhotos, ...legacyGallery].filter(Boolean))));
     setLoading(false);
   }
 
@@ -149,7 +155,7 @@ export function ProfessionalsAdmin({ lang }: { lang: Lang }) {
             </div>
 
             <div className="mt-4 border-t border-border pt-4">
-              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">{ui(lang, "Usar foto de la galería", "Usar foto da galeria")}</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">{ui(lang, "Usar foto de la biblioteca", "Usar foto da biblioteca")}</p>
               {gallery.length ? (
                 <div className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-5">
                   {gallery.map(url => (
@@ -159,7 +165,7 @@ export function ProfessionalsAdmin({ lang }: { lang: Lang }) {
                     </button>
                   ))}
                 </div>
-              ) : <p className="mt-2 text-xs text-muted-foreground">{ui(lang, "Aún no hay fotos en la galería. Súbelas desde la pestaña Fotos.", "Ainda não há fotos na galeria. Envie-as pela aba Fotos.")}</p>}
+              ) : <p className="mt-2 text-xs text-muted-foreground">{ui(lang, "Aún no hay fotos en la biblioteca. Súbelas desde la pestaña Fotos.", "Ainda não há fotos na biblioteca. Envie-as pela aba Fotos.")}</p>}
             </div>
           </div>
         ))}
