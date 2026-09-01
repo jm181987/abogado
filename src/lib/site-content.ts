@@ -8,13 +8,25 @@ export type Content = typeof translations["es"];
 const CACHE_PREFIX = "site-content:v4:";
 const OUT_OF_SCOPE = /(uruguay|uruguai|rivera|binacional|fronteri[zoç]|fronteiri[ço]|frontera|fronteira|ambos pa[ií]ses|dois pa[ií]ses)/i;
 
+const PT_ABOUT = {
+  kicker: "O Escritório",
+  title: "O Escritório",
+  body: "Bouchacourt & Simões Pires Advocacia e Consultoria Jurídica é um escritório multidisciplinar com atuação consultiva, extrajudicial e contenciosa em diferentes áreas. O Direito de Família e Sucessões ocupa lugar de destaque em nossa prática, reunindo formação especializada das sócias e experiência consolidada ao longo de dez anos de atuação contínua na área. Nossa atuação é pautada pelo conhecimento técnico, pela análise cuidadosa de cada demanda e pela construção de relações profissionais baseadas em confiança, clareza e proximidade. Atendemos pessoas físicas e empresas, buscando compreender as particularidades de cada situação para oferecer um acompanhamento jurídico individualizado e responsável.",
+} as const;
+
 function cacheKey(lang: Lang) { return `${CACHE_PREFIX}${lang}`; }
 
 function currentFallback(lang: Lang): Content {
-  return {
+  const base = {
     ...translations[lang],
     brand: { ...translations[lang].brand, logoUrl: "/navbar-logo.jpg" },
-  } as Content;
+  } as any;
+
+  if (lang === "pt") {
+    base.about = { ...base.about, ...PT_ABOUT };
+  }
+
+  return base as Content;
 }
 
 function markContentReady(lang: Lang) {
@@ -104,6 +116,7 @@ export function useSiteContent(lang: Lang) {
       const baseContent = {
         ...safeMerged,
         brand: { ...safeMerged.brand, logoUrl: "/navbar-logo.jpg" },
+        ...(lang === "pt" ? { about: { ...safeMerged.about, ...PT_ABOUT } } : {}),
       } as any;
 
       const content = (!plansResult.error && plansResult.data?.length)
@@ -122,9 +135,6 @@ export function useSiteContent(lang: Lang) {
     retry: 2,
   });
 
-  // Importante: el evento se emite desde un efecto, después de que React ya
-  // confirmó en pantalla los datos finales de la consulta. Emitirlo dentro de
-  // queryFn abría el gate un render demasiado pronto y causaba el flash.
   useEffect(() => {
     if (!query.isPlaceholderData && !query.isFetching) markContentReady(lang);
   }, [lang, query.isFetching, query.isPlaceholderData, query.dataUpdatedAt]);
