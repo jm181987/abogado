@@ -8,6 +8,23 @@ export type Content = typeof translations["es"];
 const CACHE_PREFIX = "site-content:v4:";
 const OUT_OF_SCOPE = /(uruguay|uruguai|rivera|binacional|fronteri[zoç]|fronteiri[ço]|frontera|fronteira|ambos pa[ií]ses|dois pa[ií]ses)/i;
 
+const SECTION_COPY = {
+  es: {
+    nav: { home: "Inicio", about: "El Estudio", plans: "Áreas de Actuación", diff: "Profesionales", contact: "Contacto", cta: "Contacto" },
+    aboutKicker: "El Estudio",
+    aboutTitle: "El Estudio",
+    plansKicker: "Áreas de Actuación",
+    diffKicker: "Profesionales",
+  },
+  pt: {
+    nav: { home: "Início", about: "O Escritório", plans: "Áreas de Atuação", diff: "Profissionais", contact: "Contato", cta: "Contato" },
+    aboutKicker: "O Escritório",
+    aboutTitle: "O Escritório",
+    plansKicker: "Áreas de Atuação",
+    diffKicker: "Profissionais",
+  },
+} as const;
+
 const ES_ABOUT = {
   kicker: "El Estudio",
   title: "El Estudio",
@@ -24,6 +41,17 @@ function approvedAbout(lang: Lang) {
   return lang === "pt" ? PT_ABOUT : ES_ABOUT;
 }
 
+function applyApprovedSectionNames(content: any, lang: Lang) {
+  const copy = SECTION_COPY[lang];
+  return {
+    ...content,
+    nav: { ...(content.nav ?? {}), ...copy.nav },
+    about: { ...(content.about ?? {}), ...approvedAbout(lang), kicker: copy.aboutKicker, title: copy.aboutTitle },
+    plans: { ...(content.plans ?? {}), kicker: copy.plansKicker },
+    diff: { ...(content.diff ?? {}), kicker: copy.diffKicker },
+  };
+}
+
 function cacheKey(lang: Lang) { return `${CACHE_PREFIX}${lang}`; }
 
 function currentFallback(lang: Lang): Content {
@@ -32,8 +60,7 @@ function currentFallback(lang: Lang): Content {
     brand: { ...translations[lang].brand, logoUrl: "/navbar-logo.jpg" },
   } as any;
 
-  base.about = { ...base.about, ...approvedAbout(lang) };
-  return base as Content;
+  return applyApprovedSectionNames(base, lang) as Content;
 }
 
 function markContentReady(lang: Lang) {
@@ -120,11 +147,10 @@ export function useSiteContent(lang: Lang) {
       const persisted = removeLegacyBrand(data.data);
       const merged = deepMerge(translations[lang], persisted);
       const safeMerged = sanitizeWithFallback(merged, translations[lang]);
-      const baseContent = {
+      const baseContent = applyApprovedSectionNames({
         ...safeMerged,
         brand: { ...safeMerged.brand, logoUrl: "/navbar-logo.jpg" },
-        about: { ...safeMerged.about, ...approvedAbout(lang) },
-      } as any;
+      }, lang) as any;
 
       const content = (!plansResult.error && plansResult.data?.length)
         ? { ...baseContent, plans: { ...baseContent.plans, items: mapEditablePlans(plansResult.data, lang) } }
