@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { translations, type Lang } from "@/lib/i18n";
@@ -86,7 +87,7 @@ function mapEditablePlans(rows: any[], lang: Lang) {
 export function useSiteContent(lang: Lang) {
   const fallback = currentFallback(lang);
 
-  return useQuery({
+  const query = useQuery({
     queryKey: ["site_content", lang, "refresh-safe-v4"],
     queryFn: async () => {
       const [contentResult, plansResult] = await Promise.all([
@@ -95,10 +96,7 @@ export function useSiteContent(lang: Lang) {
       ]);
       const { data, error } = contentResult;
 
-      if (error || !data?.data) {
-        markContentReady(lang);
-        return fallback;
-      }
+      if (error || !data?.data) return fallback;
 
       const persisted = removeLegacyBrand(data.data);
       const merged = deepMerge(translations[lang], persisted);
@@ -115,7 +113,6 @@ export function useSiteContent(lang: Lang) {
       if (plansResult.error) console.warn("[site plans] No se pudieron cargar los planes editables", plansResult.error);
       const typedContent = content as Content;
       writeCachedContent(lang, typedContent);
-      markContentReady(lang);
       return typedContent;
     },
     placeholderData: fallback,
@@ -124,4 +121,13 @@ export function useSiteContent(lang: Lang) {
     refetchOnWindowFocus: true,
     retry: 2,
   });
+
+  // Importante: el evento se emite desde un efecto, después de que React ya
+  // confirmó en pantalla los datos finales de la consulta. Emitirlo dentro de
+  // queryFn abría el gate un render demasiado pronto y causaba el flash.
+  useEffect(() => {
+    if (!query.isPlaceholderData && !query.isFetching) markContentReady(lang);
+  }, [lang, query.isFetching, query.isPlaceholderData, query.dataUpdatedAt]);
+
+  return query;
 }
