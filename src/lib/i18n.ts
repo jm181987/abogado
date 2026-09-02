@@ -44,7 +44,7 @@ export const translations = {
     },
     footer: "\n",
     brand: { name1: "Estudio", name2: "Jurídico", logoUrl: "" },
-    whatsapp: { number: "", display: "" }, media: { heroImage: "", gallery: [] as string[] },
+    whatsapp: { number: "5555999278466", display: "5555999278466" }, media: { heroImage: "", gallery: [] as string[] },
     theme: { primary: "", primaryForeground: "", secondary: "", accent: "", background: "", foreground: "", muted: "", mutedForeground: "", border: "" },
   },
   pt: {
@@ -59,6 +59,6 @@ export const translations = {
     ] },
     diff: { kicker: "Profissionais", title: "Experiência, ética e atendimento próximo", subtitle: "Nossa equipe combina rigor técnico, clareza e atendimento personalizado para cada questão jurídica dentro do Brasil.", items: [{ t: "Honorários transparentes", d: "Orçamento claro antes de começar, sem surpresas." }, { t: "Atendimento PT/ES", d: "Nos comunicamos com você em português ou espanhol com clareza." }, { t: "Foco preventivo", d: "Evitar o conflito é sempre mais barato do que litigar." }, { t: "Educação do cliente", d: "Explicamos cada passo em linguagem simples." }, { t: "Atuação no Brasil", d: "Assessoria e representação jurídica dentro do território brasileiro." }, { t: "Atendimento humano", d: "Relações de confiança de longo prazo com cada cliente." }] },
     contact: { kicker: "Contato", title: "Esperamos você em Livramento", location: "Endereço", address1: "Rua Uruguai, 1248 · Sala 2", address2: "Sant'Ana do Livramento, RS", parking: "Estacionamento disponível em frente ao prédio", howto: "Como chegar", howto1: "Sant'Ana do Livramento, RS", howto2: "Rio Grande do Sul · Brasil", howto3: "Atendimento presencial na Sala 2", hours: "Horários", hours1: "Segunda a sexta: 9:00 – 18:00", hours2: "Sábados: 9:00 – 12:00 (com hora marcada)", hours3: "Urgências fora do horário via WhatsApp", whats: "WhatsApp" },
-    footer: "\n", brand: { name1: "Escritório", name2: "Jurídico", logoUrl: "" }, whatsapp: { number: "", display: "" }, media: { heroImage: "", gallery: [] as string[] }, theme: { primary: "", primaryForeground: "", secondary: "", accent: "", background: "", foreground: "", muted: "", mutedForeground: "", border: "" },
+    footer: "\n", brand: { name1: "Escritório", name2: "Jurídico", logoUrl: "" }, whatsapp: { number: "5555999278466", display: "5555999278466" }, media: { heroImage: "", gallery: [] as string[] }, theme: { primary: "", primaryForeground: "", secondary: "", accent: "", background: "", foreground: "", muted: "", mutedForeground: "", border: "" },
   },
 } as const;
