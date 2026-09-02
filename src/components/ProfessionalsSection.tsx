@@ -6,13 +6,13 @@ type ProfessionalsData = { title?: string; subtitle?: string; items?: Profession
 
 const DEFAULTS: Record<Lang, Required<ProfessionalsData>> = {
   pt: { title: "Quem está à frente do escritório", subtitle: "Conheça os profissionais responsáveis pela condução técnica, próxima e responsável de cada atendimento.", items: [
-    { name: "Daniele Dachi Simões Pires", role: "Advogada", credential: "OAB/RS 108.350", bio: "Atuação jurídica pautada pelo rigor técnico, clareza e acompanhamento individualizado de cada demanda.", photo: "" },
-    { name: "Macarena de La Rosa Bouchacourt", role: "Advogada", credential: "OAB/RS 106.130", bio: "Atuação jurídica orientada pela análise cuidadosa, proximidade com o cliente e condução responsável de cada caso.", photo: "" },
+    { name: "Daniele Dachi Simões Pires", role: "Advogada", credential: "OAB/RS 108.350", bio: "Advogada desde 2017, formada pela Universidade da Região da Campanha — URCAMP, e pós-graduada em Direito de Família e Sucessões pela Faculdade CERS — Complexo de Ensino Renato Saraiva.\n\nFoi Conselheira da OAB, Subseção de Sant’Ana do Livramento, na gestão 2022/2024, e atualmente é Conselheira Titular da OAB, Subseção de Sant’Ana do Livramento, na gestão 2025/2027.\n\nExerce, ainda, a função de Coordenadora da Comissão de Direito da Criança e do Adolescente da OAB, Subseção de Sant’Ana do Livramento — gestão 2025/2027.", photo: "" },
+    { name: "Macarena de La Rosa Bouchacourt", role: "Advogada", credential: "OAB/RS 106.130", bio: "Advogada desde 2016, formada pelo Centro Universitário Ritter dos Reis — UniRitter, e pós-graduada em Direito de Família e Sucessões pela Fundação Escola Superior do Ministério Público — FMP.\n\nAtualmente, é Secretária-Geral da OAB, Subseção de Sant’Ana do Livramento — gestão 2025/2027, Delegada da Caixa de Assistência dos Advogados da OAB, Subseção de Sant’Ana do Livramento — gestão 2025/2027, e Coordenadora da Comissão de Direito de Família e Sucessões da OAB, Subseção de Sant’Ana do Livramento.\n\nTambém é Presidente do Instituto Brasileiro de Direito de Família — IBDFAM, Núcleo de Sant’Ana do Livramento, e possui formação em Mediação pelo NUPEMEC.", photo: "" },
     { name: "Matheus Figueiredo Machado", role: "Advogado", credential: "OAB/RS 127.152", bio: "Advogado, formado pelo Centro Universitário da Região da Campanha — URCAMP. Pós-graduado em Direito Penal e Processual Penal pela Legale Educacional e com especialização em Direito Processual Penal pela Universidade Paulista — UNIP.", photo: "" },
   ]},
   es: { title: "Quiénes están al frente del estudio", subtitle: "Conoce a los profesionales responsables de brindar una atención técnica, cercana y cuidadosa en cada asunto.", items: [
-    { name: "Daniele Dachi Simões Pires", role: "Abogada", credential: "OAB/RS 108.350", bio: "Actuación jurídica basada en el rigor técnico, la claridad y el acompañamiento individualizado de cada asunto.", photo: "" },
-    { name: "Macarena de La Rosa Bouchacourt", role: "Abogada", credential: "OAB/RS 106.130", bio: "Actuación jurídica orientada por el análisis cuidadoso, la cercanía con el cliente y la conducción responsable de cada caso.", photo: "" },
+    { name: "Daniele Dachi Simões Pires", role: "Abogada", credential: "OAB/RS 108.350", bio: "Abogada desde 2017, graduada por la Universidade da Região da Campanha — URCAMP, y posgraduada en Derecho de Familia y Sucesiones por la Facultad CERS — Complexo de Ensino Renato Saraiva.\n\nFue Consejera de la OAB, Subsección de Sant’Ana do Livramento, durante la gestión 2022/2024, y actualmente es Consejera Titular de la OAB, Subsección de Sant’Ana do Livramento, en la gestión 2025/2027.\n\nAsimismo, ejerce la función de Coordinadora de la Comisión de Derecho del Niño y del Adolescente de la OAB, Subsección de Sant’Ana do Livramento — gestión 2025/2027.", photo: "" },
+    { name: "Macarena de La Rosa Bouchacourt", role: "Abogada", credential: "OAB/RS 106.130", bio: "Abogada desde 2016, graduada por el Centro Universitário Ritter dos Reis — UniRitter, y posgraduada en Derecho de Familia y Sucesiones por la Fundação Escola Superior do Ministério Público — FMP.\n\nActualmente es Secretaria General de la OAB, Subsección de Sant’Ana do Livramento — gestión 2025/2027, Delegada de la Caixa de Assistência dos Advogados de la OAB, Subsección de Sant’Ana do Livramento — gestión 2025/2027, y Coordinadora de la Comisión de Derecho de Familia y Sucesiones de la OAB, Subsección de Sant’Ana do Livramento.\n\nTambién es Presidenta del Instituto Brasileiro de Direito de Família — IBDFAM, Núcleo de Sant’Ana do Livramento, y cuenta con formación en Mediación por el NUPEMEC.", photo: "" },
     { name: "Matheus Figueiredo Machado", role: "Abogado", credential: "OAB/RS 127.152", bio: "Abogado graduado por el Centro Universitario de la Región de Campanha — URCAMP. Posgraduado en Derecho Penal y Procesal Penal por Legale Educacional y con especialización en Derecho Procesal Penal por la Universidade Paulista — UNIP.", photo: "" },
   ]},
 };
@@ -23,7 +23,15 @@ function mergeProfessionals(lang: Lang, data?: ProfessionalsData, gallery: strin
   return {
     title: data?.title || fallback.title,
     subtitle: data?.subtitle || fallback.subtitle,
-    items: fallback.items.map((item, index) => ({ ...item, ...(incoming[index] ?? {}), photo: incoming[index]?.photo || gallery[index] || item.photo })),
+    items: fallback.items.map((item, index) => {
+      const persisted = incoming[index] ?? {};
+      return {
+        ...item,
+        ...persisted,
+        bio: index < 2 ? item.bio : persisted.bio || item.bio,
+        photo: persisted.photo || gallery[index] || item.photo,
+      };
+    }),
   };
 }
 
