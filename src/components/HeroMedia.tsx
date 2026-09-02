@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Lang } from "@/lib/i18n";
 
@@ -20,6 +20,10 @@ type HeroMediaState = {
 
 export function HeroMedia({ lang, media, fallbackSrc }: { lang: Lang; media?: HeroMediaState; fallbackSrc: string }) {
   const [authoritative, setAuthoritative] = useState<HeroMediaState | null>(null);
+  const [initialResolved, setInitialResolved] = useState(false);
+  const mobileRef = useRef<HTMLImageElement | null>(null);
+  const desktopRef = useRef<HTMLImageElement | null>(null);
+  const readyNotified = useRef(false);
 
   const refresh = useCallback(async () => {
     const { data, error } = await supabase
@@ -35,6 +39,8 @@ export function HeroMedia({ lang, media, fallbackSrc }: { lang: Lang; media?: He
 
   useEffect(() => {
     let active = true;
+    readyNotified.current = false;
+    setInitialResolved(false);
 
     void supabase
       .from("site_content")
@@ -44,6 +50,10 @@ export function HeroMedia({ lang, media, fallbackSrc }: { lang: Lang; media?: He
       .then(({ data, error }) => {
         if (!active) return;
         if (!error) setAuthoritative((((data?.data as any)?.media ?? null) as HeroMediaState | null));
+        setInitialResolved(true);
+      })
+      .catch(() => {
+        if (active) setInitialResolved(true);
       });
 
     const onFocus = () => { if (active) void refresh(); };
@@ -83,9 +93,30 @@ export function HeroMedia({ lang, media, fallbackSrc }: { lang: Lang; media?: He
   const desktopPosition = useMemo(() => `${desktopX}% ${desktopY}%`, [desktopX, desktopY]);
   const mobilePosition = useMemo(() => `${mobileX}% ${mobileY}%`, [mobileX, mobileY]);
 
+  const notifyHeroReady = useCallback(() => {
+    if (!initialResolved || readyNotified.current || typeof window === "undefined") return;
+    readyNotified.current = true;
+    (window as any).__BSP_HERO_READY__ = lang;
+    window.dispatchEvent(new CustomEvent("bsp:hero-ready", { detail: { lang } }));
+  }, [initialResolved, lang]);
+
+  const handleImageLoad = useCallback((kind: "mobile" | "desktop") => {
+    if (!initialResolved || typeof window === "undefined") return;
+    const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
+    if ((isDesktop && kind === "desktop") || (!isDesktop && kind === "mobile")) notifyHeroReady();
+  }, [initialResolved, notifyHeroReady]);
+
+  useEffect(() => {
+    if (!initialResolved || typeof window === "undefined") return;
+    const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
+    const activeImage = isDesktop ? desktopRef.current : mobileRef.current;
+    if (activeImage?.complete && activeImage.naturalWidth > 0) notifyHeroReady();
+  }, [initialResolved, desktopSrc, mobileSrc, notifyHeroReady]);
+
   return (
     <div className="absolute inset-0">
       <img
+        ref={mobileRef}
         src={mobileSrc}
         alt="Estudio jurídico"
         className="h-full w-full object-cover lg:hidden"
@@ -95,6 +126,7 @@ export function HeroMedia({ lang, media, fallbackSrc }: { lang: Lang; media?: He
         loading="eager"
         fetchPriority="high"
         decoding="async"
+        onLoad={() => handleImageLoad("mobile")}
         onError={(event) => {
           if (!event.currentTarget.dataset.fallback) {
             event.currentTarget.dataset.fallback = "true";
@@ -105,6 +137,7 @@ export function HeroMedia({ lang, media, fallbackSrc }: { lang: Lang; media?: He
 
       <div className="absolute inset-y-0 right-0 hidden w-1/2 overflow-hidden bg-background lg:block">
         <img
+          ref={desktopRef}
           src={desktopSrc}
           alt="Estudio jurídico"
           className="h-full w-full object-cover opacity-100"
@@ -114,6 +147,7 @@ export function HeroMedia({ lang, media, fallbackSrc }: { lang: Lang; media?: He
           loading="eager"
           fetchPriority="high"
           decoding="async"
+          onLoad={() => handleImageLoad("desktop")}
           onError={(event) => {
             if (!event.currentTarget.dataset.fallback) {
               event.currentTarget.dataset.fallback = "true";
