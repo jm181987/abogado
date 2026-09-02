@@ -156,15 +156,21 @@ function enhanceContact() {
 }
 
 export function CookieTracking() {
-  const [lang, setLang] = useState<Lang>(getLang);
-  const [consent, setConsent] = useState<Consent>(readConsent);
-  const [open, setOpen] = useState(() => readConsent() === null);
+  // El primer render debe ser idéntico en SSR y en el navegador. Leer localStorage
+  // durante la inicialización provoca diferencias de hidratación al refrescar.
+  const [lang, setLang] = useState<Lang>("es");
+  const [consent, setConsent] = useState<Consent>(null);
+  const [open, setOpen] = useState(false);
   const [showPolicy, setShowPolicy] = useState(false);
   const [tracking, setTracking] = useState<TrackingConfig>({});
   const [adminTrackingOpen, setAdminTrackingOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
+    const storedConsent = readConsent();
+    setLang(getLang());
+    setConsent(storedConsent);
+    setOpen(storedConsent === null);
     setIsAdmin(window.location.pathname.startsWith("/admin"));
   }, []);
 
