@@ -5,7 +5,6 @@ import { translations, type Lang } from "@/lib/i18n";
 
 export type Content = typeof translations["es"];
 
-const CACHE_PREFIX = "site-content:v5:";
 const OUT_OF_SCOPE = /(uruguay|uruguai|rivera|binacional|fronteri[zoç]|fronteiri[ço]|frontera|fronteira|ambos pa[ií]ses|dois pa[ií]ses)/i;
 
 const SECTION_COPY = {
@@ -102,71 +101,100 @@ function approvedHero(lang: Lang) { return lang === "pt" ? HERO_COPY.pt : HERO_C
 function approvedAbout(lang: Lang) { return lang === "pt" ? PT_ABOUT : ES_ABOUT; }
 function approvedContact(lang: Lang) { return lang === "pt" ? CONTACT_COPY.pt : CONTACT_COPY.es; }
 
-function cacheKey(lang: Lang) { return `${CACHE_PREFIX}${lang}`; }
-
 function markContentReady(lang: Lang) {
   if (typeof window === "undefined") return;
   (window as any).__BSP_CONTENT_READY__ = lang;
   window.dispatchEvent(new CustomEvent("bsp:content-ready", { detail: { lang } }));
 }
 
-function writeCachedContent(lang: Lang, content: Content) {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(cacheKey(lang), JSON.stringify(content));
-    for (const legacyKey of ["site-content:v1:", "site-content:v2:", "site-content:v3:", "site-content:v4:"]) window.localStorage.removeItem(`${legacyKey}${lang}`);
-  } catch {}
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
+/**
+ * Mezcla únicamente valores compatibles con la forma del contenido base.
+ * Un registro viejo o mal formado de site_content nunca puede sustituir un
+ * objeto por texto, una lista por un objeto, etc. Eso evita errores de render
+ * al llegar datos persistidos después de la hidratación.
+ */
 export function deepMerge(base: any, override: any): any {
   if (override === null || override === undefined) return base;
-  if (typeof base !== "object" || typeof override !== "object") return override ?? base;
-  if (Array.isArray(base)) return Array.isArray(override) ? override : base;
-  const out: any = { ...base };
-  for (const k of Object.keys(override)) {
-    const o = override[k];
-    if (o === null || o === undefined) continue;
-    out[k] = deepMerge(base?.[k], o);
+  if (base === null || base === undefined) return override;
+
+  const baseIsArray = Array.isArray(base);
+  const overrideIsArray = Array.isArray(override);
+  if (baseIsArray || overrideIsArray) {
+    return baseIsArray && overrideIsArray ? override : base;
   }
-  return out;
+
+  const baseIsObject = isPlainObject(base);
+  const overrideIsObject = isPlainObject(override);
+  if (baseIsObject || overrideIsObject) {
+    if (!baseIsObject || !overrideIsObject) return base;
+    const out: any = { ...base };
+    for (const [key, value] of Object.entries(override)) {
+      if (value === null || value === undefined) continue;
+      out[key] = key in base ? deepMerge(base[key], value) : value;
+    }
+    return out;
+  }
+
+  return typeof base === typeof override ? override : base;
 }
 
 function removeLegacyBrand(value: any): any {
   if (typeof value === "string") return value.replace(/Vizcaya\s+Salud/gi, "").replace(/Vizcaya/gi, "");
   if (Array.isArray(value)) return value.map(removeLegacyBrand);
-  if (value && typeof value === "object") return Object.fromEntries(Object.entries(value).map(([key, val]) => [key, removeLegacyBrand(val)]));
+  if (isPlainObject(value)) return Object.fromEntries(Object.entries(value).map(([key, val]) => [key, removeLegacyBrand(val)]));
   return value;
 }
 
 function stripLegacyDefaults(value: any, oldDefaults: any): any {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+  if (!isPlainObject(value)) return value;
   const out: any = {};
   for (const [key, item] of Object.entries(value)) {
     const old = oldDefaults?.[key];
     if (typeof item === "string" && typeof old === "string" && item === old) continue;
-    out[key] = item && typeof item === "object" && !Array.isArray(item) ? stripLegacyDefaults(item, old) : item;
+    out[key] = isPlainObject(item) ? stripLegacyDefaults(item, old) : item;
   }
   return out;
 }
 
 function sanitizeWithFallback(value: any, fallback: any): any {
+  if (fallback !== undefined && fallback !== null) {
+    if (Array.isArray(fallback) && !Array.isArray(value)) return fallback;
+    if (isPlainObject(fallback) && !isPlainObject(value)) return fallback;
+    if (!Array.isArray(fallback) && !isPlainObject(fallback) && typeof value !== typeof fallback) return fallback;
+  }
+
   if (typeof value === "string") return OUT_OF_SCOPE.test(value) && typeof fallback === "string" ? fallback : value;
-  if (Array.isArray(value)) return value.map((item, index) => sanitizeWithFallback(item, Array.isArray(fallback) ? fallback[index] : undefined));
-  if (value && typeof value === "object") return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, sanitizeWithFallback(item, fallback?.[key])]));
+  if (Array.isArray(value)) {
+    const fallbackItem = Array.isArray(fallback) ? fallback[0] : undefined;
+    return value.map((item, index) => sanitizeWithFallback(item, Array.isArray(fallback) ? (fallback[index] ?? fallbackItem) : undefined));
+  }
+  if (isPlainObject(value)) {
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, sanitizeWithFallback(item, fallback?.[key])]));
+  }
   return value;
 }
 
 function sanitizeLocalizedSection(value: any, fallback: any, lang: Lang): any {
+  if (isPlainObject(fallback) && !isPlainObject(value)) return fallback;
+  if (Array.isArray(fallback) && !Array.isArray(value)) return fallback;
+
   const opposite = lang === "pt" ? LANGUAGE_MARKERS.es : LANGUAGE_MARKERS.pt;
   if (typeof value === "string") {
     if (opposite.test(value) && typeof fallback === "string") return fallback;
     return value;
   }
-  if (Array.isArray(value)) return value.map((item, index) => sanitizeLocalizedSection(item, Array.isArray(fallback) ? fallback[index] : undefined, lang));
-  if (value && typeof value === "object") {
+  if (Array.isArray(value)) {
+    const fallbackItem = Array.isArray(fallback) ? fallback[0] : undefined;
+    return value.map((item, index) => sanitizeLocalizedSection(item, Array.isArray(fallback) ? (fallback[index] ?? fallbackItem) : undefined, lang));
+  }
+  if (isPlainObject(value)) {
     return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, sanitizeLocalizedSection(item, fallback?.[key], lang)]));
   }
-  return value;
+  return fallback ?? value;
 }
 
 function currentBase(lang: Lang) {
@@ -184,7 +212,9 @@ function currentBase(lang: Lang) {
 
 export function resolveSiteContent(lang: Lang, persisted?: any): Content {
   const base = currentBase(lang);
-  const cleaned = removeLegacyBrand(persisted ?? {});
+  if (!isPlainObject(persisted)) return base as Content;
+
+  const cleaned = removeLegacyBrand(persisted);
   const editablePersisted = stripLegacyDefaults(cleaned, translations[lang]);
   const merged = deepMerge(base, editablePersisted);
   const localized = {
@@ -199,47 +229,63 @@ export function resolveSiteContent(lang: Lang, persisted?: any): Content {
 
 function currentFallback(lang: Lang): Content { return resolveSiteContent(lang); }
 
+function asStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is string => typeof item === "string");
+}
+
 function mapEditablePlans(rows: any[], lang: Lang) {
   const safeDefaults = translations[lang].plans.items;
   return rows.map((plan, index) => {
+    const safeDefault = safeDefaults[index] ?? safeDefaults[safeDefaults.length - 1];
+    const features = asStringArray(lang === "pt" ? plan?.features_pt : plan?.features_es);
     const mapped = {
-      name: lang === "pt" ? plan.name_pt : plan.name_es,
-      age: lang === "pt" ? plan.age_pt : plan.age_es,
-      price: plan.price ?? "",
-      old: plan.old_price ?? "",
-      popular: Boolean(plan.popular),
-      features: lang === "pt" ? (plan.features_pt ?? []) : (plan.features_es ?? []),
+      name: typeof (lang === "pt" ? plan?.name_pt : plan?.name_es) === "string" ? (lang === "pt" ? plan.name_pt : plan.name_es) : safeDefault.name,
+      age: typeof (lang === "pt" ? plan?.age_pt : plan?.age_es) === "string" ? (lang === "pt" ? plan.age_pt : plan.age_es) : safeDefault.age,
+      price: typeof plan?.price === "string" ? plan.price : (safeDefault.price ?? ""),
+      old: typeof plan?.old_price === "string" ? plan.old_price : (safeDefault.old ?? ""),
+      popular: Boolean(plan?.popular),
+      features: features.length ? features : asStringArray(safeDefault.features),
     };
     const searchable = [mapped.name, mapped.age, ...mapped.features].join(" ");
-    return OUT_OF_SCOPE.test(searchable) ? (safeDefaults[index] ?? safeDefaults[safeDefaults.length - 1]) : mapped;
+    return OUT_OF_SCOPE.test(searchable) ? safeDefault : mapped;
   });
 }
 
 export function useSiteContent(lang: Lang) {
   const fallback = currentFallback(lang);
   const query = useQuery({
-    queryKey: ["site_content", lang, "refresh-safe-v5"],
+    queryKey: ["site_content", lang, "db-safe-v6"],
     queryFn: async () => {
-      const [contentResult, plansResult] = await Promise.all([
-        supabase.from("site_content").select("data").eq("lang", lang).maybeSingle(),
-        supabase.from("plans").select("name_es,name_pt,age_es,age_pt,price,old_price,features_es,features_pt,popular,active,sort_order").eq("active", true).order("sort_order"),
-      ]);
-      const { data, error } = contentResult;
-      if (error || !data?.data) return fallback;
-      const baseContent = resolveSiteContent(lang, data.data) as any;
-      const content = (!plansResult.error && plansResult.data?.length)
-        ? { ...baseContent, plans: { ...baseContent.plans, items: mapEditablePlans(plansResult.data, lang) } }
-        : baseContent;
-      if (plansResult.error) console.warn("[site plans] No se pudieron cargar los planes editables", plansResult.error);
-      const typedContent = content as Content;
-      writeCachedContent(lang, typedContent);
-      return typedContent;
+      try {
+        const [contentResult, plansResult] = await Promise.all([
+          supabase.from("site_content").select("data").eq("lang", lang).maybeSingle(),
+          supabase.from("plans").select("name_es,name_pt,age_es,age_pt,price,old_price,features_es,features_pt,popular,active,sort_order").eq("active", true).order("sort_order"),
+        ]);
+
+        const { data, error } = contentResult;
+        const baseContent = !error && isPlainObject(data?.data)
+          ? (resolveSiteContent(lang, data.data) as any)
+          : (fallback as any);
+
+        const content = (!plansResult.error && Array.isArray(plansResult.data) && plansResult.data.length)
+          ? { ...baseContent, plans: { ...baseContent.plans, items: mapEditablePlans(plansResult.data, lang) } }
+          : baseContent;
+
+        if (error) console.warn("[site content] Se ignoró contenido persistido inválido o inaccesible", error);
+        if (plansResult.error) console.warn("[site plans] No se pudieron cargar los planes editables", plansResult.error);
+
+        return sanitizeWithFallback(content, fallback) as Content;
+      } catch (error) {
+        console.warn("[site content] Se usa contenido estable porque la BD no respondió correctamente", error);
+        return fallback;
+      }
     },
     placeholderData: fallback,
-    staleTime: 0,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
-    retry: 2,
+    staleTime: 30_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    retry: 0,
   });
 
   useEffect(() => {
