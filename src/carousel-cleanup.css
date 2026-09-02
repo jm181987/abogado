@@ -33,3 +33,46 @@
 #diferenciadores .flex.items-center.justify-between {
   justify-content: flex-end !important;
 }
+
+/* Branded loading state. The public site stays visually stable while hydration finishes. */
+@keyframes bsp-logo-loader-pulse {
+  0%, 100% { opacity: .84; transform: scale(.985); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+[data-bsp-site-loader="true"] img {
+  animation: bsp-logo-loader-pulse 1.5s ease-in-out infinite;
+}
+
+/* If TanStack reaches the root error boundary during the initial hydration window,
+   never expose the generic technical fallback to visitors. Keep the same branded
+   logo screen while the next navigation/reload gets a clean render. */
+.flex.min-h-screen.items-center.justify-center.bg-background.px-4:has(> .max-w-md.text-center > h1.font-display.text-3xl) {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 99999 !important;
+  display: grid !important;
+  place-items: center !important;
+  padding: 0 !important;
+  background: var(--color-background, #fff) !important;
+}
+
+.flex.min-h-screen.items-center.justify-center.bg-background.px-4:has(> .max-w-md.text-center > h1.font-display.text-3xl) > * {
+  display: none !important;
+}
+
+.flex.min-h-screen.items-center.justify-center.bg-background.px-4:has(> .max-w-md.text-center > h1.font-display.text-3xl)::before {
+  content: "";
+  display: block;
+  width: min(78vw, 360px);
+  height: 150px;
+  background: url('/navbar-logo.jpg') center / contain no-repeat;
+  animation: bsp-logo-loader-pulse 1.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-bsp-site-loader="true"] img,
+  .flex.min-h-screen.items-center.justify-center.bg-background.px-4:has(> .max-w-md.text-center > h1.font-display.text-3xl)::before {
+    animation: none !important;
+  }
+}
