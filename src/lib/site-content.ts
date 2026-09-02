@@ -44,8 +44,8 @@ const HERO_COPY = {
 } as const;
 
 const LANGUAGE_MARKERS = {
-  es: /(asesor[ií]a|acompañamos|personas|criterio y cercan[ií]a|defensa jur[ií]dica|estudio jur[ií]dico|atenci[oó]n|actuaci[oó]n|español)/i,
-  pt: /(assessoria|acompanhamos|pessoas|crit[eé]rio e proximidade|defesa jur[ií]dica|escrit[oó]rio de advocacia|atendimento|atuaç[aã]o|portugu[eê]s)/i,
+  es: /(asesor[ií]a|acompañamos|personas|criterio y cercan[ií]a|defensa jur[ií]dica|estudio jur[ií]dico|atenci[oó]n|actuaci[oó]n|español|honorarios|presupuesto|biling[uü]e|nos comunicamos contigo)/i,
+  pt: /(assessoria|acompanhamos|pessoas|crit[eé]rio e proximidade|defesa jur[ií]dica|escrit[oó]rio de advocacia|atendimento|atuaç[aã]o|portugu[eê]s|honor[aá]rios|orçamento|bil[ií]ngue|nos comunicamos com voc[eê])/i,
 } as const;
 
 const ES_ABOUT = {
@@ -255,7 +255,7 @@ function mapEditablePlans(rows: any[], lang: Lang) {
 export function useSiteContent(lang: Lang) {
   const fallback = currentFallback(lang);
   const query = useQuery({
-    queryKey: ["site_content", lang, "db-safe-v6"],
+    queryKey: ["site_content", lang, "db-safe-v7"],
     queryFn: async () => {
       try {
         const [contentResult, plansResult] = await Promise.all([
