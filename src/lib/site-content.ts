@@ -5,7 +5,7 @@ import { translations, type Lang } from "@/lib/i18n";
 
 export type Content = typeof translations["es"];
 
-const CACHE_PREFIX = "site-content:v4:";
+const CACHE_PREFIX = "site-content:v5:";
 const OUT_OF_SCOPE = /(uruguay|uruguai|rivera|binacional|fronteri[zoç]|fronteiri[ço]|frontera|fronteira|ambos pa[ií]ses|dois pa[ií]ses)/i;
 
 const SECTION_COPY = {
@@ -23,6 +23,30 @@ const SECTION_COPY = {
     plansKicker: "Áreas de Atuação",
     diffKicker: "Profissionais",
   },
+} as const;
+
+const HERO_COPY = {
+  es: {
+    badge: "Estudio jurídico · Sant'Ana do Livramento, RS",
+    title1: "Defensa jurídica con",
+    title2: "criterio y cercanía",
+    desc: "Asesoría jurídica ética y estratégica en Brasil. Acompañamos a personas, familias y empresas con soluciones claras, transparencia y atención profesional en español y portugués.",
+    ctaPlans: "Ver áreas de actuación",
+    ctaWhats: "WhatsApp",
+  },
+  pt: {
+    badge: "Escritório de advocacia · Sant'Ana do Livramento, RS",
+    title1: "Defesa jurídica com",
+    title2: "critério e proximidade",
+    desc: "Assessoria jurídica ética e estratégica no Brasil. Acompanhamos pessoas, famílias e empresas com soluções claras, transparência e atendimento profissional em português e espanhol.",
+    ctaPlans: "Ver áreas de atuação",
+    ctaWhats: "WhatsApp",
+  },
+} as const;
+
+const LANGUAGE_MARKERS = {
+  es: /(asesor[ií]a|acompañamos|personas|criterio y cercan[ií]a|defensa jur[ií]dica|estudio jur[ií]dico|atenci[oó]n|actuaci[oó]n|español)/i,
+  pt: /(assessoria|acompanhamos|pessoas|crit[eé]rio e proximidade|defesa jur[ií]dica|escrit[oó]rio de advocacia|atendimento|atuaç[aã]o|portugu[eê]s)/i,
 } as const;
 
 const ES_ABOUT = {
@@ -74,6 +98,7 @@ const CONTACT_COPY = {
   },
 } as const;
 
+function approvedHero(lang: Lang) { return lang === "pt" ? HERO_COPY.pt : HERO_COPY.es; }
 function approvedAbout(lang: Lang) { return lang === "pt" ? PT_ABOUT : ES_ABOUT; }
 function approvedContact(lang: Lang) { return lang === "pt" ? CONTACT_COPY.pt : CONTACT_COPY.es; }
 
@@ -89,7 +114,7 @@ function writeCachedContent(lang: Lang, content: Content) {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(cacheKey(lang), JSON.stringify(content));
-    for (const legacyKey of ["site-content:v1:", "site-content:v2:", "site-content:v3:"]) window.localStorage.removeItem(`${legacyKey}${lang}`);
+    for (const legacyKey of ["site-content:v1:", "site-content:v2:", "site-content:v3:", "site-content:v4:"]) window.localStorage.removeItem(`${legacyKey}${lang}`);
   } catch {}
 }
 
@@ -131,10 +156,24 @@ function sanitizeWithFallback(value: any, fallback: any): any {
   return value;
 }
 
+function sanitizeLocalizedSection(value: any, fallback: any, lang: Lang): any {
+  const opposite = lang === "pt" ? LANGUAGE_MARKERS.es : LANGUAGE_MARKERS.pt;
+  if (typeof value === "string") {
+    if (opposite.test(value) && typeof fallback === "string") return fallback;
+    return value;
+  }
+  if (Array.isArray(value)) return value.map((item, index) => sanitizeLocalizedSection(item, Array.isArray(fallback) ? fallback[index] : undefined, lang));
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, sanitizeLocalizedSection(item, fallback?.[key], lang)]));
+  }
+  return value;
+}
+
 function currentBase(lang: Lang) {
   const copy = SECTION_COPY[lang];
   return deepMerge(translations[lang], {
     nav: copy.nav,
+    hero: approvedHero(lang),
     about: { ...approvedAbout(lang), kicker: copy.aboutKicker, title: copy.aboutTitle },
     plans: { kicker: copy.plansKicker },
     diff: { kicker: copy.diffKicker },
@@ -148,7 +187,13 @@ export function resolveSiteContent(lang: Lang, persisted?: any): Content {
   const cleaned = removeLegacyBrand(persisted ?? {});
   const editablePersisted = stripLegacyDefaults(cleaned, translations[lang]);
   const merged = deepMerge(base, editablePersisted);
-  const localized = { ...merged, nav: SECTION_COPY[lang].nav, contact: approvedContact(lang) };
+  const localized = {
+    ...merged,
+    nav: SECTION_COPY[lang].nav,
+    hero: sanitizeLocalizedSection(merged.hero, approvedHero(lang), lang),
+    diff: sanitizeLocalizedSection(merged.diff, base.diff, lang),
+    contact: approvedContact(lang),
+  };
   return sanitizeWithFallback(localized, base) as Content;
 }
 
@@ -173,7 +218,7 @@ function mapEditablePlans(rows: any[], lang: Lang) {
 export function useSiteContent(lang: Lang) {
   const fallback = currentFallback(lang);
   const query = useQuery({
-    queryKey: ["site_content", lang, "refresh-safe-v4"],
+    queryKey: ["site_content", lang, "refresh-safe-v5"],
     queryFn: async () => {
       const [contentResult, plansResult] = await Promise.all([
         supabase.from("site_content").select("data").eq("lang", lang).maybeSingle(),
