@@ -15,8 +15,9 @@ type Consent = "all" | "necessary" | null;
 const CONSENT_KEY = "bsp-cookie-consent:v1";
 const INSTAGRAM_URL = "https://www.instagram.com/bouchacourtsimoespires/";
 const INSTAGRAM_LABEL = "@bouchacourtsimoespires";
-const WHATSAPP_FALLBACK_NUMBER = "5551993254208";
-const WHATSAPP_FALLBACK_DISPLAY = "+55 51 99325-4208";
+const WHATSAPP_NUMBER = "5555999278466";
+const WHATSAPP_DISPLAY = "5555999278466";
+const WHATSAPP_URL = `https://api.whatsapp.com/send/?phone=${WHATSAPP_NUMBER}`;
 
 function getLang(): Lang {
   if (typeof window === "undefined") return "es";
@@ -129,31 +130,41 @@ function enhanceContact() {
   const whatsappHeading = Array.from(contact.querySelectorAll<HTMLHeadingElement>("h3"))
     .find((heading) => heading.textContent?.trim().toLowerCase() === "whatsapp");
   const body = whatsappHeading?.nextElementSibling as HTMLElement | null;
-  if (!body || body.querySelector('[data-bsp-contact-methods="true"]')) return;
+  if (!body) return;
 
-  const existingWhatsapp = body.querySelector<HTMLAnchorElement>('a[href*="whatsapp"], a[href*="wa.me"]');
-  const existingDigits = (existingWhatsapp?.textContent ?? "").replace(/\D/g, "");
-  const existingLabel = existingWhatsapp?.textContent?.trim() ?? "";
-  const whatsappHref = existingWhatsapp?.href || `https://wa.me/${WHATSAPP_FALLBACK_NUMBER}`;
-  const whatsappLabel = existingDigits.length >= 8 ? existingLabel : WHATSAPP_FALLBACK_DISPLAY;
+  // Mantener los nodos de React en el DOM para no romper la hidratación, pero
+  // ocultar su valor duplicado y volver a comprobarlo en cada mutación.
+  Array.from(body.children).forEach((child) => {
+    const element = child as HTMLElement;
+    if (element.dataset.bspContactMethods === "true") return;
+    element.style.display = "none";
+    element.setAttribute("aria-hidden", "true");
+  });
 
-  // No reemplazar ni eliminar hijos renderizados por React. Hacerlo durante la
-  // hidratación puede dejar al reconciliador apuntando a nodos que ya no existen
-  // y provocar la pantalla de error al refrescar.
-  const existingPrimary = body.firstElementChild as HTMLElement | null;
-  if (existingPrimary) {
-    existingPrimary.style.display = "none";
-    existingPrimary.setAttribute("aria-hidden", "true");
+  let methods = body.querySelector<HTMLElement>('[data-bsp-contact-methods="true"]');
+  if (!methods) {
+    methods = document.createElement("div");
+    methods.dataset.bspContactMethods = "true";
+    methods.className = "grid gap-3";
+    body.appendChild(methods);
   }
 
-  const methods = document.createElement("div");
-  methods.dataset.bspContactMethods = "true";
-  methods.className = "grid gap-3";
-  methods.append(
-    makeMethodLink("whatsapp", whatsappHref, whatsappLabel),
-    makeMethodLink("instagram", INSTAGRAM_URL, INSTAGRAM_LABEL),
-  );
-  body.appendChild(methods);
+  const whatsappLink = methods.querySelector<HTMLAnchorElement>('[data-bsp-method="whatsapp"]');
+  if (whatsappLink) {
+    whatsappLink.href = WHATSAPP_URL;
+    const label = whatsappLink.querySelector("span");
+    if (label) label.textContent = WHATSAPP_DISPLAY;
+  } else {
+    const link = makeMethodLink("whatsapp", WHATSAPP_URL, WHATSAPP_DISPLAY);
+    link.dataset.bspMethod = "whatsapp";
+    methods.appendChild(link);
+  }
+
+  if (!methods.querySelector('[data-bsp-method="instagram"]')) {
+    const link = makeMethodLink("instagram", INSTAGRAM_URL, INSTAGRAM_LABEL);
+    link.dataset.bspMethod = "instagram";
+    methods.appendChild(link);
+  }
 }
 
 export function CookieTracking() {
