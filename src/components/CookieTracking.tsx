@@ -132,13 +132,13 @@ function enhanceContact() {
   const body = whatsappHeading?.nextElementSibling as HTMLElement | null;
   if (!body) return;
 
-  // Mantener los nodos de React en el DOM para no romper la hidratación, pero
-  // ocultar su valor duplicado y volver a comprobarlo en cada mutación.
+  // Mantener los nodos de React intactos. Solo aplicar atributos cuando cambian
+  // para que el MutationObserver no se retroalimente durante la hidratación.
   Array.from(body.children).forEach((child) => {
     const element = child as HTMLElement;
     if (element.dataset.bspContactMethods === "true") return;
-    element.style.display = "none";
-    element.setAttribute("aria-hidden", "true");
+    if (element.style.display !== "none") element.style.display = "none";
+    if (element.getAttribute("aria-hidden") !== "true") element.setAttribute("aria-hidden", "true");
   });
 
   let methods = body.querySelector<HTMLElement>('[data-bsp-contact-methods="true"]');
@@ -151,9 +151,9 @@ function enhanceContact() {
 
   const whatsappLink = methods.querySelector<HTMLAnchorElement>('[data-bsp-method="whatsapp"]');
   if (whatsappLink) {
-    whatsappLink.href = WHATSAPP_URL;
+    if (whatsappLink.href !== WHATSAPP_URL) whatsappLink.href = WHATSAPP_URL;
     const label = whatsappLink.querySelector("span");
-    if (label) label.textContent = WHATSAPP_DISPLAY;
+    if (label && label.textContent !== WHATSAPP_DISPLAY) label.textContent = WHATSAPP_DISPLAY;
   } else {
     const link = makeMethodLink("whatsapp", WHATSAPP_URL, WHATSAPP_DISPLAY);
     link.dataset.bspMethod = "whatsapp";
