@@ -10,10 +10,13 @@ function currentLanguage(): Lang {
 }
 
 export function LegalFooter() {
-  const [lang, setLang] = useState<Lang>(currentLanguage);
+  // Mantener el primer render estable entre servidor y cliente evita errores de
+  // hidratación cuando el idioma persistido es portugués y se refresca la página.
+  const [lang, setLang] = useState<Lang>("es");
 
   useEffect(() => {
     const sync = () => setLang(currentLanguage());
+    sync();
     document.addEventListener("click", sync, true);
     window.addEventListener("storage", sync);
     const observer = new MutationObserver(sync);
