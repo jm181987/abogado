@@ -20,7 +20,6 @@ type HeroMediaState = {
 
 export function HeroMedia({ lang, media, fallbackSrc }: { lang: Lang; media?: HeroMediaState; fallbackSrc: string }) {
   const [authoritative, setAuthoritative] = useState<HeroMediaState | null>(null);
-  const [resolved, setResolved] = useState(false);
 
   const refresh = useCallback(async () => {
     const { data, error } = await supabase
@@ -32,12 +31,10 @@ export function HeroMedia({ lang, media, fallbackSrc }: { lang: Lang; media?: He
     if (!error) {
       setAuthoritative((((data?.data as any)?.media ?? null) as HeroMediaState | null));
     }
-    setResolved(true);
   }, [lang]);
 
   useEffect(() => {
     let active = true;
-    setResolved(false);
 
     void supabase
       .from("site_content")
@@ -47,7 +44,6 @@ export function HeroMedia({ lang, media, fallbackSrc }: { lang: Lang; media?: He
       .then(({ data, error }) => {
         if (!active) return;
         if (!error) setAuthoritative((((data?.data as any)?.media ?? null) as HeroMediaState | null));
-        setResolved(true);
       });
 
     const onFocus = () => { if (active) void refresh(); };
@@ -88,7 +84,7 @@ export function HeroMedia({ lang, media, fallbackSrc }: { lang: Lang; media?: He
   const mobilePosition = useMemo(() => `${mobileX}% ${mobileY}%`, [mobileX, mobileY]);
 
   return (
-    <div className="absolute inset-0" style={{ opacity: resolved ? 1 : 0 }}>
+    <div className="absolute inset-0">
       <img
         src={mobileSrc}
         alt="Estudio jurídico"
