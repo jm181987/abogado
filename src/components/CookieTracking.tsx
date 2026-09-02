@@ -247,12 +247,10 @@ export function CookieTracking() {
   }, [lang]);
 
   function choose(value: Exclude<Consent, null>) {
-    const previous = consent;
     localStorage.setItem(CONSENT_KEY, value);
     setConsent(value);
     setOpen(false);
     setShowPolicy(false);
-    if (previous === "all" && value === "necessary") window.location.reload();
   }
 
   return (
