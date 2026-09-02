@@ -16,9 +16,9 @@ function expectedLanguage(): "es" | "pt" {
 }
 
 export function SiteContentGate({ children }: { children: ReactNode }) {
-  // El logo cubre toda la fase inicial y el sitio solo se revela cuando la imagen
-  // real del hero correspondiente al idioma del visitante ya terminó de cargar.
-  // Así nunca queda visible durante milisegundos la imagen fallback del bundle.
+  // El contenido permanece totalmente oculto hasta que tanto los textos de
+  // Supabase como la imagen real del hero estén listos para el idioma esperado.
+  // El cambio loader -> sitio ocurre en un único commit, sin fundido intermedio.
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -36,7 +36,7 @@ export function SiteContentGate({ children }: { children: ReactNode }) {
       });
     };
 
-    // Rutas como /admin no tienen HeroMedia y no deben esperar un evento del hero.
+    // Rutas como /admin no tienen HeroMedia ni contenido público que sincronizar.
     if (window.location.pathname !== "/") {
       reveal();
       return () => {
@@ -46,22 +46,39 @@ export function SiteContentGate({ children }: { children: ReactNode }) {
       };
     }
 
+    let heroReady = (window as any).__BSP_HERO_READY__ === expected;
+    let contentReady = (window as any).__BSP_CONTENT_READY__ === expected;
+
+    const maybeReveal = () => {
+      if (heroReady && contentReady) reveal();
+    };
+
     const onHeroReady = (event: Event) => {
       const lang = (event as CustomEvent<{ lang?: string }>).detail?.lang;
-      if (lang === expected) reveal();
+      if (lang !== expected) return;
+      heroReady = true;
+      maybeReveal();
+    };
+
+    const onContentReady = (event: Event) => {
+      const lang = (event as CustomEvent<{ lang?: string }>).detail?.lang;
+      if (lang !== expected) return;
+      contentReady = true;
+      maybeReveal();
     };
 
     window.addEventListener("bsp:hero-ready", onHeroReady as EventListener);
+    window.addEventListener("bsp:content-ready", onContentReady as EventListener);
+    maybeReveal();
 
-    if ((window as any).__BSP_HERO_READY__ === expected) reveal();
-
-    // Solo para un fallo extremo de red/imagen: evita bloquear el sitio para siempre.
-    // En el flujo normal el evento del hero ocurre mucho antes y el fallback nunca se ve.
+    // Evita un bloqueo permanente ante un fallo extremo de red. En el flujo
+    // normal ambos eventos llegan antes y nunca se muestra contenido transitorio.
     const safetyTimer = window.setTimeout(reveal, 8000);
 
     return () => {
       cancelled = true;
       window.removeEventListener("bsp:hero-ready", onHeroReady as EventListener);
+      window.removeEventListener("bsp:content-ready", onContentReady as EventListener);
       window.clearTimeout(safetyTimer);
       if (firstFrame) window.cancelAnimationFrame(firstFrame);
       if (secondFrame) window.cancelAnimationFrame(secondFrame);
@@ -75,8 +92,8 @@ export function SiteContentGate({ children }: { children: ReactNode }) {
         data-bsp-site-content="true"
         style={{
           opacity: ready ? 1 : 0,
+          visibility: ready ? "visible" : "hidden",
           pointerEvents: ready ? "auto" : "none",
-          transition: "opacity 120ms ease",
         }}
       >
         <ProfessionalContacts />
