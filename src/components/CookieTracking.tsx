@@ -17,10 +17,6 @@ const INSTAGRAM_URL = "https://www.instagram.com/bouchacourtsimoespires/";
 const INSTAGRAM_LABEL = "@bouchacourtsimoespires";
 const WHATSAPP_FALLBACK_NUMBER = "5551993254208";
 const WHATSAPP_FALLBACK_DISPLAY = "+55 51 99325-4208";
-const PARKING_COPY = new Set([
-  "Estacionamiento disponible frente al edificio",
-  "Estacionamento disponível em frente ao prédio",
-]);
 
 function getLang(): Lang {
   if (typeof window === "undefined") return "es";
@@ -130,10 +126,6 @@ function enhanceContact() {
   const contact = document.getElementById("contacto");
   if (!contact) return;
 
-  contact.querySelectorAll<HTMLElement>("span").forEach((node) => {
-    if (PARKING_COPY.has(node.textContent?.trim() ?? "")) node.remove();
-  });
-
   const whatsappHeading = Array.from(contact.querySelectorAll<HTMLHeadingElement>("h3"))
     .find((heading) => heading.textContent?.trim().toLowerCase() === "whatsapp");
   const body = whatsappHeading?.nextElementSibling as HTMLElement | null;
@@ -145,6 +137,15 @@ function enhanceContact() {
   const whatsappHref = existingWhatsapp?.href || `https://wa.me/${WHATSAPP_FALLBACK_NUMBER}`;
   const whatsappLabel = existingDigits.length >= 8 ? existingLabel : WHATSAPP_FALLBACK_DISPLAY;
 
+  // No reemplazar ni eliminar hijos renderizados por React. Hacerlo durante la
+  // hidratación puede dejar al reconciliador apuntando a nodos que ya no existen
+  // y provocar la pantalla de error al refrescar.
+  const existingPrimary = body.firstElementChild as HTMLElement | null;
+  if (existingPrimary) {
+    existingPrimary.style.display = "none";
+    existingPrimary.setAttribute("aria-hidden", "true");
+  }
+
   const methods = document.createElement("div");
   methods.dataset.bspContactMethods = "true";
   methods.className = "grid gap-3";
@@ -152,7 +153,7 @@ function enhanceContact() {
     makeMethodLink("whatsapp", whatsappHref, whatsappLabel),
     makeMethodLink("instagram", INSTAGRAM_URL, INSTAGRAM_LABEL),
   );
-  body.replaceChildren(methods);
+  body.appendChild(methods);
 }
 
 export function CookieTracking() {
@@ -192,8 +193,11 @@ export function CookieTracking() {
 
   useEffect(() => {
     if (isAdmin) return;
-    enhanceContact();
-    const observer = new MutationObserver(() => enhanceContact());
+    const safeEnhance = () => {
+      try { enhanceContact(); } catch (error) { console.warn("[contact methods]", error); }
+    };
+    safeEnhance();
+    const observer = new MutationObserver(safeEnhance);
     observer.observe(document.body, { childList: true, subtree: true });
     return () => observer.disconnect();
   }, [lang, isAdmin]);
