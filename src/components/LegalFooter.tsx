@@ -39,6 +39,7 @@ export function LegalFooter() {
           <div>
             <div className="flex items-center gap-2 text-primary"><Scale className="size-4" strokeWidth={1.7} /><p className="text-[11px] font-semibold uppercase tracking-[0.18em]">{es ? "Área legal" : "Área jurídica"}</p></div>
             <h2 className="mt-3 font-display text-xl text-foreground sm:text-2xl">Bouchacourt · Simões Pires</h2>
+            <p className="mt-2 text-xs font-bold leading-5 text-foreground"><strong>OAB/RS 13.750</strong></p>
             <p className="mt-2 max-w-md text-xs leading-5 text-muted-foreground">{es ? "Información institucional, identificación profesional y condiciones de uso del sitio." : "Informações institucionais, identificação profissional e condições de uso do site."}</p>
             <div className="mt-4 space-y-1 text-[11px] leading-5 text-foreground/75 sm:text-xs"><p><strong>Dra. Macarena Bouchacourt</strong> · OAB/RS 106.130</p><p><strong>Dra. Daniele Simões Pires</strong> · OAB/RS 108.350</p><p className="pt-1">Rua Uruguai, 1248, Sala 2 · Sant'Ana do Livramento/RS · Brasil</p></div>
           </div>
