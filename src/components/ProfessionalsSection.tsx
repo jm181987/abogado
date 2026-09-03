@@ -55,8 +55,8 @@ export function ProfessionalsSection({ lang }: { lang: Lang }) {
           <div className="mx-auto mt-12 grid max-w-6xl gap-6 lg:grid-cols-2">
             {content.items.map((professional, index) => (
               <article key={`${professional.name}-${index}`} className={`overflow-hidden rounded-[1.35rem] border border-[#e7ddd1] bg-white/75 shadow-[0_14px_45px_-32px_rgba(54,26,24,.35)] ${content.items.length % 2 === 1 && index === content.items.length - 1 ? "lg:col-span-2 lg:w-[calc(50%-0.75rem)] lg:min-w-[560px] lg:justify-self-center" : ""}`}>
-                <div className="grid sm:grid-cols-[0.9fr_1.1fr] sm:items-stretch">
-                  <div className="relative h-[330px] overflow-hidden bg-[#eee7df] sm:h-[520px]">
+                <div className="grid h-full min-h-[360px] sm:grid-cols-[0.9fr_1.1fr]">
+                  <div className="relative min-h-[330px] overflow-hidden bg-[#eee7df] sm:min-h-full">
                     {professional.photo ? <img src={professional.photo} alt={professional.name || ""} loading="lazy" className="absolute inset-0 h-full w-full object-cover object-top" /> : <div className="absolute inset-0 grid place-items-center px-6 text-center text-xs uppercase tracking-[0.18em] text-muted-foreground/70">{lang === "pt" ? "Selecione uma foto no Admin" : "Selecciona una foto en Admin"}</div>}
                   </div>
                   <div className="flex flex-col justify-center p-7 sm:p-8 lg:p-9">
