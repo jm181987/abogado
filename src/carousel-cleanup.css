@@ -40,6 +40,18 @@
   display: none !important;
 }
 
+/* Hero CTAs: center the action group within the same visual width as the description. */
+#inicio .max-w-3xl > .mt-9.flex {
+  width: 100%;
+  max-width: 42rem;
+}
+
+@media (min-width: 640px) {
+  #inicio .max-w-3xl > .mt-9.flex {
+    justify-content: center;
+  }
+}
+
 /* Branded loading state. The public site stays visually stable while hydration finishes. */
 @keyframes bsp-logo-loader-pulse {
   0%, 100% { opacity: .84; transform: scale(.985); }
