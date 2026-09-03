@@ -34,6 +34,12 @@
   justify-content: flex-end !important;
 }
 
+/* Hero: remove the location/multidisciplinary badge and the three small trust labels in every language. */
+#inicio .max-w-3xl > .mb-7.inline-flex,
+#inicio .max-w-3xl > .mt-10.flex.flex-wrap {
+  display: none !important;
+}
+
 /* Branded loading state. The public site stays visually stable while hydration finishes. */
 @keyframes bsp-logo-loader-pulse {
   0%, 100% { opacity: .84; transform: scale(.985); }
