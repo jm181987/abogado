@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import type { Lang } from "@/lib/i18n";
 
 type GalleryCarouselProps = {
@@ -7,10 +7,11 @@ type GalleryCarouselProps = {
 };
 
 const AUTOPLAY_MS = 6000;
-const GAP_PX = 16;
+const RESET_AFTER_MS = 850;
 
 export function GalleryCarousel({ images, lang }: GalleryCarouselProps) {
   const trackRef = useRef<HTMLDivElement>(null);
+  const renderedImages = useMemo(() => (images.length > 1 ? [...images, ...images] : images), [images]);
 
   useEffect(() => {
     const track = trackRef.current;
@@ -18,9 +19,12 @@ export function GalleryCarousel({ images, lang }: GalleryCarouselProps) {
 
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let timer: number | null = null;
+    let resetTimer: number | null = null;
     let disposed = false;
-    let advancing = false;
+    let visualIndex = 0;
     const decodedImages = new Map<string, Promise<void>>();
+
+    const getSlides = () => Array.from(track.querySelectorAll<HTMLElement>("[data-gallery-slide='true']"));
 
     const preloadAndDecode = (url: string) => {
       const existing = decodedImages.get(url);
@@ -28,76 +32,86 @@ export function GalleryCarousel({ images, lang }: GalleryCarouselProps) {
 
       const promise = new Promise<void>((resolve) => {
         const preload = new Image();
-        preload.decoding = "async";
-
-        const finish = () => {
+        preload.decoding = "sync";
+        preload.onload = () => {
           if (typeof preload.decode === "function") {
             void preload.decode().catch(() => undefined).finally(resolve);
           } else {
             resolve();
           }
         };
-
-        preload.onload = finish;
         preload.onerror = () => resolve();
         preload.src = url;
-
-        if (preload.complete) finish();
+        if (preload.complete) {
+          if (typeof preload.decode === "function") {
+            void preload.decode().catch(() => undefined).finally(resolve);
+          } else {
+            resolve();
+          }
+        }
       });
 
       decodedImages.set(url, promise);
       return promise;
     };
 
-    const getSlides = () => Array.from(track.querySelectorAll<HTMLElement>("[data-gallery-slide='true']"));
-
-    const currentIndex = () => {
+    const goToVisualIndex = (index: number, behavior: ScrollBehavior = "smooth") => {
       const slides = getSlides();
-      const first = slides[0];
-      if (!first) return 0;
-      const step = first.getBoundingClientRect().width + GAP_PX;
-      return Math.max(0, Math.min(slides.length - 1, Math.round(track.scrollLeft / Math.max(step, 1))));
+      const target = slides[index];
+      if (!target) return;
+      track.scrollTo({ left: target.offsetLeft, behavior: reduceMotion ? "auto" : behavior });
     };
 
     const preloadAhead = () => {
-      if (!images.length) return;
-      const current = currentIndex();
-      void preloadAndDecode(images[(current + 1) % images.length]);
-      if (images.length > 2) void preloadAndDecode(images[(current + 2) % images.length]);
+      const logicalIndex = visualIndex % images.length;
+      void preloadAndDecode(images[(logicalIndex + 1) % images.length]);
+      if (images.length > 2) void preloadAndDecode(images[(logicalIndex + 2) % images.length]);
     };
 
     const advance = async () => {
-      if (advancing || disposed) return;
-      advancing = true;
-      try {
-        const slides = getSlides();
-        if (slides.length <= 1) return;
-        const nextIndex = (currentIndex() + 1) % slides.length;
+      if (disposed) return;
 
-        // Never move a photo into view until its original file has finished
-        // downloading and decoding. This prevents progressive JPEGs from
-        // looking soft during the first seconds they are visible.
-        await preloadAndDecode(images[nextIndex]);
-        if (disposed) return;
+      const nextVisualIndex = visualIndex + 1;
+      const logicalNextIndex = nextVisualIndex % images.length;
+      await preloadAndDecode(images[logicalNextIndex]);
+      if (disposed) return;
 
-        const target = slides[nextIndex];
-        track.scrollTo({ left: target.offsetLeft, behavior: reduceMotion ? "auto" : "smooth" });
+      visualIndex = nextVisualIndex;
+      goToVisualIndex(visualIndex, "smooth");
+
+      // The second sequence is an exact visual copy of the first one. After
+      // reaching its first card, reset instantly to the original first card.
+      // Because both cards are identical, the visitor never sees a jump and
+      // autoplay can continue forever.
+      if (visualIndex === images.length) {
+        if (resetTimer !== null) window.clearTimeout(resetTimer);
+        resetTimer = window.setTimeout(() => {
+          if (disposed) return;
+          visualIndex = 0;
+          goToVisualIndex(0, "auto");
+          preloadAhead();
+        }, reduceMotion ? 0 : RESET_AFTER_MS);
+      } else {
         window.setTimeout(preloadAhead, 250);
-      } finally {
-        advancing = false;
       }
     };
 
-    const start = () => {
+    const stopTimer = () => {
       if (timer !== null) window.clearInterval(timer);
-      if (document.hidden) return;
+      timer = null;
+    };
+
+    const start = () => {
+      stopTimer();
+      if (document.hidden || disposed) return;
       preloadAhead();
       timer = window.setInterval(() => { void advance(); }, AUTOPLAY_MS);
     };
 
-    // The first visible cards are requested immediately. The next cards are
-    // decoded in advance so autoplay always reveals a fully rendered original.
-    images.slice(0, Math.min(3, images.length)).forEach((url) => { void preloadAndDecode(url); });
+    // Load every original source, not a resized or transformed derivative.
+    // This also prevents progressive JPEGs from becoming visible before their
+    // full-resolution decode is ready when the carousel advances.
+    images.forEach((url) => { void preloadAndDecode(url); });
 
     const handleVisibility = () => start();
     document.addEventListener("visibilitychange", handleVisibility);
@@ -106,7 +120,8 @@ export function GalleryCarousel({ images, lang }: GalleryCarouselProps) {
     return () => {
       disposed = true;
       document.removeEventListener("visibilitychange", handleVisibility);
-      if (timer !== null) window.clearInterval(timer);
+      stopTimer();
+      if (resetTimer !== null) window.clearTimeout(resetTimer);
     };
   }, [images]);
 
@@ -126,32 +141,36 @@ export function GalleryCarousel({ images, lang }: GalleryCarouselProps) {
           ref={trackRef}
           role="region"
           aria-label={lang === "es" ? "Galería de imágenes" : "Galeria de imagens"}
-          className="flex gap-4 overflow-x-auto scroll-smooth pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          {images.map((url, index) => (
-            <div
-              key={`${url}-${index}`}
-              data-gallery-slide="true"
-              className="relative aspect-[4/5] w-[82vw] max-w-[340px] shrink-0 snap-start overflow-hidden rounded-[1.5rem] border border-border bg-muted shadow-sm sm:w-[360px] sm:max-w-[360px] lg:w-[360px] lg:max-w-[360px]"
-            >
-              <img
-                src={url}
-                alt={`${lang === "es" ? "Estudio jurídico" : "Escritório de advocacia"} ${index + 1}`}
-                loading={index < 3 ? "eager" : "lazy"}
-                decoding="async"
-                fetchPriority={index === 0 ? "high" : "auto"}
-                draggable={false}
-                className="absolute inset-0 block h-full w-full max-w-none select-none object-cover object-center"
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                  objectPosition: "center",
-                  imageRendering: "auto",
-                }}
-              />
-            </div>
-          ))}
+          {renderedImages.map((url, index) => {
+            const logicalIndex = index % images.length;
+            return (
+              <div
+                key={`${url}-${index}`}
+                data-gallery-slide="true"
+                aria-hidden={index >= images.length ? "true" : undefined}
+                className="relative aspect-[4/5] w-[82vw] max-w-[340px] shrink-0 snap-start overflow-hidden rounded-[1.5rem] border border-border bg-muted shadow-sm sm:w-[360px] sm:max-w-[360px] lg:w-[360px] lg:max-w-[360px]"
+              >
+                <img
+                  src={url}
+                  alt={index < images.length ? `${lang === "es" ? "Estudio jurídico" : "Escritório de advocacia"} ${logicalIndex + 1}` : ""}
+                  loading="eager"
+                  decoding="sync"
+                  fetchPriority={logicalIndex < 3 ? "high" : "auto"}
+                  draggable={false}
+                  className="absolute inset-0 block h-full w-full max-w-none select-none object-cover object-center"
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    objectPosition: "center",
+                    imageRendering: "auto",
+                  }}
+                />
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>
