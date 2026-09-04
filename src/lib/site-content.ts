@@ -26,7 +26,7 @@ const SECTION_COPY = {
 
 const HERO_COPY = {
   es: {
-    badge: "Estudio jurídico · Sant'Ana do Livramento, RS",
+    badge: "Estudio jurídico - Sant’Ana do Livramento│RS",
     title1: "Defensa jurídica con",
     title2: "criterio y cercanía",
     desc: "Asesoría jurídica ética y estratégica en Brasil. Acompañamos a personas, familias y empresas con soluciones claras, transparencia y atención profesional en español y portugués.",
@@ -34,7 +34,7 @@ const HERO_COPY = {
     ctaWhats: "WhatsApp",
   },
   pt: {
-    badge: "Escritório de advocacia · Sant'Ana do Livramento, RS",
+    badge: "Escritório de advocacia - Sant’Ana do Livramento│RS",
     title1: "Defesa jurídica com",
     title2: "critério e proximidade",
     desc: "Assessoria jurídica ética e estratégica no Brasil. Acompanhamos pessoas, famílias e empresas com soluções claras, transparência e atendimento profissional em português e espanhol.",
@@ -217,10 +217,11 @@ export function resolveSiteContent(lang: Lang, persisted?: any): Content {
   const cleaned = removeLegacyBrand(persisted);
   const editablePersisted = stripLegacyDefaults(cleaned, translations[lang]);
   const merged = deepMerge(base, editablePersisted);
+  const localizedHero = sanitizeLocalizedSection(merged.hero, approvedHero(lang), lang);
   const localized = {
     ...merged,
     nav: SECTION_COPY[lang].nav,
-    hero: sanitizeLocalizedSection(merged.hero, approvedHero(lang), lang),
+    hero: { ...localizedHero, badge: approvedHero(lang).badge },
     diff: sanitizeLocalizedSection(merged.diff, base.diff, lang),
     contact: approvedContact(lang),
   };
