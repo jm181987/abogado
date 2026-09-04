@@ -26,6 +26,8 @@
   min-height: 0 !important;
   max-height: none !important;
   flex-shrink: 0 !important;
+  scale: 1.06 !important;
+  clip-path: inset(2.85% round 1.35rem);
 }
 
 /* Guarantee real justification in the practice-area copy, including the featured Family card. */
