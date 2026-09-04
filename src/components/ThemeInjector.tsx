@@ -98,5 +98,35 @@ export function ThemeInjector({ theme }: { theme?: ThemeColors | null }) {
     };
   }, []);
 
+  useEffect(() => {
+    const hero = document.getElementById("inicio");
+    if (!(hero instanceof HTMLElement)) return;
+
+    let frame = 0;
+    const restoreLocationBadge = () => {
+      const badge = hero.querySelector<HTMLElement>(".mb-7.inline-flex");
+      if (!badge) return;
+      badge.style.setProperty("display", "inline-flex", "important");
+      badge.style.setProperty("visibility", "visible", "important");
+      badge.style.setProperty("opacity", "1", "important");
+      badge.removeAttribute("aria-hidden");
+    };
+
+    const schedule = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(restoreLocationBadge);
+    };
+
+    const observer = new MutationObserver(schedule);
+    observer.observe(hero, { subtree: true, childList: true, characterData: true });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["lang"] });
+    schedule();
+
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
+  }, []);
+
   return null;
 }
