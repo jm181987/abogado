@@ -19,6 +19,7 @@ import { Reveal } from "@/components/Reveal";
 import { ThemeInjector } from "@/components/ThemeInjector";
 import { HeroMedia } from "@/components/HeroMedia";
 import { OfficeSection } from "@/components/OfficeSection";
+import { GalleryCarousel } from "@/components/GalleryCarousel";
 import { usePreferredLanguage } from "@/hooks/use-language";
 
 const SITE_URL = "https://bspadvogados.vercel.app";
@@ -235,17 +236,7 @@ function Index() {
           </div>
         </section>
 
-        {gallery.length > 0 && (
-          <section id="galeria" className="py-20 sm:py-24 lg:py-28">
-            <div className="mx-auto max-w-7xl px-5 sm:px-6">
-              <p className="mb-4 text-xs font-semibold uppercase tracking-[0.22em] text-primary">{lang === "es" ? "Nuestro espacio" : "Nosso espaço"}</p>
-              <h2 className="mb-10 font-display text-4xl tracking-[-0.03em] sm:text-5xl">{lang === "es" ? "Un entorno profesional y cercano" : "Um ambiente profissional e acolhedor"}</h2>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                {gallery.map((url, index) => <img key={url} src={url} alt={`${lang === "es" ? "Estudio jurídico" : "Escritório de advocacia"} ${index + 1}`} loading="lazy" className="aspect-[4/5] w-full rounded-[1.5rem] border border-border object-cover shadow-sm" />)}
-              </div>
-            </div>
-          </section>
-        )}
+        <GalleryCarousel images={gallery} lang={lang} />
 
         <section id="contacto" className="py-20 sm:py-24 lg:py-32">
           <div className="mx-auto max-w-7xl px-5 sm:px-6">
