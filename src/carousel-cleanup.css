@@ -12,22 +12,47 @@
   align-items: stretch !important;
 }
 
-/* Keep every gallery image visually consistent, regardless of source dimensions. */
-#galeria img {
+/* Gallery: every photo uses the exact same visible frame, regardless of source ratio. */
+#galeria [data-gallery-track="true"] > img {
   display: block !important;
-  width: 100%;
+  flex: 0 0 min(78vw, 340px) !important;
+  width: min(78vw, 340px) !important;
+  min-width: min(78vw, 340px) !important;
+  max-width: min(78vw, 340px) !important;
+  height: 425px !important;
+  min-height: 425px !important;
+  max-height: 425px !important;
+  aspect-ratio: auto !important;
   object-fit: cover !important;
   object-position: center center !important;
+  border-radius: 1.5rem !important;
+  box-sizing: border-box !important;
+  scale: 1 !important;
+  clip-path: none !important;
 }
 
-#galeria [data-gallery-track="true"] > img {
-  aspect-ratio: 4 / 5 !important;
-  height: auto !important;
-  min-height: 0 !important;
-  max-height: none !important;
-  flex-shrink: 0 !important;
-  scale: 1.06 !important;
-  clip-path: inset(2.85% round 1.35rem);
+@media (min-width: 640px) and (max-width: 1023px) {
+  #galeria [data-gallery-track="true"] > img {
+    flex-basis: 360px !important;
+    width: 360px !important;
+    min-width: 360px !important;
+    max-width: 360px !important;
+    height: 450px !important;
+    min-height: 450px !important;
+    max-height: 450px !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  #galeria [data-gallery-track="true"] > img {
+    flex-basis: calc((100% - 2rem) / 3) !important;
+    width: calc((100% - 2rem) / 3) !important;
+    min-width: calc((100% - 2rem) / 3) !important;
+    max-width: calc((100% - 2rem) / 3) !important;
+    height: 460px !important;
+    min-height: 460px !important;
+    max-height: 460px !important;
+  }
 }
 
 /* Guarantee real justification in the practice-area copy, including the featured Family card. */
