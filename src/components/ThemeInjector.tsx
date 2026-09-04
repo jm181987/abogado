@@ -39,8 +39,6 @@ const TRUST_COPY = {
   },
 } as const;
 
-const REMOVED_HERO_COPY = /(?:multidisciplin\w*[^.]{0,120}(?:sant['’]?ana|livramento)|(?:sant['’]?ana|livramento)[^.]{0,120}multidisciplin\w*)/i;
-
 export function ThemeInjector({ theme }: { theme?: ThemeColors | null }) {
   useEffect(() => {
     const root = document.documentElement;
@@ -97,48 +95,6 @@ export function ThemeInjector({ theme }: { theme?: ThemeColors | null }) {
       cancelAnimationFrame(frame);
       languageObserver.disconnect();
       contentObserver.disconnect();
-    };
-  }, []);
-
-  useEffect(() => {
-    const hero = document.getElementById("inicio");
-    if (!(hero instanceof HTMLElement)) return;
-
-    let frame = 0;
-    const removeLegacyHeroCopy = () => {
-      // The old location/multidisciplinary pill must not be shown in either PT or ES,
-      // even when an older value is returned by the persisted site_content record.
-      hero.querySelectorAll<HTMLElement>(".mb-7.inline-flex").forEach((element) => {
-        element.style.setProperty("display", "none", "important");
-        element.setAttribute("aria-hidden", "true");
-      });
-
-      hero.querySelectorAll<HTMLElement>("*").forEach((element) => {
-        const directText = Array.from(element.childNodes)
-          .filter((node) => node.nodeType === Node.TEXT_NODE)
-          .map((node) => node.textContent ?? "")
-          .join(" ")
-          .trim();
-        if (directText && REMOVED_HERO_COPY.test(directText)) {
-          element.style.setProperty("display", "none", "important");
-          element.setAttribute("aria-hidden", "true");
-        }
-      });
-    };
-
-    const schedule = () => {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(removeLegacyHeroCopy);
-    };
-
-    const observer = new MutationObserver(schedule);
-    observer.observe(hero, { subtree: true, childList: true, characterData: true });
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["lang"] });
-    schedule();
-
-    return () => {
-      cancelAnimationFrame(frame);
-      observer.disconnect();
     };
   }, []);
 
