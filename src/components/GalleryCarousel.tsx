@@ -79,10 +79,6 @@ export function GalleryCarousel({ images, lang }: GalleryCarouselProps) {
       visualIndex = nextVisualIndex;
       goToVisualIndex(visualIndex, "smooth");
 
-      // The second sequence is an exact visual copy of the first one. After
-      // reaching its first card, reset instantly to the original first card.
-      // Because both cards are identical, the visitor never sees a jump and
-      // autoplay can continue forever.
       if (visualIndex === images.length) {
         if (resetTimer !== null) window.clearTimeout(resetTimer);
         resetTimer = window.setTimeout(() => {
@@ -108,9 +104,7 @@ export function GalleryCarousel({ images, lang }: GalleryCarouselProps) {
       timer = window.setInterval(() => { void advance(); }, AUTOPLAY_MS);
     };
 
-    // Load every original source, not a resized or transformed derivative.
-    // This also prevents progressive JPEGs from becoming visible before their
-    // full-resolution decode is ready when the carousel advances.
+    // Warm the browser cache with the original files before they enter view.
     images.forEach((url) => { void preloadAndDecode(url); });
 
     const handleVisibility = () => start();
@@ -145,30 +139,24 @@ export function GalleryCarousel({ images, lang }: GalleryCarouselProps) {
         >
           {renderedImages.map((url, index) => {
             const logicalIndex = index % images.length;
+            const duplicated = index >= images.length;
+            const label = `${lang === "es" ? "Estudio jurídico" : "Escritório de advocacia"} ${logicalIndex + 1}`;
+
             return (
               <div
                 key={`${url}-${index}`}
                 data-gallery-slide="true"
-                aria-hidden={index >= images.length ? "true" : undefined}
+                role={duplicated ? undefined : "img"}
+                aria-label={duplicated ? undefined : label}
+                aria-hidden={duplicated ? "true" : undefined}
                 className="relative aspect-[4/5] w-[82vw] max-w-[340px] shrink-0 snap-start overflow-hidden rounded-[1.5rem] border border-border bg-muted shadow-sm sm:w-[360px] sm:max-w-[360px] lg:w-[360px] lg:max-w-[360px]"
-              >
-                <img
-                  src={url}
-                  alt={index < images.length ? `${lang === "es" ? "Estudio jurídico" : "Escritório de advocacia"} ${logicalIndex + 1}` : ""}
-                  loading="eager"
-                  decoding="sync"
-                  fetchPriority={logicalIndex < 3 ? "high" : "auto"}
-                  draggable={false}
-                  className="absolute inset-0 block h-full w-full max-w-none select-none object-cover object-center"
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                    objectPosition: "center",
-                    imageRendering: "auto",
-                  }}
-                />
-              </div>
+                style={{
+                  backgroundImage: `url(${JSON.stringify(url)})`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center center",
+                  backgroundRepeat: "no-repeat",
+                }}
+              />
             );
           })}
         </div>
