@@ -9,16 +9,29 @@
 
 #galeria [data-gallery-track="true"] {
   margin-top: 0 !important;
+  align-items: stretch !important;
 }
 
 /* Keep every gallery image visually consistent, regardless of source dimensions. */
-#galeria [data-gallery-track="true"] > img {
+#galeria img {
   display: block !important;
-  height: clamp(360px, 38vw, 480px) !important;
-  min-height: clamp(360px, 38vw, 480px) !important;
-  max-height: clamp(360px, 38vw, 480px) !important;
+  width: 100%;
   object-fit: cover !important;
   object-position: center center !important;
+}
+
+#galeria [data-gallery-track="true"] > img {
+  aspect-ratio: 4 / 5 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  flex-shrink: 0 !important;
+}
+
+/* Guarantee real justification in the practice-area copy, including the featured Family card. */
+#planes p.text-justify {
+  text-align: justify !important;
+  text-align-last: auto !important;
 }
 
 /* About section: remove decorative labels while preserving cards and icons. */
@@ -44,7 +57,13 @@
   justify-content: flex-end !important;
 }
 
-/* Hero: keep the location badge visible; hide only the three small trust labels. */
+/* Hero: the location badge must stay visible; hide only the three small trust labels. */
+#inicio .max-w-3xl > .mb-7.inline-flex {
+  display: inline-flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
 #inicio .max-w-3xl > .mt-10.flex.flex-wrap {
   display: none !important;
 }
