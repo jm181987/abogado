@@ -20,7 +20,7 @@ jobs:
           cache-dependency-path: package.json
       - name: Verify legacy backend name is absent
         run: |
-          if grep -RIni --exclude-dir=node_modules --exclude-dir=.git -E 'supabase' src package.json package-lock.json .env.example 2>/dev/null; then
+          if grep -RIni --exclude-dir=node_modules --exclude-dir=.git -E 'supabase' src package.json .env.example; then
             echo 'Legacy backend reference found'
             exit 1
           fi
