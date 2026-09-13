@@ -7,8 +7,8 @@ import { clearSessionCookie, destroySession, getSessionUser, requireAdmin, sessi
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"]);
 const MAX_UPLOAD_BYTES = Number(process.env.MAX_UPLOAD_BYTES || 15 * 1024 * 1024);
 
-function json(data: unknown, status = 200, headers?: HeadersInit) {
-  return new Response(JSON.stringify(data), { status, headers: { "content-type": "application/json; charset=utf-8", ...headers } });
+function json(data: unknown, status = 200, headers?: Record<string, string>) {
+  return new Response(JSON.stringify(data), { status, headers: { "content-type": "application/json; charset=utf-8", ...(headers || {}) } });
 }
 
 function fail(error: unknown) {
@@ -30,8 +30,7 @@ function pathParts(splat?: string) {
 }
 
 function asLang(value: string | null): "es" | "pt" {
-  if (value === "pt") return "pt";
-  return "es";
+  return value === "pt" ? "pt" : "es";
 }
 
 function publicPhoto(row: any) {
@@ -122,7 +121,7 @@ async function handle(request: Request, splat?: string) {
     if (parts[1] === "content") {
       if (method === "GET") {
         const requested = (url.searchParams.get("langs") || "es,pt").split(",").filter((value): value is "es" | "pt" => value === "es" || value === "pt");
-        const langs = requested.length ? requested : ["es", "pt"];
+        const langs: Array<"es" | "pt"> = requested.length ? requested : ["es", "pt"];
         const rows = await sql<any[]>`SELECT lang, data, updated_at FROM site_content WHERE lang IN ${sql(langs)} ORDER BY lang`;
         return json({ rows });
       }
@@ -180,7 +179,9 @@ async function handle(request: Request, splat?: string) {
         const bytes = Buffer.from(await file.arrayBuffer());
         const id = randomUUID();
         const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-160) || "image";
-        const storagePath = `${Date.now()}-${id}-${safeName}`;
+        const requestedPath = form.get("storage_path") ? String(form.get("storage_path")) : "";
+        const safeRequestedPath = requestedPath.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 220);
+        const storagePath = safeRequestedPath || `${Date.now()}-${id}-${safeName}`;
         const sha256 = createHash("sha256").update(bytes).digest("hex");
         const slot = String(form.get("slot") || `photo-${Date.now()}`).slice(0, 200);
         const altEs = form.get("alt_es") ? String(form.get("alt_es")) : null;
