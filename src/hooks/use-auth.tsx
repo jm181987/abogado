@@ -1,10 +1,11 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import type { Session, User } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
+import { getSession, signInApi, signOutApi, signUpApi, type ApiUser } from "@/lib/site-api";
+
+type AppSession = { user: ApiUser };
 
 interface AuthCtx {
-  user: User | null;
-  session: Session | null;
+  user: ApiUser | null;
+  session: AppSession | null;
   isAdmin: boolean;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
@@ -15,49 +16,47 @@ interface AuthCtx {
 const AuthContext = createContext<AuthCtx | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null);
-  const [user, setUser] = useState<User | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [user, setUser] = useState<ApiUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setUser(data.session?.user ?? null);
-      setLoading(false);
-    });
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
-      setSession(s);
-      setUser(s?.user ?? null);
-    });
-    return () => sub.subscription.unsubscribe();
+    let active = true;
+    void getSession()
+      .then(({ user: nextUser }) => { if (active) setUser(nextUser); })
+      .catch(() => { if (active) setUser(null); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
   }, []);
 
-  useEffect(() => {
-    if (!user) { setIsAdmin(false); return; }
-    supabase.rpc("has_role", { _user_id: user.id, _role: "admin" }).then(({ data }) => {
-      setIsAdmin(!!data);
-    });
-  }, [user]);
-
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error: error?.message ?? null };
+    try {
+      const { user: nextUser } = await signInApi(email, password);
+      setUser(nextUser);
+      return { error: null };
+    } catch (error: any) {
+      return { error: error?.message ?? "No se pudo iniciar sesión" };
+    }
   };
-  const signUp = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({
-      email, password,
-      options: { emailRedirectTo: window.location.origin + "/admin" },
-    });
-    return { error: error?.message ?? null };
-  };
-  const signOut = async () => { await supabase.auth.signOut(); };
 
-  return (
-    <AuthContext.Provider value={{ user, session, isAdmin, loading, signIn, signUp, signOut }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  const signUp = async (email: string, password: string) => {
+    try {
+      const { user: nextUser } = await signUpApi(email, password);
+      setUser(nextUser);
+      return { error: null };
+    } catch (error: any) {
+      return { error: error?.message ?? "No se pudo crear la cuenta" };
+    }
+  };
+
+  const signOut = async () => {
+    try { await signOutApi(); }
+    finally { setUser(null); }
+  };
+
+  const session = user ? { user } : null;
+  const isAdmin = user?.role === "admin";
+
+  return <AuthContext.Provider value={{ user, session, isAdmin, loading, signIn, signUp, signOut }}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
