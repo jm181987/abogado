@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { dataClient } from "@/lib/data-client";
 import { TrackingAdmin } from "@/components/admin/TrackingAdmin";
 import type { Lang } from "@/lib/i18n";
 
@@ -132,8 +132,6 @@ function enhanceContact() {
   const body = whatsappHeading?.nextElementSibling as HTMLElement | null;
   if (!body) return;
 
-  // Mantener los nodos de React intactos. Solo aplicar atributos cuando cambian
-  // para que el MutationObserver no se retroalimente durante la hidratación.
   Array.from(body.children).forEach((child) => {
     const element = child as HTMLElement;
     if (element.dataset.bspContactMethods === "true") return;
@@ -168,8 +166,6 @@ function enhanceContact() {
 }
 
 export function CookieTracking() {
-  // El primer render debe ser idéntico en SSR y en el navegador. Leer localStorage
-  // durante la inicialización provoca diferencias de hidratación al refrescar.
   const [lang, setLang] = useState<Lang>("es");
   const [consent, setConsent] = useState<Consent>(null);
   const [open, setOpen] = useState(false);
@@ -215,7 +211,7 @@ export function CookieTracking() {
 
   useEffect(() => {
     void (async () => {
-      const { data } = await supabase.from("site_content").select("data").eq("lang", "pt").maybeSingle();
+      const { data } = await dataClient.from("site_content").select("data").eq("lang", "pt").maybeSingle();
       setTracking(((data?.data as any)?.tracking ?? {}) as TrackingConfig);
     })();
   }, []);
