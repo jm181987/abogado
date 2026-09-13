@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { dataClient } from "@/lib/data-client";
 import type { Lang } from "@/lib/i18n";
 
 const clamp = (value: unknown) => {
@@ -26,7 +26,7 @@ export function HeroMedia({ lang, media, fallbackSrc }: { lang: Lang; media?: He
   const readyNotified = useRef(false);
 
   const refresh = useCallback(async () => {
-    const { data, error } = await supabase
+    const { data, error } = await dataClient
       .from("site_content")
       .select("data")
       .eq("lang", lang)
@@ -42,7 +42,7 @@ export function HeroMedia({ lang, media, fallbackSrc }: { lang: Lang; media?: He
     readyNotified.current = false;
     setInitialResolved(false);
 
-    void supabase
+    void dataClient
       .from("site_content")
       .select("data")
       .eq("lang", lang)
