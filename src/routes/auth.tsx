@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/auth")({
-  head: () => ({ meta: [{ title: "Ingresar · Vizcaya Salud" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({ meta: [{ title: "Ingresar · Bouchacourt e Simões Pires" }, { name: "robots", content: "noindex" }] }),
   component: AuthPage,
 });
 
@@ -28,8 +28,8 @@ function AuthPage() {
     const { error } = await fn(email, password);
     setSubmitting(false);
     if (error) return setErr(error);
-    if (mode === "signup") setMsg("Cuenta creada. Revisa tu correo para confirmar (si está habilitado) o inicia sesión.");
-    else navigate({ to: "/admin" });
+    if (mode === "signup") setMsg("Cuenta administradora creada.");
+    navigate({ to: "/admin" });
   }
 
   return (
@@ -40,8 +40,8 @@ function AuthPage() {
           <span className="font-display text-3xl font-light italic text-primary">Bouchacourt e Simões Pires Advocacia</span>
         </Link>
         <div className="rounded-3xl border border-border bg-card p-8 shadow-sm">
-          <h1 className="font-display text-2xl mb-1">{mode === "signin" ? "Iniciar sesión" : "Crear cuenta"}</h1>
-          <p className="text-sm text-muted-foreground mb-6">Acceso al panel de administración.</p>
+          <h1 className="font-display text-2xl mb-1">{mode === "signin" ? "Iniciar sesión" : "Crear cuenta administradora"}</h1>
+          <p className="text-sm text-muted-foreground mb-6">{mode === "signin" ? "Acceso al panel de administración." : "La creación inicial está limitada a la cuenta administradora autorizada."}</p>
           <form onSubmit={onSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-medium mb-1.5">Email</label>
@@ -62,7 +62,7 @@ function AuthPage() {
           </form>
           <button onClick={() => { setMode(mode === "signin" ? "signup" : "signin"); setErr(null); setMsg(null); }}
             className="mt-4 w-full text-xs text-muted-foreground hover:text-foreground">
-            {mode === "signin" ? "¿No tienes cuenta? Crear una" : "¿Ya tienes cuenta? Iniciar sesión"}
+            {mode === "signin" ? "Inicializar cuenta administradora" : "¿Ya tienes cuenta? Iniciar sesión"}
           </button>
         </div>
         <Link to="/" className="block text-center mt-4 text-xs text-muted-foreground hover:text-foreground">← Volver al sitio</Link>
