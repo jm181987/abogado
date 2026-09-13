@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { dataClient } from "@/lib/data-client";
 import { translations, type Lang } from "@/lib/i18n";
 
 export type Content = typeof translations["es"];
@@ -260,8 +260,8 @@ export function useSiteContent(lang: Lang) {
     queryFn: async () => {
       try {
         const [contentResult, plansResult] = await Promise.all([
-          supabase.from("site_content").select("data").eq("lang", lang).maybeSingle(),
-          supabase.from("plans").select("name_es,name_pt,age_es,age_pt,price,old_price,features_es,features_pt,popular,active,sort_order").eq("active", true).order("sort_order"),
+          dataClient.from("site_content").select("data").eq("lang", lang).maybeSingle(),
+          dataClient.from("plans").select("name_es,name_pt,age_es,age_pt,price,old_price,features_es,features_pt,popular,active,sort_order").eq("active", true).order("sort_order"),
         ]);
 
         const { data, error } = contentResult;
