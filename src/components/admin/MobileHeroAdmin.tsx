@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { dataClient } from "@/lib/data-client";
 import type { Lang } from "@/lib/i18n";
 
 const ui = (lang: Lang, es: string, pt: string) => lang === "pt" ? pt : es;
@@ -22,7 +22,7 @@ export function MobileHeroAdmin({ lang }: { lang: Lang }) {
   const queryClient = useQueryClient();
 
   async function load() {
-    const { data } = await supabase.from("site_content").select("data").eq("lang", lang).maybeSingle();
+    const { data } = await dataClient.from("site_content").select("data").eq("lang", lang).maybeSingle();
     const media = ((data?.data as any)?.media) ?? {};
     setDesktopUrl(media.heroImage ?? "");
     setMobileUrl(media.heroMobileImage ?? "");
@@ -36,9 +36,9 @@ export function MobileHeroAdmin({ lang }: { lang: Lang }) {
 
   async function persistMedia(patch: Record<string, unknown>) {
     for (const contentLang of ["es", "pt"] as const) {
-      const { data } = await supabase.from("site_content").select("data").eq("lang", contentLang).maybeSingle();
+      const { data } = await dataClient.from("site_content").select("data").eq("lang", contentLang).maybeSingle();
       const current = (data?.data as any) ?? {};
-      const { error } = await supabase.from("site_content").upsert({
+      const { error } = await dataClient.from("site_content").upsert({
         lang: contentLang,
         data: { ...current, media: { ...(current.media ?? {}), ...patch } },
         updated_at: new Date().toISOString(),
@@ -46,8 +46,6 @@ export function MobileHeroAdmin({ lang }: { lang: Lang }) {
       if (error) throw error;
     }
 
-    // Mantener el cache de React Query exactamente alineado con lo recién guardado.
-    // Así, al volver al sitio, el hero usa de inmediato la misma posición que el admin.
     queryClient.setQueriesData({ queryKey: ["site_content"] }, (old: any) => {
       if (!old || typeof old !== "object") return old;
       return { ...old, media: { ...(old.media ?? {}), ...patch } };
@@ -63,10 +61,10 @@ export function MobileHeroAdmin({ lang }: { lang: Lang }) {
     try {
       const prefix = kind === "desktop" ? "hero-desktop" : "hero-mobile";
       const path = `${prefix}-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
-      const { error: uploadError } = await supabase.storage.from("site-photos").upload(path, file);
+      const { error: uploadError } = await dataClient.storage.from("site-photos").upload(path, file);
       if (uploadError) throw uploadError;
-      const publicUrl = supabase.storage.from("site-photos").getPublicUrl(path).data.publicUrl;
-      const { error: rowError } = await supabase.from("site_photos").insert({
+      const publicUrl = dataClient.storage.from("site-photos").getPublicUrl(path).data.publicUrl;
+      const { error: rowError } = await dataClient.from("site_photos").insert({
         slot: `${prefix}-${Date.now()}`,
         storage_path: path,
         alt_es: kind === "desktop" ? "Hero escritorio" : "Hero móvil",
