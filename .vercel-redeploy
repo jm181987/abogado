@@ -1,1 +1,1 @@
-trigger production redeploy after PR #65
+trigger preview redeploy after DATABASE_URL configured 2026-09-13
