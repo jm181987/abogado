@@ -3,8 +3,10 @@ name: Postgres migration check
 on:
   push:
     branches:
-      - feat-postgres-storage-migration
-      - chore-clean-data-client
+      - main
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
@@ -18,10 +20,11 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: package.json
-      - name: Verify legacy backend name is absent
+      - name: Verify retired backend name is absent
         run: |
-          if grep -RIni --exclude-dir=node_modules --exclude-dir=.git -E 'supabase' src package.json .env.example; then
-            echo 'Legacy backend reference found'
+          retired='supa''base'
+          if grep -RIni --exclude-dir=node_modules --exclude-dir=.git -E "$retired" .; then
+            echo 'Retired backend reference found'
             exit 1
           fi
       - run: npm install --no-audit --no-fund
