@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { dataClient } from "@/lib/data-client";
 import type { Lang } from "@/lib/i18n";
 
 type TrackingConfig = {
@@ -29,7 +29,7 @@ export function TrackingAdmin({ lang }: { lang: Lang }) {
   useEffect(() => {
     void (async () => {
       setLoading(true);
-      const { data: row, error } = await supabase.from("site_content").select("data").eq("lang", "pt").maybeSingle();
+      const { data: row, error } = await dataClient.from("site_content").select("data").eq("lang", "pt").maybeSingle();
       if (error) alert(ui(lang, "No se pudo cargar la configuración: ", "Não foi possível carregar a configuração: ") + error.message);
       setData({ ...DEFAULTS, ...(((row?.data as any)?.tracking ?? {}) as Partial<TrackingConfig>) });
       setLoading(false);
@@ -49,14 +49,14 @@ export function TrackingAdmin({ lang }: { lang: Lang }) {
     }
 
     setSaving(true); setSaved(false);
-    const { data: rows, error: readError } = await supabase.from("site_content").select("lang,data").in("lang", ["es", "pt"]);
+    const { data: rows, error: readError } = await dataClient.from("site_content").select("lang,data").in("lang", ["es", "pt"]);
     if (readError) { alert(readError.message); setSaving(false); return; }
     const tracking = { ...data, googleAnalyticsId: ga, metaPixelId: pixel };
     const updates = (["es", "pt"] as const).map(contentLang => {
       const current = (rows ?? []).find((row: any) => row.lang === contentLang)?.data ?? {};
       return { lang: contentLang, data: { ...current, tracking }, updated_at: new Date().toISOString() };
     });
-    const { error } = await supabase.from("site_content").upsert(updates as any, { onConflict: "lang" });
+    const { error } = await dataClient.from("site_content").upsert(updates as any, { onConflict: "lang" });
     setSaving(false);
     if (error) { alert(ui(lang, "Error guardando: ", "Erro ao salvar: ") + error.message); return; }
     await queryClient.invalidateQueries({ queryKey: ["site_content"] });
