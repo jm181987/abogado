@@ -67,10 +67,11 @@ export async function listPhotos() {
   return api<{ photos: ApiPhoto[] }>("/api/admin/photos");
 }
 
-export async function uploadPhoto(file: File, options: { slot: string; alt_es?: string | null; alt_pt?: string | null }) {
+export async function uploadPhoto(file: File, options: { slot: string; storage_path?: string; alt_es?: string | null; alt_pt?: string | null }) {
   const form = new FormData();
   form.set("file", file);
   form.set("slot", options.slot);
+  if (options.storage_path) form.set("storage_path", options.storage_path);
   if (options.alt_es) form.set("alt_es", options.alt_es);
   if (options.alt_pt) form.set("alt_pt", options.alt_pt);
   return api<{ photo: ApiPhoto }>("/api/admin/photos", { method: "POST", body: form });
