@@ -17,7 +17,7 @@ function expectedLanguage(): "es" | "pt" {
 
 export function SiteContentGate({ children }: { children: ReactNode }) {
   // El contenido permanece totalmente oculto hasta que tanto los textos de
-  // Supabase como la imagen real del hero estén listos para el idioma esperado.
+  // PostgreSQL como la imagen real del hero estén listos para el idioma esperado.
   // El cambio loader -> sitio ocurre en un único commit, sin fundido intermedio.
   const [ready, setReady] = useState(false);
 
@@ -36,7 +36,6 @@ export function SiteContentGate({ children }: { children: ReactNode }) {
       });
     };
 
-    // Rutas como /admin no tienen HeroMedia ni contenido público que sincronizar.
     if (window.location.pathname !== "/") {
       reveal();
       return () => {
@@ -71,8 +70,6 @@ export function SiteContentGate({ children }: { children: ReactNode }) {
     window.addEventListener("bsp:content-ready", onContentReady as EventListener);
     maybeReveal();
 
-    // Evita un bloqueo permanente ante un fallo extremo de red. En el flujo
-    // normal ambos eventos llegan antes y nunca se muestra contenido transitorio.
     const safetyTimer = window.setTimeout(reveal, 8000);
 
     return () => {

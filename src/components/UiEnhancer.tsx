@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { dataClient } from "@/lib/data-client";
 
 const UI_STYLES = `
 /* Admin photo management: make upload and photo actions unmistakable. */
@@ -284,7 +284,7 @@ type MediaSettings = {
 };
 
 async function loadMediaSettings(): Promise<MediaSettings> {
-  const { data } = await supabase
+  const { data } = await dataClient
     .from("site_content")
     .select("data")
     .eq("lang", "es")
@@ -294,7 +294,7 @@ async function loadMediaSettings(): Promise<MediaSettings> {
 
 async function persistMediaSettings(patch: MediaSettings) {
   for (const lang of ["es", "pt"] as const) {
-    const { data, error: readError } = await supabase
+    const { data, error: readError } = await dataClient
       .from("site_content")
       .select("data")
       .eq("lang", lang)
@@ -302,7 +302,7 @@ async function persistMediaSettings(patch: MediaSettings) {
     if (readError) throw readError;
     const current = (data?.data as any) ?? {};
     const next = { ...current, media: { ...(current.media ?? {}), ...patch } };
-    const { error } = await supabase
+    const { error } = await dataClient
       .from("site_content")
       .upsert({ lang, data: next, updated_at: new Date().toISOString() }, { onConflict: "lang" });
     if (error) throw error;

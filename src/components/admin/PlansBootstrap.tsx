@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouterState } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
-import { supabase } from "@/integrations/supabase/client";
+import { dataClient } from "@/lib/data-client";
 import { useSiteContent } from "@/lib/site-content";
 
 /** No monta hooks ni consultas de planes fuera de /admin. */
@@ -23,7 +23,7 @@ function AdminPlansBootstrap() {
     ran.current = true;
 
     void (async () => {
-      const { data, error } = await supabase.from("plans").select("id").limit(1);
+      const { data, error } = await dataClient.from("plans").select("id").limit(1);
       if (error) {
         console.warn("[plans bootstrap] No se pudo verificar la tabla de planes", error);
         return;
@@ -52,7 +52,7 @@ function AdminPlansBootstrap() {
         };
       });
 
-      const { error: insertError } = await supabase.from("plans").insert(rows as any);
+      const { error: insertError } = await dataClient.from("plans").insert(rows as any);
       if (insertError) {
         console.warn("[plans bootstrap] No se pudieron importar los planes visibles", insertError);
         return;
@@ -83,9 +83,9 @@ function AdminPlansBootstrap() {
         event.stopPropagation();
 
         void (async () => {
-          const { data } = await supabase.from("plans").select("sort_order").order("sort_order", { ascending: false }).limit(1);
+          const { data } = await dataClient.from("plans").select("sort_order").order("sort_order", { ascending: false }).limit(1);
           const nextOrder = ((data?.[0] as any)?.sort_order ?? 0) + 1;
-          const { error } = await supabase.from("plans").insert({
+          const { error } = await dataClient.from("plans").insert({
             name: "Nuevo plan",
             name_es: "Nuevo plan",
             name_pt: "Novo plano",

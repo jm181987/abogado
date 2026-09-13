@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { dataClient } from "@/lib/data-client";
 import type { Lang } from "@/lib/i18n";
 
 type Professional = {
@@ -63,8 +63,8 @@ export function ProfessionalsAdmin({ lang }: { lang: Lang }) {
   async function load() {
     setLoading(true);
     const [{ data: rows, error }, { data: photoRows, error: photosError }] = await Promise.all([
-      supabase.from("site_content").select("lang,data").in("lang", ["es", "pt"]),
-      supabase.from("site_photos").select("storage_path").order("updated_at", { ascending: false }),
+      dataClient.from("site_content").select("lang,data").in("lang", ["es", "pt"]),
+      dataClient.from("site_photos").select("storage_path").order("updated_at", { ascending: false }),
     ]);
     if (error) {
       alert(ui(lang, "No se pudieron cargar los profesionales: ", "Não foi possível carregar os profissionais: ") + error.message);
@@ -75,7 +75,7 @@ export function ProfessionalsAdmin({ lang }: { lang: Lang }) {
     const current = rows?.find((row: any) => row.lang === lang)?.data ?? {};
     setData(resolveData(lang, current));
 
-    const uploadedPhotos = (photoRows ?? []).map((row: any) => supabase.storage.from("site-photos").getPublicUrl(row.storage_path).data.publicUrl).filter(Boolean);
+    const uploadedPhotos = (photoRows ?? []).map((row: any) => dataClient.storage.from("site-photos").getPublicUrl(row.storage_path).data.publicUrl).filter(Boolean);
     const legacyGallery = (rows ?? []).flatMap((row: any) => Array.isArray(row.data?.media?.gallery) ? row.data.media.gallery : []);
     setGallery(Array.from(new Set([...uploadedPhotos, ...legacyGallery].filter(Boolean))));
     setLoading(false);
@@ -91,7 +91,7 @@ export function ProfessionalsAdmin({ lang }: { lang: Lang }) {
 
   async function save() {
     setSaving(true); setSaved(false);
-    const { data: rows, error: loadError } = await supabase.from("site_content").select("lang,data").in("lang", ["es", "pt"]);
+    const { data: rows, error: loadError } = await dataClient.from("site_content").select("lang,data").in("lang", ["es", "pt"]);
     if (loadError) { alert(loadError.message); setSaving(false); return; }
 
     const otherLang: Lang = lang === "pt" ? "es" : "pt";
@@ -111,7 +111,7 @@ export function ProfessionalsAdmin({ lang }: { lang: Lang }) {
       { lang: otherLang, data: { ...otherRow, professionals: { ...otherProfessionals, items: sharedItems } }, updated_at: new Date().toISOString() },
     ];
 
-    const { error } = await supabase.from("site_content").upsert(updates as any, { onConflict: "lang" });
+    const { error } = await dataClient.from("site_content").upsert(updates as any, { onConflict: "lang" });
     setSaving(false);
     if (error) { alert(ui(lang, "Error guardando: ", "Erro ao salvar: ") + error.message); return; }
     await queryClient.invalidateQueries({ queryKey: ["site_content"] });

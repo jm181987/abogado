@@ -164,7 +164,7 @@ class QueryBuilder implements PromiseLike<Result<any>> {
   }
 }
 
-export const supabase = {
+export const dataClient = {
   from(table: string) { return new QueryBuilder(table); },
   storage: {
     from(_bucket: string) {

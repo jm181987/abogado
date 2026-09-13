@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { dataClient } from "@/lib/data-client";
 import type { Lang } from "@/lib/i18n";
 import { PRACTICE_AREAS_DEFAULTS, type PracticeAreasData } from "@/components/PracticeAreasSection";
 import { ProfessionalsAdmin } from "@/components/admin/ProfessionalsAdmin";
@@ -17,7 +17,7 @@ export function PracticeAreasAdmin({ lang }: { lang: Lang }) {
   useEffect(()=>{void load(editLang)},[editLang]);
 
   async function load(l:Lang){
-    const {data:row}=await supabase.from("site_content").select("data").eq("lang",l).maybeSingle();
+    const {data:row}=await dataClient.from("site_content").select("data").eq("lang",l).maybeSingle();
     const stored=(row?.data as any)?.practiceAreas;
     setData(stored?.items?.length?stored:PRACTICE_AREAS_DEFAULTS[l]);
   }
@@ -25,9 +25,9 @@ export function PracticeAreasAdmin({ lang }: { lang: Lang }) {
   function patchItem(i:number,p:Record<string,any>){setData(v=>({...v,items:v.items.map((it,index)=>index===i?{...it,...p}:it)}));}
   async function save(){
     setSaving(true);setSaved(false);
-    const {data:row}=await supabase.from("site_content").select("data").eq("lang",editLang).maybeSingle();
+    const {data:row}=await dataClient.from("site_content").select("data").eq("lang",editLang).maybeSingle();
     const current=(row?.data as any)??{};
-    const {error}=await supabase.from("site_content").upsert({lang:editLang,data:{...current,practiceAreas:data},updated_at:new Date().toISOString()},{onConflict:"lang"});
+    const {error}=await dataClient.from("site_content").upsert({lang:editLang,data:{...current,practiceAreas:data},updated_at:new Date().toISOString()},{onConflict:"lang"});
     setSaving(false);
     if(error){alert(error.message);return;}
     await queryClient.invalidateQueries({queryKey:["site_content"]});
