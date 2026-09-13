@@ -5,9 +5,14 @@ export type AppUser = { id: string; email: string; role: "admin" | "user" };
 
 const COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "knj_admin_session";
 const SESSION_DAYS = Math.max(1, Number(process.env.SESSION_TTL_DAYS || 7));
+const BOOTSTRAP_ADMIN_EMAIL_SHA256 = process.env.BOOTSTRAP_ADMIN_EMAIL_SHA256 || "f5a57b8051eb2f24f938256b3e28e83d2dae505feb3f8276e6aa6c37307c5736";
 
 function normalizeEmail(value: string) {
   return value.trim().toLowerCase();
+}
+
+function emailHash(email: string) {
+  return createHash("sha256").update(normalizeEmail(email)).digest("hex");
 }
 
 function hashPassword(password: string) {
@@ -67,14 +72,14 @@ export async function signUp(emailInput: string, password: string) {
   const id = randomUUID();
   const passwordHash = hashPassword(password);
 
-  let role: "admin" | "user" = "user";
   try {
     await sql.begin(async (tx) => {
       await tx`SELECT pg_advisory_xact_lock(72541983)`;
       const existingAdmin = await tx<{ count: number }[]>`SELECT count(*)::int AS count FROM user_roles WHERE role = 'admin'`;
-      role = existingAdmin[0]?.count ? "user" : "admin";
+      if (existingAdmin[0]?.count) throw Object.assign(new Error("El administrador ya fue creado. Inicia sesión."), { status: 409 });
+      if (emailHash(email) !== BOOTSTRAP_ADMIN_EMAIL_SHA256) throw Object.assign(new Error("Esta cuenta no está autorizada para inicializar el panel."), { status: 403 });
       await tx`INSERT INTO app_users (id, email, password_hash) VALUES (${id}, ${email}, ${passwordHash})`;
-      await tx`INSERT INTO user_roles (user_id, role) VALUES (${id}, ${role})`;
+      await tx`INSERT INTO user_roles (user_id, role) VALUES (${id}, 'admin')`;
     });
   } catch (error: any) {
     if (error?.code === "23505") throw new Error("Ya existe una cuenta con ese email");
@@ -82,7 +87,7 @@ export async function signUp(emailInput: string, password: string) {
   }
 
   const token = await createSession(id);
-  return { user: { id, email, role } satisfies AppUser, token };
+  return { user: { id, email, role: "admin" } satisfies AppUser, token };
 }
 
 export async function signIn(emailInput: string, password: string) {
