@@ -18,5 +18,11 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: package.json
+      - name: Verify legacy backend name is absent
+        run: |
+          if grep -RIni --exclude-dir=node_modules --exclude-dir=.git -E 'supabase' src package.json package-lock.json .env.example 2>/dev/null; then
+            echo 'Legacy backend reference found'
+            exit 1
+          fi
       - run: npm install --no-audit --no-fund
       - run: npm run build
